@@ -248,6 +248,7 @@ The repository includes example sites:
 | Example | Description | Command |
 |---------|-------------|---------|
 | `blog` | Standard blog with posts, pages, collections | `just example blog` |
+| `docs` | Documentation site with sidebar navigation | `just example docs` |
 | `slideshow` | Presentation/slideshow site | `just example slideshow` |
 
 ## Output

@@ -1,0 +1,8 @@
+[[sections]]
+title = "Guide"
+items = [
+    { title = "Getting Started", url = "/docs/getting-started/" },
+    { title = "Configuration", url = "/docs/configuration/" },
+    { title = "Content", url = "/docs/content/" },
+    { title = "Templating", url = "/docs/templating/" },
+]

@@ -14,6 +14,7 @@ const DEFAULT_COLLECTION_TEMPLATE: &str =
 const DEFAULT_COLLECTION_ITEM_TEMPLATE: &str =
     include_str!("../themes/default/templates/collection_item.html");
 const DEFAULT_SLIDESHOW_TEMPLATE: &str = include_str!("../themes/default/templates/slideshow.html");
+const DEFAULT_DOCS_TEMPLATE: &str = include_str!("../themes/default/templates/docs.html");
 const DEFAULT_HEADER_PARTIAL: &str =
     include_str!("../themes/default/templates/partials/header.html");
 const DEFAULT_FOOTER_PARTIAL: &str =
@@ -50,6 +51,7 @@ impl ThemeEngine {
         tera.add_raw_template("collection.html", DEFAULT_COLLECTION_TEMPLATE)?;
         tera.add_raw_template("collection_item.html", DEFAULT_COLLECTION_ITEM_TEMPLATE)?;
         tera.add_raw_template("slideshow.html", DEFAULT_SLIDESHOW_TEMPLATE)?;
+        tera.add_raw_template("docs.html", DEFAULT_DOCS_TEMPLATE)?;
         tera.add_raw_template("partials/header.html", DEFAULT_HEADER_PARTIAL)?;
         tera.add_raw_template("partials/footer.html", DEFAULT_FOOTER_PARTIAL)?;
         tera.add_raw_template("partials/nav.html", DEFAULT_NAV_PARTIAL)?;

@@ -1,0 +1,7 @@
+title = "Bamboo Docs"
+base_url = "http://localhost:3000"
+description = "Documentation for Bamboo Static Site Generator"
+language = "en"
+
+[extra]
+github = "https://github.com/matthewjberger/bamboo"
