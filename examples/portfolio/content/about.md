@@ -3,24 +3,35 @@ title = "About"
 weight = 1
 +++
 
-# About Me
+## Education
 
-I'm Jane Doe, a designer and developer based in San Francisco. I create digital products that are both beautiful and functional.
+**Bachelor of Science in Computer Science**
+Stanford University, 2010
 
-## Background
-
-I started my career as a graphic designer before transitioning to web development. This unique background allows me to bridge the gap between design and code, creating seamless user experiences.
-
-## Skills
-
-- **Design**: UI/UX, Brand Identity, Typography
-- **Development**: HTML, CSS, JavaScript, React
-- **Tools**: Figma, Sketch, VS Code, Git
+Focus on algorithms, data compression, and distributed systems. Graduated with honors. Thesis on novel approaches to lossless data compression.
 
 ## Experience
 
-Previously, I've worked with companies like Acme Corp, TechStartup Inc, and Creative Agency. Now I work as an independent consultant helping businesses build their digital presence.
+### CEO & Founder — Pied Piper
+*Sep 2014 - Present*
 
-## Get in Touch
+- Developed revolutionary middle-out compression algorithm achieving unprecedented 5.2 Weissman score
+- Led company through TechCrunch Disrupt victory, securing initial funding and industry recognition
+- Pivoted company strategy multiple times to stay ahead of Hooli's competitive threats
+- Built decentralized peer-to-peer internet infrastructure capable of replacing traditional web
+- Grew engineering team from 4 to 50+ while maintaining startup culture and technical excellence
 
-Interested in working together? [Send me an email](mailto:hello@example.com) or connect with me on social media.
+### Software Engineer — Hooli
+*Jun 2012 - Aug 2014*
+
+- Worked on Nucleus project before identifying fundamental architectural limitations
+- Developed initial compression concepts that would later become Pied Piper's core technology
+- Collaborated with cross-functional teams on large-scale distributed systems
+- Left to pursue independent venture after recognizing potential of middle-out approach
+
+### Software Engineering Intern — Various Silicon Valley Startups
+*May 2010 - May 2012*
+
+- Gained hands-on experience in Silicon Valley startup culture and rapid development cycles
+- Learned importance of intellectual property protection and technical due diligence
+- Built foundational skills in systems programming and algorithm optimization

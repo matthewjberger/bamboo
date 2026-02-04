@@ -15,37 +15,36 @@
     {% endif %}
 
     <div class="social-links">
-      {% if site.config.extra.github %}
-      <a href="{{ site.config.extra.github }}" target="_blank" rel="noopener">GitHub</a>
-      {% endif %}
       {% if site.config.extra.linkedin %}
-      <a href="{{ site.config.extra.linkedin }}" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="{{ site.config.extra.linkedin }}" target="_blank" rel="noopener" class="btn btn-linkedin">LinkedIn</a>
       {% endif %}
-      {% if site.config.extra.twitter %}
-      <a href="{{ site.config.extra.twitter }}" target="_blank" rel="noopener">Twitter</a>
+      {% if site.config.extra.github %}
+      <a href="{{ site.config.extra.github }}" target="_blank" rel="noopener" class="btn btn-github">GitHub</a>
       {% endif %}
       {% if site.config.extra.email %}
-      <a href="mailto:{{ site.config.extra.email }}">Email</a>
+      <a href="mailto:{{ site.config.extra.email }}" class="btn btn-email">Email</a>
       {% endif %}
     </div>
   </header>
 
   {% if site.collections.projects %}
   <section class="projects">
-    <h2>Selected Work</h2>
+    <h2>Projects</h2>
     <div class="project-grid">
       {% for item in site.collections.projects.items %}
-      <a href="/projects/{{ item.slug }}/" class="project-card">
+      <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener" class="project-card">
         <div class="project-info">
           {% if item.frontmatter.extra.category %}
           <span class="category">{{ item.frontmatter.extra.category }}</span>
           {% endif %}
           <h3>{{ item.title }}</h3>
-          {% if item.frontmatter.extra.preview %}
-          <p>{{ item.frontmatter.extra.preview }}</p>
-          {% endif %}
-          {% if item.frontmatter.extra.year %}
-          <span class="year">{{ item.frontmatter.extra.year }}</span>
+          <p>{{ item.content | striptags | truncate(length=150) }}</p>
+          {% if item.frontmatter.extra.technologies %}
+          <div class="technologies">
+            {% for tech in item.frontmatter.extra.technologies %}
+            <span class="tech-tag">{{ tech }}</span>
+            {% endfor %}
+          </div>
           {% endif %}
         </div>
       </a>
@@ -94,33 +93,50 @@
   .social-links {
     display: flex;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
-  .social-links a {
-    color: #6ee7b7;
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
     text-decoration: none;
     font-weight: 500;
-    transition: opacity 0.2s;
+    transition: transform 0.2s, opacity 0.2s;
   }
 
-  .social-links a:hover {
-    opacity: 0.8;
+  .btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+  }
+
+  .btn-linkedin {
+    background: #0077b5;
+    color: white;
+  }
+
+  .btn-github {
+    background: #333;
+    color: white;
+  }
+
+  .btn-email {
+    background: #6ee7b7;
+    color: #0a0a0a;
   }
 
   .projects h2 {
-    font-size: 1.5rem;
+    font-size: 2rem;
     margin-bottom: 2rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 400;
   }
 
   .project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   .project-card {
@@ -128,15 +144,16 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 2rem;
+    padding: 1.5rem;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.2s, border-color 0.2s;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 
   .project-card:hover {
-    transform: translateY(-4px);
+    transform: scale(1.02);
     border-color: rgba(110, 231, 183, 0.3);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
   }
 
   .project-info .category {
@@ -161,9 +178,20 @@
     margin-bottom: 1rem;
   }
 
-  .project-info .year {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+  .technologies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tech-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
   }
 
   @media (max-width: 600px) {

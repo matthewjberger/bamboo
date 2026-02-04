@@ -1,8 +1,8 @@
 +++
-title = "Portfolio"
+title = "Richard Hendricks"
 template = "portfolio.html"
 +++
 
-I'm a designer and developer passionate about creating beautiful, functional digital experiences.
+A passionate entrepreneur revolutionizing data compression in Silicon Valley.
 
-With over 10 years of experience, I specialize in user interface design, front-end development, and creative direction for startups and established brands alike.
+Founder and CEO of Pied Piper, creator of the revolutionary middle-out compression algorithm with an unprecedented 5.2 Weissman score. Building the new decentralized internet, one node at a time.
