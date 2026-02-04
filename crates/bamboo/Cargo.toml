@@ -7,7 +7,7 @@ description = "A fast static site generator written in Rust"
 repository = "https://github.com/matthewjberger/bamboo"
 homepage = "https://github.com/matthewjberger/bamboo"
 readme = "../../README.md"
-keywords = ["static-site-generator", "markdown", "blog", "tera", "ssg"]
+keywords = ["static-site", "markdown", "blog", "tera", "ssg"]
 categories = ["command-line-utilities", "web-programming"]
 authors = ["Matthew J. Berger <matthewjordanberger@gmail.com>"]
 

@@ -7,7 +7,7 @@ description = "CLI for the Bamboo static site generator"
 repository = "https://github.com/matthewjberger/bamboo"
 homepage = "https://github.com/matthewjberger/bamboo"
 readme = "../../README.md"
-keywords = ["static-site-generator", "markdown", "blog", "cli", "ssg"]
+keywords = ["static-site", "markdown", "blog", "cli", "ssg"]
 categories = ["command-line-utilities", "web-programming"]
 authors = ["Matthew J. Berger <matthewjordanberger@gmail.com>"]
 
