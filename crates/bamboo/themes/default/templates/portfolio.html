@@ -1,53 +1,58 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="portfolio">
+<div class="w-screen relative left-1/2 -ml-[50vw] -mt-[calc(var(--header-height)+3rem)] -mb-12">
   <!-- Navigation -->
-  <nav class="portfolio-nav">
-    <div class="nav-container">
-      <a href="#hero" class="nav-brand">{{ site.config.title }}</a>
-      <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" />
-      <label for="nav-toggle" class="nav-toggle-label">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <nav class="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50 h-16">
+    <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
+      <a href="#hero" class="text-xl font-bold text-white hover:text-blue-400 transition-colors">
+        {{ site.config.title }}
+      </a>
+      <input type="checkbox" id="nav-toggle" class="hidden peer" />
+      <label for="nav-toggle" class="md:hidden flex items-center cursor-pointer text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </label>
-      <div class="nav-links">
-        <a href="#about">About</a>
-        {% if site.data.highlights %}<a href="#highlights">Highlights</a>{% endif %}
-        {% if site.data.experience %}<a href="#experience">Experience</a>{% endif %}
-        {% if site.collections.projects %}<a href="#projects">Projects</a>{% endif %}
-        {% if site.data.education %}<a href="#education">Education</a>{% endif %}
+      <div class="hidden md:flex space-x-8 items-center peer-checked:flex peer-checked:flex-col peer-checked:absolute peer-checked:top-16 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-gray-800 peer-checked:border-b peer-checked:border-gray-700 peer-checked:p-4 peer-checked:space-x-0 peer-checked:space-y-4 md:peer-checked:flex-row md:peer-checked:static md:peer-checked:bg-transparent md:peer-checked:border-0 md:peer-checked:p-0 md:peer-checked:space-x-8 md:peer-checked:space-y-0">
+        <a href="#about" class="text-gray-300 hover:text-blue-400 transition-colors">About</a>
+        {% if site.data.highlights %}<a href="#highlights" class="text-gray-300 hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
+        {% if site.data.experience %}<a href="#experience" class="text-gray-300 hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+        {% if site.collections.projects %}<a href="#projects" class="text-gray-300 hover:text-blue-400 transition-colors">Projects</a>{% endif %}
+        {% if site.data.education %}<a href="#education" class="text-gray-300 hover:text-blue-400 transition-colors">Education</a>{% endif %}
       </div>
     </div>
   </nav>
 
   <!-- Hero Section -->
-  <section id="hero" class="hero-section">
-    <div class="hero-content">
+  <section id="hero" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 pt-16">
+    <div class="text-center px-4">
       <img
         src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=180&h=180&fit=crop&crop=face"
         alt="{{ site.config.title }}"
-        class="hero-avatar"
+        class="rounded-lg mx-auto mb-6 border-2 border-blue-400 object-cover"
+        style="width: 180px; height: 180px;"
       />
-      <h1>Hi, I'm <span class="highlight">{{ site.config.title }}</span></h1>
+      <h1 class="text-5xl md:text-7xl font-bold text-white mb-4">
+        Hi, I'm <span class="text-blue-400">{{ site.config.title }}</span>
+      </h1>
       {% if site.config.extra.extra.tagline %}
-      <p class="tagline">{{ site.config.extra.extra.tagline }}</p>
+      <p class="text-xl md:text-2xl text-gray-300 mb-8">{{ site.config.extra.extra.tagline }}</p>
       {% elif site.config.extra.tagline %}
-      <p class="tagline">{{ site.config.extra.tagline }}</p>
+      <p class="text-xl md:text-2xl text-gray-300 mb-8">{{ site.config.extra.tagline }}</p>
       {% endif %}
 
-      <div class="social-links">
-        <a href="#experience" class="btn btn-purple">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a href="#experience" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
           </svg>
           Experience
         </a>
         {% set linkedin_url = site.config.extra.extra.linkedin | default(value=site.config.extra.linkedin) %}
         {% if linkedin_url %}
-        <a href="{{ linkedin_url }}" target="_blank" rel="noopener" class="btn btn-linkedin">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <a href="{{ linkedin_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
           </svg>
           LinkedIn
@@ -55,15 +60,15 @@
         {% endif %}
         {% set github_url = site.config.extra.extra.github | default(value=site.config.extra.github) %}
         {% if github_url %}
-        <a href="{{ github_url }}" target="_blank" rel="noopener" class="btn btn-github">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <a href="{{ github_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
           GitHub
         </a>
         {% endif %}
-        <a href="#projects" class="btn btn-teal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+        <a href="#projects" class="px-6 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clip-rule="evenodd"/>
           </svg>
           Projects
@@ -73,12 +78,14 @@
   </section>
 
   <!-- About Section -->
-  <section id="about" class="about-section">
-    <div class="section-container">
-      <h2>About Me</h2>
+  <section id="about" class="py-20 bg-gray-900">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-4xl font-bold text-center mb-12 text-white">About Me</h2>
       {% if home %}
-      <div class="about-content">
-        {{ home.content | safe }}
+      <div class="max-w-3xl mx-auto space-y-8">
+        <div class="text-gray-300 leading-relaxed text-lg text-center [&>p]:mb-8 [&>p:last-child]:mb-0">
+          {{ home.content | safe }}
+        </div>
       </div>
       {% endif %}
     </div>
@@ -86,18 +93,20 @@
 
   <!-- Highlights Section -->
   {% if site.data.highlights %}
-  <section id="highlights" class="highlights-section">
-    <div class="section-container">
-      <h2>Highlights</h2>
-      <div class="highlights-grid">
+  <section id="highlights" class="py-20 bg-gradient-to-br from-gray-900 to-gray-800">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-white">Highlights</h2>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.data.highlights.items %}
-        <a href="{{ item.link }}" target="_blank" rel="noopener" class="highlight-card">
+        <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="block bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-700 hover:shadow-xl transition-all hover:scale-105 cursor-pointer flex flex-col">
           {% if item.image %}
-          <img src="{{ item.image }}" alt="{{ item.title }}" class="highlight-image" />
+          <img src="{{ item.image }}" alt="{{ item.title }}" class="w-full h-48 object-cover" />
           {% endif %}
-          <div class="highlight-content">
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.description }}</p>
+          <div class="p-6 flex-1">
+            <h3 class="text-xl font-bold mb-3 text-white">{{ item.title }}</h3>
+            <p class="text-gray-300 leading-relaxed">{{ item.description }}</p>
           </div>
         </a>
         {% endfor %}
@@ -108,20 +117,20 @@
 
   <!-- Experience Section -->
   {% if site.data.experience %}
-  <section id="experience" class="experience-section">
-    <div class="section-container-narrow">
-      <h2>Experience</h2>
-      <div class="experience-list">
+  <section id="experience" class="py-20 bg-gray-900">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="text-4xl font-bold text-center mb-12 text-white">Experience</h2>
+      <div class="space-y-8">
         {% for job in site.data.experience.jobs %}
-        <div class="job-card">
-          <h3>{{ job.title }}</h3>
-          <p class="company">{{ job.company }}</p>
-          <p class="period">{{ job.period }}</p>
-          <ul class="achievements">
+        <div class="border-l-4 border-blue-500 pl-6">
+          <h3 class="text-2xl font-bold text-white">{{ job.title }}</h3>
+          <p class="text-lg text-gray-300 mb-2">{{ job.company }}</p>
+          <p class="text-sm text-gray-400 mb-4">{{ job.period }}</p>
+          <ul class="space-y-2">
             {% for achievement in job.achievements %}
-            <li>
-              <span class="bullet">•</span>
-              <span>{{ achievement }}</span>
+            <li class="flex items-start">
+              <span class="text-blue-400 mr-2">&bull;</span>
+              <span class="text-gray-300">{{ achievement }}</span>
             </li>
             {% endfor %}
           </ul>
@@ -134,19 +143,19 @@
 
   <!-- Projects Section -->
   {% if site.collections.projects %}
-  <section id="projects" class="projects-section">
-    <div class="section-container">
-      <h2>Projects</h2>
-      <div class="project-grid">
+  <section id="projects" class="py-20 bg-gray-800">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-4xl font-bold text-center mb-12 text-white">Projects</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.collections.projects.items %}
-        <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener" class="project-card">
-          <div class="project-info">
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.content | striptags | truncate(length=120) }}</p>
+        <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener noreferrer" class="block bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-700 hover:scale-105 cursor-pointer">
+          <div class="p-6">
+            <h3 class="text-xl font-bold mb-3 text-white">{{ item.title }}</h3>
+            <p class="text-gray-300 mb-4 leading-relaxed">{{ item.content | striptags | truncate(length=120) }}</p>
             {% if item.frontmatter.extra.technologies %}
-            <div class="technologies">
+            <div class="flex flex-wrap gap-2">
               {% for tech in item.frontmatter.extra.technologies %}
-              <span class="tech-tag">{{ tech }}</span>
+              <span class="px-3 py-1 bg-gray-800 text-gray-300 rounded text-sm border border-gray-700">{{ tech }}</span>
               {% endfor %}
             </div>
             {% endif %}
@@ -160,16 +169,16 @@
 
   <!-- Education Section -->
   {% if site.data.education %}
-  <section id="education" class="education-section">
-    <div class="section-container-narrow">
-      <h2>Education</h2>
-      <div class="education-list">
+  <section id="education" class="py-20 bg-gray-800">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="text-4xl font-bold text-center mb-12 text-white">Education</h2>
+      <div class="space-y-8">
         {% for degree in site.data.education.degrees %}
-        <div class="education-card">
-          <h3>{{ degree.degree }}</h3>
-          <p class="institution">{{ degree.institution }}</p>
-          <p class="period">{{ degree.period }}</p>
-          <p class="description">{{ degree.description }}</p>
+        <div class="bg-gray-900 p-6 rounded-lg shadow-md border border-gray-700">
+          <h3 class="text-2xl font-bold text-white mb-2">{{ degree.degree }}</h3>
+          <p class="text-lg text-blue-400 mb-1">{{ degree.institution }}</p>
+          <p class="text-sm text-gray-400 mb-3">{{ degree.period }}</p>
+          <p class="text-gray-300">{{ degree.description }}</p>
         </div>
         {% endfor %}
       </div>
@@ -178,552 +187,19 @@
   {% endif %}
 
   <!-- Footer -->
-  <footer class="portfolio-footer">
-    <div class="footer-container">
-      <p>Built with <a href="https://github.com/matthewjberger/bamboo" target="_blank" rel="noopener">Bamboo</a></p>
+  <footer class="py-8 bg-black border-t border-gray-800">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <p class="text-gray-400">
+        Built with
+        <a href="https://github.com/matthewjberger/bamboo" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300">Bamboo</a>
+      </p>
     </div>
   </footer>
 </div>
 
 <style>
-  :root {
-    --color-blue-400: #60a5fa;
-    --color-blue-500: #3b82f6;
-    --color-blue-600: #2563eb;
-    --color-purple-500: #8b5cf6;
-    --color-purple-600: #7c3aed;
-    --color-teal-500: #14b8a6;
-    --color-teal-600: #0d9488;
-    --color-gray-100: #f3f4f6;
-    --color-gray-200: #e5e7eb;
-    --color-gray-300: #d1d5db;
-    --color-gray-400: #9ca3af;
-    --color-gray-600: #4b5563;
-    --color-gray-700: #374151;
-    --color-gray-800: #1f2937;
-    --color-gray-900: #111827;
-  }
-
-  .portfolio {
-    width: 100vw;
-    position: relative;
-    left: 50%;
-    margin-left: -50vw;
-    margin-top: calc(-1 * (var(--header-height) + 3rem));
-    margin-bottom: -3rem;
-  }
-
-  /* Navigation */
-  .portfolio-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: var(--color-gray-900);
-    border-bottom: 1px solid var(--color-gray-800);
-    z-index: 100;
-    height: 4rem;
-  }
-
-  .nav-container {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 0 1rem;
-    height: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .nav-brand {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: white;
-    text-decoration: none;
-  }
-
-  .nav-brand:hover {
-    color: var(--color-blue-400);
-  }
-
-  .nav-links {
-    display: none;
-    gap: 2rem;
-  }
-
-  .nav-links a {
-    color: var(--color-gray-300);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-
-  .nav-links a:hover {
-    color: var(--color-blue-400);
-  }
-
-  .nav-toggle-checkbox {
-    display: none;
-  }
-
-  .nav-toggle-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    color: white;
-  }
-
-  .nav-toggle-checkbox:checked ~ .nav-links {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 4rem;
-    left: 0;
-    right: 0;
-    background: var(--color-gray-800);
-    border-bottom: 1px solid var(--color-gray-700);
-    padding: 1rem;
-    gap: 0;
-  }
-
-  .nav-toggle-checkbox:checked ~ .nav-links a {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--color-gray-700);
-  }
-
-  .nav-toggle-checkbox:checked ~ .nav-links a:last-child {
-    border-bottom: none;
-  }
-
-  @media (min-width: 768px) {
-    .nav-links {
-      display: flex;
-    }
-
-    .nav-toggle-label {
-      display: none;
-    }
-
-    .nav-toggle-checkbox:checked ~ .nav-links {
-      position: static;
-      flex-direction: row;
-      background: transparent;
-      border: none;
-      padding: 0;
-      gap: 2rem;
-    }
-
-    .nav-toggle-checkbox:checked ~ .nav-links a {
-      padding: 0;
-      border: none;
-    }
-  }
-
-  .section-container {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
-
-  .section-container-narrow {
-    max-width: 56rem;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
-
-  .portfolio h2 {
-    font-size: 2.25rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 3rem;
-    color: white;
-  }
-
-  /* Hero */
-  .hero-section {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(to bottom right, var(--color-gray-900), var(--color-gray-800));
-    padding-top: 4rem;
-  }
-
-  .hero-content {
-    text-align: center;
-    padding: 0 1rem;
-  }
-
-  .hero-avatar {
-    width: 180px;
-    height: 180px;
-    border-radius: 0.5rem;
-    border: 2px solid var(--color-blue-400);
-    object-fit: cover;
-    margin: 0 auto 1.5rem;
-  }
-
-  .hero-section h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 1rem;
-  }
-
-  .hero-section .highlight {
-    color: var(--color-blue-400);
-  }
-
-  .tagline {
-    font-size: 1.25rem;
-    color: var(--color-gray-300);
-    margin-bottom: 2rem;
-  }
-
-  .social-links {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-    color: white;
-  }
-
-  .btn svg {
-    flex-shrink: 0;
-  }
-
-  .btn-purple {
-    background: var(--color-purple-500);
-  }
-  .btn-purple:hover {
-    background: var(--color-purple-600);
-  }
-
-  .btn-linkedin {
-    background: var(--color-blue-500);
-  }
-  .btn-linkedin:hover {
-    background: var(--color-blue-600);
-  }
-
-  .btn-github {
-    background: var(--color-gray-700);
-  }
-  .btn-github:hover {
-    background: var(--color-gray-600);
-  }
-
-  .btn-teal {
-    background: var(--color-teal-500);
-  }
-  .btn-teal:hover {
-    background: var(--color-teal-600);
-  }
-
-  /* About */
-  .about-section {
-    padding: 5rem 0;
-    background: var(--color-gray-900);
-  }
-
-  .about-content {
-    max-width: 48rem;
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  .about-content p {
-    font-size: 1.125rem;
-    color: var(--color-gray-300);
-    line-height: 1.75;
-    margin-bottom: 2rem;
-  }
-
-  .about-content p:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Highlights */
-  .highlights-section {
-    padding: 5rem 0;
-    background: linear-gradient(to bottom right, var(--color-gray-900), var(--color-gray-800));
-  }
-
-  .highlights-grid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 2rem;
-  }
-
-  .highlight-card {
-    display: flex;
-    flex-direction: column;
-    background: var(--color-gray-900);
-    border: 1px solid var(--color-gray-700);
-    border-radius: 0.5rem;
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s;
-  }
-
-  .highlight-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-
-  .highlight-image {
-    width: 100%;
-    height: 12rem;
-    object-fit: cover;
-  }
-
-  .highlight-content {
-    padding: 1.5rem;
-    flex: 1;
-  }
-
-  .highlight-content h3 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-    color: white;
-  }
-
-  .highlight-content p {
-    color: var(--color-gray-300);
-    line-height: 1.75;
-  }
-
-  /* Experience */
-  .experience-section {
-    padding: 5rem 0;
-    background: var(--color-gray-900);
-  }
-
-  .experience-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .job-card {
-    border-left: 4px solid var(--color-blue-500);
-    padding-left: 1.5rem;
-  }
-
-  .job-card h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 0.25rem;
-  }
-
-  .job-card .company {
-    font-size: 1.125rem;
-    color: var(--color-gray-300);
-    margin-bottom: 0.5rem;
-  }
-
-  .job-card .period {
-    font-size: 0.875rem;
-    color: var(--color-gray-400);
-    margin-bottom: 1rem;
-  }
-
-  .job-card .achievements {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .job-card .achievements li {
-    display: flex;
-    align-items: flex-start;
-    color: var(--color-gray-300);
-    line-height: 1.6;
-  }
-
-  .job-card .achievements .bullet {
-    color: var(--color-blue-400);
-    margin-right: 0.5rem;
-    flex-shrink: 0;
-  }
-
-  /* Projects */
-  .projects-section {
-    padding: 5rem 0;
-    background: var(--color-gray-800);
-  }
-
-  .project-grid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 2rem;
-  }
-
-  .project-card {
-    display: block;
-    background: var(--color-gray-900);
-    border: 1px solid var(--color-gray-700);
-    border-radius: 0.5rem;
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s;
-  }
-
-  .project-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-
-  .project-info {
-    padding: 1.5rem;
-  }
-
-  .project-info h3 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-    color: white;
-  }
-
-  .project-info p {
-    color: var(--color-gray-300);
-    line-height: 1.75;
-    margin-bottom: 1rem;
-  }
-
-  .technologies {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .tech-tag {
-    padding: 0.25rem 0.75rem;
-    background: var(--color-gray-800);
-    border: 1px solid var(--color-gray-700);
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    color: var(--color-gray-300);
-  }
-
-  /* Education */
-  .education-section {
-    padding: 5rem 0;
-    background: var(--color-gray-800);
-  }
-
-  .education-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .education-card {
-    background: var(--color-gray-900);
-    border: 1px solid var(--color-gray-700);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  .education-card h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 0.5rem;
-  }
-
-  .education-card .institution {
-    font-size: 1.125rem;
-    color: var(--color-blue-400);
-    margin-bottom: 0.25rem;
-  }
-
-  .education-card .period {
-    font-size: 0.875rem;
-    color: var(--color-gray-400);
-    margin-bottom: 0.75rem;
-  }
-
-  .education-card .description {
-    color: var(--color-gray-300);
-    line-height: 1.6;
-  }
-
-  /* Footer */
-  .portfolio-footer {
-    padding: 2rem 0;
-    background: black;
-    border-top: 1px solid var(--color-gray-800);
-  }
-
-  .footer-container {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 0 1rem;
-    text-align: center;
-  }
-
-  .portfolio-footer p {
-    color: var(--color-gray-400);
-  }
-
-  .portfolio-footer a {
-    color: var(--color-blue-400);
-    text-decoration: none;
-  }
-
-  .portfolio-footer a:hover {
-    color: #93c5fd;
-  }
-
-  /* Responsive */
-  @media (min-width: 768px) {
-    .hero-section h1 {
-      font-size: 4.5rem;
-    }
-
-    .tagline {
-      font-size: 1.5rem;
-    }
-
-    .highlights-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .project-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .highlights-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .project-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  html {
+    scroll-behavior: smooth;
   }
 </style>
 {% endblock %}
