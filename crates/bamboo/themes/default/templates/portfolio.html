@@ -2,6 +2,26 @@
 
 {% block content %}
 <div class="portfolio">
+  <!-- Navigation -->
+  <nav class="portfolio-nav">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand">{{ site.config.title }}</a>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" />
+      <label for="nav-toggle" class="nav-toggle-label">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </label>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        {% if site.data.highlights %}<a href="#highlights">Highlights</a>{% endif %}
+        {% if site.data.experience %}<a href="#experience">Experience</a>{% endif %}
+        {% if site.collections.projects %}<a href="#projects">Projects</a>{% endif %}
+        {% if site.data.education %}<a href="#education">Education</a>{% endif %}
+      </div>
+    </div>
+  </nav>
+
   <!-- Hero Section -->
   <section id="hero" class="hero-section">
     <div class="hero-content">
@@ -193,6 +213,112 @@
     margin-bottom: -3rem;
   }
 
+  /* Navigation */
+  .portfolio-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-gray-900);
+    border-bottom: 1px solid var(--color-gray-800);
+    z-index: 100;
+    height: 4rem;
+  }
+
+  .nav-container {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+  }
+
+  .nav-brand:hover {
+    color: var(--color-blue-400);
+  }
+
+  .nav-links {
+    display: none;
+    gap: 2rem;
+  }
+
+  .nav-links a {
+    color: var(--color-gray-300);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--color-blue-400);
+  }
+
+  .nav-toggle-checkbox {
+    display: none;
+  }
+
+  .nav-toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: white;
+  }
+
+  .nav-toggle-checkbox:checked ~ .nav-links {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 4rem;
+    left: 0;
+    right: 0;
+    background: var(--color-gray-800);
+    border-bottom: 1px solid var(--color-gray-700);
+    padding: 1rem;
+    gap: 0;
+  }
+
+  .nav-toggle-checkbox:checked ~ .nav-links a {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-gray-700);
+  }
+
+  .nav-toggle-checkbox:checked ~ .nav-links a:last-child {
+    border-bottom: none;
+  }
+
+  @media (min-width: 768px) {
+    .nav-links {
+      display: flex;
+    }
+
+    .nav-toggle-label {
+      display: none;
+    }
+
+    .nav-toggle-checkbox:checked ~ .nav-links {
+      position: static;
+      flex-direction: row;
+      background: transparent;
+      border: none;
+      padding: 0;
+      gap: 2rem;
+    }
+
+    .nav-toggle-checkbox:checked ~ .nav-links a {
+      padding: 0;
+      border: none;
+    }
+  }
+
   .section-container {
     max-width: 72rem;
     margin: 0 auto;
@@ -220,6 +346,7 @@
     align-items: center;
     justify-content: center;
     background: linear-gradient(to bottom right, var(--color-gray-900), var(--color-gray-800));
+    padding-top: 4rem;
   }
 
   .hero-content {
