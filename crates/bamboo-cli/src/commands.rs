@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::mpsc::{RecvTimeoutError, channel};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::broadcast;
 use tower_http::services::ServeDir;
 
@@ -127,6 +127,7 @@ pub fn build_site(
     }
 
     println!("Building site...");
+    let start = Instant::now();
 
     let mut builder = SiteBuilder::new(input_dir).include_drafts(drafts);
 
@@ -139,11 +140,13 @@ pub fn build_site(
     let theme_engine = ThemeEngine::new(theme)?;
     theme_engine.render_site(&site, output)?;
 
+    let elapsed = start.elapsed();
     println!(
-        "Built {} pages, {} posts to {}",
+        "Built {} pages, {} posts to {} in {:.2?}",
         site.pages.len(),
         site.posts.len(),
-        output.display()
+        output.display(),
+        elapsed
     );
 
     Ok(())
