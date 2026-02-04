@@ -158,9 +158,10 @@ pub async fn serve_site(
     output: &Path,
     drafts: bool,
     port: u16,
+    clean: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let serve_base_url = format!("http://localhost:{}", port);
-    build_site(theme, input, output, drafts, Some(&serve_base_url), true)?;
+    build_site(theme, input, output, drafts, Some(&serve_base_url), clean)?;
 
     let input_dir = input.unwrap_or(Path::new(".")).to_path_buf();
     let output_dir = output.to_path_buf();

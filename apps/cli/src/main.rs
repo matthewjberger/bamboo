@@ -33,7 +33,7 @@ enum Commands {
         #[arg(long)]
         base_url: Option<String>,
 
-        #[arg(long, default_value = "true")]
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         clean: bool,
     },
     Serve {
@@ -51,6 +51,9 @@ enum Commands {
 
         #[arg(long, default_value = "3000")]
         port: u16,
+
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+        clean: bool,
     },
 }
 
@@ -82,7 +85,8 @@ async fn main() {
             output,
             drafts,
             port,
-        } => commands::serve_site(&theme, input.as_deref(), &output, drafts, port).await,
+            clean,
+        } => commands::serve_site(&theme, input.as_deref(), &output, drafts, port, clean).await,
     };
 
     if let Err(error) = result {

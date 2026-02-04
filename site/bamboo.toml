@@ -1,0 +1,10 @@
+title = "Bamboo 🎋"
+base_url = "https://matthewjberger.github.io/bamboo"
+description = "A fast, flexible static site generator written in Rust"
+language = "en"
+
+[extra]
+tagline = "Build beautiful static sites with Rust"
+github = "https://github.com/matthewjberger/bamboo"
+cta_text = "Get Started"
+cta_url = "https://github.com/matthewjberger/bamboo#quick-start"

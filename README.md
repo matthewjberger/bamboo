@@ -9,7 +9,7 @@
 <p align="center"><strong>A fast static site generator written in Rust.</strong></p>
 
 <p align="center">
-  <code>cargo install bamboo-cli</code>
+  <a href="https://matthewjberger.github.io/bamboo/">Live Demo</a> · <code>cargo install bamboo-cli</code>
 </p>
 
 Bamboo transforms markdown content with frontmatter into static HTML sites. It features syntax highlighting, Tera templating, live reload development, and generates RSS feeds and sitemaps automatically.
@@ -217,7 +217,7 @@ Nested directories work: `data/nav/main.toml` → `site.data.nav.main`
 
 ## Themes
 
-Bamboo includes a built-in dark theme. Create custom themes by specifying a theme directory:
+Bamboo includes a built-in theme with light/dark mode toggle. Create custom themes by specifying a theme directory:
 
 ```bash
 bamboo build --theme ./my-theme

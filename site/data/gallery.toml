@@ -1,0 +1,35 @@
+[[items]]
+title = "Blog"
+description = "A personal blog with posts, tags, and a clean reading experience."
+url = "./examples/blog/"
+icon = "pencil"
+
+[[items]]
+title = "Documentation"
+description = "Technical documentation with sidebar navigation and code highlighting."
+url = "./examples/docs/"
+icon = "book"
+
+[[items]]
+title = "Portfolio"
+description = "A personal portfolio showcasing projects and professional experience."
+url = "./examples/portfolio/"
+icon = "user"
+
+[[items]]
+title = "Changelog"
+description = "Release notes and version history for software projects."
+url = "./examples/changelog/"
+icon = "list"
+
+[[items]]
+title = "Landing Page"
+description = "A product landing page with hero section, features, and pricing."
+url = "./examples/landing/"
+icon = "rocket"
+
+[[items]]
+title = "Slideshow"
+description = "Presentation slides with keyboard navigation and speaker notes."
+url = "./examples/slideshow/"
+icon = "presentation"

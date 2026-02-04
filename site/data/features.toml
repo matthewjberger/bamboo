@@ -1,0 +1,29 @@
+[[items]]
+icon = "zap"
+title = "Fast"
+description = "Written in Rust for quick builds and a snappy development experience."
+
+[[items]]
+icon = "code"
+title = "Flexible Theming"
+description = "Tera templates with Tailwind CSS. Create any layout with full template inheritance."
+
+[[items]]
+icon = "activity"
+title = "Live Reload"
+description = "Development server with automatic refresh. See changes as you write."
+
+[[items]]
+icon = "shield"
+title = "Type Safe"
+description = "Rust's type system catches errors at compile time."
+
+[[items]]
+icon = "trending-up"
+title = "Multiple Site Types"
+description = "Blogs, docs, portfolios, changelogs, slideshows, and landing pages out of the box."
+
+[[items]]
+icon = "headphones"
+title = "Light/Dark Mode"
+description = "Built-in theme toggle with system preference detection."
