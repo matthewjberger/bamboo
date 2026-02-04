@@ -1,8 +1,8 @@
-title = "Acme SDK Changelog"
+title = "Nightshade Changelog"
 base_url = "http://localhost:3000"
-description = "Release notes and changelog for Acme SDK"
+description = "Release notes and changelog for Nightshade Game Engine"
 language = "en"
 
 [extra]
-github = "https://github.com/acme/sdk"
-docs = "https://docs.acme.com"
+github = "https://github.com/matthewjberger/nightshade"
+docs = "https://nightshade.dev"
