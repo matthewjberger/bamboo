@@ -5,7 +5,7 @@
 {% block content %}
 <article>
     <header>
-        <p class="breadcrumb"><a href="/{{ collection_name }}/">{{ collection.name | title }}</a></p>
+        <p class="breadcrumb"><a href="{{ site.config.base_url }}/{{ collection_name }}/">{{ collection.name | title }}</a></p>
         <h1>{{ item.title }}</h1>
     </header>
     <div class="content">

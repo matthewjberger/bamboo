@@ -44,7 +44,7 @@
             <time>{{ post.date | date(format="%B %d, %Y") }}</time>
           </div>
           <h3 class="text-xl font-semibold mb-3 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            <a href="/posts/{{ post.slug }}/" class="after:absolute after:inset-0">
+            <a href="{{ site.config.base_url }}/posts/{{ post.slug }}/" class="after:absolute after:inset-0">
               {{ post.title }}
             </a>
           </h3>

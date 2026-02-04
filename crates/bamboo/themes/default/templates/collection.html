@@ -9,7 +9,7 @@
 <section>
     {% for item in collection.items %}
     <article>
-        <h2><a href="/{{ collection_name }}/{{ item.slug }}/">{{ item.title }}</a></h2>
+        <h2><a href="{{ site.config.base_url }}/{{ collection_name }}/{{ item.slug }}/">{{ item.title }}</a></h2>
     </article>
     {% endfor %}
 </section>
