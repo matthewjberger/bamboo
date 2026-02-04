@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.title }} | {{ collection.name | title }} | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<article>
+    <header>
+        <p class="breadcrumb"><a href="/{{ collection_name }}/">{{ collection.name | title }}</a></p>
+        <h1>{{ item.title }}</h1>
+    </header>
+    <div class="content">
+        {{ item.content | safe }}
+    </div>
+</article>
+
+<style>
+    .breadcrumb {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    .breadcrumb a {
+        color: var(--color-text-muted);
+    }
+</style>
+{% endblock %}

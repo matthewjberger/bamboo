@@ -1,0 +1,3 @@
+title = "Bamboo Presentation"
+base_url = "http://localhost:3000"
+description = "A slideshow built with Bamboo"

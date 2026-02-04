@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<article class="post">
+    <header class="post-header">
+        <h1>{{ post.title }}</h1>
+        <div class="post-meta">
+            <time datetime="{{ post.date }}">{{ post.date | date(format="%B %d, %Y") }}</time>
+            {% if site.config.author %}
+            <span class="meta-separator">·</span>
+            <span>{{ site.config.author }}</span>
+            {% endif %}
+        </div>
+        {% if post.tags | length > 0 %}
+        <div class="tags">
+            {% for tag in post.tags %}
+            <span class="tag">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="content post-content">
+        {{ post.content | safe }}
+    </div>
+
+    <footer class="post-footer">
+        <a href="/" class="back-link">← Back to home</a>
+    </footer>
+</article>
+
+<style>
+    .post {
+        max-width: 48rem;
+        margin: 0 auto;
+    }
+
+    .post-header {
+        margin-bottom: 2.5rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .post-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .post-meta {
+        color: var(--color-text-muted);
+        font-size: 0.9375rem;
+    }
+
+    .meta-separator {
+        margin: 0 0.5rem;
+    }
+
+    .post-header .tags {
+        margin-top: 1rem;
+    }
+
+    .post-content {
+        font-size: 1.0625rem;
+    }
+
+    .post-content h2 {
+        margin-top: 2.5rem;
+    }
+
+    .post-content h3 {
+        margin-top: 2rem;
+    }
+
+    .post-footer {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .back-link {
+        color: var(--color-text-muted);
+        font-weight: 500;
+    }
+
+    .back-link:hover {
+        color: var(--color-primary);
+    }
+</style>
+{% endblock %}

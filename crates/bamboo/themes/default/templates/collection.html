@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ collection.name | title }} | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<h1>{{ collection.name | title }}</h1>
+
+{% if collection.items | length > 0 %}
+<section>
+    {% for item in collection.items %}
+    <article>
+        <h2><a href="/{{ collection_name }}/{{ item.slug }}/">{{ item.title }}</a></h2>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<p>No items in this collection.</p>
+{% endif %}
+{% endblock %}

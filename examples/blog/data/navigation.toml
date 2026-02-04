@@ -1,0 +1,11 @@
+[[items]]
+label = "Home"
+url = "/"
+
+[[items]]
+label = "About"
+url = "/about/"
+
+[[items]]
+label = "Projects"
+url = "/projects/"

@@ -1,0 +1,27 @@
+[package]
+name = "bamboo-ssg"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "A fast static site generator written in Rust"
+repository = "https://github.com/matthewjberger/bamboo"
+homepage = "https://github.com/matthewjberger/bamboo"
+readme = "../../README.md"
+keywords = ["static-site-generator", "markdown", "blog", "tera", "ssg"]
+categories = ["command-line-utilities", "web-programming"]
+authors = ["Matthew J. Berger <matthewjordanberger@gmail.com>"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+serde_yaml = "0.9"
+pulldown-cmark = "0.12"
+chrono = { version = "0.4", features = ["serde"] }
+tera = "1"
+thiserror = "2"
+walkdir = "2"
+syntect = "5"
+
+[dev-dependencies]
+tempfile = "3"

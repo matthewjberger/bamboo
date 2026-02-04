@@ -1,0 +1,49 @@
+<nav class="site-nav">
+    <a href="/" class="site-title">{{ site.config.title }}</a>
+    <div class="nav-links">
+        {% for page in site.pages %}
+        {% if page.slug != "index" %}
+        <a href="/{{ page.slug }}/">{{ page.title }}</a>
+        {% endif %}
+        {% endfor %}
+    </div>
+</nav>
+
+<style>
+    .site-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .site-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--color-text);
+    }
+
+    .site-title:hover {
+        color: var(--color-primary);
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 2rem;
+    }
+
+    .nav-links a {
+        color: var(--color-text-muted);
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+        color: var(--color-primary);
+    }
+
+    @media (max-width: 640px) {
+        .nav-links {
+            gap: 1rem;
+        }
+    }
+</style>

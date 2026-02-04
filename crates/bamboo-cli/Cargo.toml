@@ -1,0 +1,26 @@
+[package]
+name = "bamboo-cli"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "CLI for the Bamboo static site generator"
+repository = "https://github.com/matthewjberger/bamboo"
+homepage = "https://github.com/matthewjberger/bamboo"
+readme = "../../README.md"
+keywords = ["static-site-generator", "markdown", "blog", "cli", "ssg"]
+categories = ["command-line-utilities", "web-programming"]
+authors = ["Matthew J. Berger <matthewjordanberger@gmail.com>"]
+
+[[bin]]
+name = "bamboo"
+path = "src/main.rs"
+
+[dependencies]
+bamboo-ssg = { version = "0.1.0", path = "../bamboo" }
+clap = { version = "4", features = ["derive"] }
+notify = "8"
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["fs"] }
+tower-livereload = "0.9"

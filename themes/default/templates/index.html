@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if home %}
+<section class="hero">
+    <div class="content">
+        {{ home.content | safe }}
+    </div>
+</section>
+{% else %}
+<section class="hero">
+    <h1>{{ site.config.title }}</h1>
+    {% if site.config.description %}
+    <p class="hero-description">{{ site.config.description }}</p>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if site.posts | length > 0 %}
+<section class="posts-section">
+    <h2>Recent Posts</h2>
+    <div class="posts-grid">
+        {% for post in site.posts %}
+        <article class="card post-card">
+            <div class="post-meta">{{ post.date | date(format="%Y-%m-%d") }}</div>
+            <h3><a href="/posts/{{ post.slug }}/">{{ post.title }}</a></h3>
+            {% if post.excerpt %}
+            <p class="post-excerpt">{{ post.excerpt }}</p>
+            {% endif %}
+            {% if post.tags | length > 0 %}
+            <div class="tags">
+                {% for tag in post.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<style>
+    .hero {
+        margin-bottom: 3rem;
+    }
+
+    .hero h1 {
+        font-size: 3rem;
+        background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-description {
+        font-size: 1.25rem;
+        color: var(--color-text-muted);
+    }
+
+    .posts-section {
+        margin-top: 3rem;
+    }
+
+    .posts-section h2 {
+        margin-bottom: 1.5rem;
+    }
+
+    .posts-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .post-card h3 {
+        margin-bottom: 0.5rem;
+    }
+
+    .post-card h3 a {
+        color: var(--color-text);
+    }
+
+    .post-card h3 a:hover {
+        color: var(--color-primary);
+    }
+
+    .post-excerpt {
+        color: var(--color-text-muted);
+        font-size: 0.9375rem;
+        margin-bottom: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .posts-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}

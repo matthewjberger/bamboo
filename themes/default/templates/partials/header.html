@@ -1,0 +1,25 @@
+<header class="site-header">
+    <div class="container">
+        {% include "partials/nav.html" %}
+    </div>
+</header>
+
+<style>
+    .site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(17, 24, 39, 0.95);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--color-border);
+        height: var(--header-height);
+        display: flex;
+        align-items: center;
+        z-index: 50;
+    }
+
+    .site-header .container {
+        width: 100%;
+    }
+</style>

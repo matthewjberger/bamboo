@@ -1,0 +1,8 @@
+title = "Example Site"
+base_url = "http://localhost:3000"
+description = "An example Bamboo site"
+author = "Your Name"
+language = "en"
+
+[extra]
+github = "https://github.com/matthewjberger/bamboo"
