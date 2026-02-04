@@ -1,0 +1,8 @@
+title = "Acme SDK Changelog"
+base_url = "http://localhost:3000"
+description = "Release notes and changelog for Acme SDK"
+language = "en"
+
+[extra]
+github = "https://github.com/acme/sdk"
+docs = "https://docs.acme.com"

@@ -248,6 +248,7 @@ The repository includes example sites:
 | Example | Description | Command |
 |---------|-------------|---------|
 | `blog` | Standard blog with posts, pages, collections | `just example blog` |
+| `changelog` | Software release notes and changelog | `just example changelog` |
 | `docs` | Documentation site with sidebar navigation | `just example docs` |
 | `landing` | Product landing page with pricing | `just example landing` |
 | `portfolio` | Creative portfolio with project showcase | `just example portfolio` |

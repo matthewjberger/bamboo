@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="changelog">
+  <header class="changelog-header">
+    <h1>{{ site.config.title }}</h1>
+
+    {% if home %}
+    <div class="intro">
+      {{ home.content | safe }}
+    </div>
+    {% endif %}
+
+    <div class="links">
+      {% if site.config.extra.github %}
+      <a href="{{ site.config.extra.github }}" target="_blank" rel="noopener">GitHub</a>
+      {% endif %}
+      {% if site.config.extra.docs %}
+      <a href="{{ site.config.extra.docs }}" target="_blank" rel="noopener">Documentation</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if site.collections.releases %}
+  <div class="releases">
+    {% for item in site.collections.releases.items %}
+    <article class="release" id="{{ item.slug }}">
+      <header class="release-header">
+        <div class="version-info">
+          <h2>
+            <a href="#{{ item.slug }}">{{ item.title }}</a>
+          </h2>
+          {% if item.frontmatter.extra.breaking %}
+          <span class="badge breaking">Breaking Changes</span>
+          {% endif %}
+        </div>
+        {% if item.frontmatter.date %}
+        <time>{{ item.frontmatter.date }}</time>
+        {% endif %}
+      </header>
+
+      <div class="release-content">
+        {{ item.content | safe }}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  .changelog {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .changelog-header {
+    text-align: center;
+    padding: 3rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 3rem;
+  }
+
+  .changelog-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .changelog-header .intro {
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.8;
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+  }
+
+  .changelog-header .intro p {
+    margin-bottom: 0.75rem;
+  }
+
+  .changelog-header .links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .changelog-header .links a {
+    color: #6ee7b7;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .changelog-header .links a:hover {
+    text-decoration: underline;
+  }
+
+  .releases {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  .release {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 3rem;
+  }
+
+  .release:last-child {
+    border-bottom: none;
+  }
+
+  .release-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .version-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .release-header h2 {
+    font-size: 1.75rem;
+    margin: 0;
+  }
+
+  .release-header h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .release-header h2 a:hover {
+    color: #6ee7b7;
+  }
+
+  .release-header time {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge.breaking {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .release-content h2 {
+    font-size: 1.25rem;
+    color: #6ee7b7;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .release-content h2:first-child {
+    margin-top: 0;
+  }
+
+  .release-content h3 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .release-content p {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .release-content ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .release-content li {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .release-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .release-content pre {
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+
+  .release-content pre code {
+    background: none;
+    padding: 0;
+  }
+
+  @media (max-width: 600px) {
+    .release-header {
+      flex-direction: column;
+    }
+
+    .release-header h2 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+{% endblock %}
