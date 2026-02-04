@@ -35,13 +35,15 @@
     gap: 2rem;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 0 2rem 2rem 2rem;
   }
 
   .docs-sidebar {
     position: sticky;
-    top: 2rem;
+    top: calc(var(--header-height) + 2rem);
     height: fit-content;
+    max-height: calc(100vh - var(--header-height) - 4rem);
+    overflow-y: auto;
   }
 
   .docs-sidebar nav {
@@ -151,6 +153,7 @@
 
     .docs-sidebar {
       position: static;
+      max-height: none;
     }
   }
 </style>
