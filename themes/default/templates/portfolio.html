@@ -2,43 +2,91 @@
 
 {% block content %}
 <div class="portfolio">
-  <header class="portfolio-hero">
-    <h1>{{ site.config.title }}</h1>
+  <!-- Hero Section -->
+  <section id="hero" class="hero-section">
+    <img
+      src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=180&h=180&fit=crop&crop=face"
+      alt="{{ site.config.title }}"
+      class="hero-avatar"
+    />
+    <h1>Hi, I'm <span class="highlight">{{ site.config.title }}</span></h1>
     {% if site.config.extra.tagline %}
     <p class="tagline">{{ site.config.extra.tagline }}</p>
     {% endif %}
 
-    {% if home %}
-    <div class="intro">
-      {{ home.content | safe }}
-    </div>
-    {% endif %}
-
     <div class="social-links">
+      <a href="#experience" class="btn btn-purple">Experience</a>
       {% if site.config.extra.linkedin %}
       <a href="{{ site.config.extra.linkedin }}" target="_blank" rel="noopener" class="btn btn-linkedin">LinkedIn</a>
       {% endif %}
       {% if site.config.extra.github %}
       <a href="{{ site.config.extra.github }}" target="_blank" rel="noopener" class="btn btn-github">GitHub</a>
       {% endif %}
-      {% if site.config.extra.email %}
-      <a href="mailto:{{ site.config.extra.email }}" class="btn btn-email">Email</a>
-      {% endif %}
+      <a href="#projects" class="btn btn-teal">Projects</a>
     </div>
-  </header>
+  </section>
 
+  <!-- About Section -->
+  <section id="about" class="about-section">
+    <h2>About Me</h2>
+    {% if home %}
+    <div class="about-content">
+      {{ home.content | safe }}
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Highlights Section -->
+  {% if site.data.highlights %}
+  <section id="highlights" class="highlights-section">
+    <h2>Highlights</h2>
+    <div class="highlights-grid">
+      {% for item in site.data.highlights.items %}
+      <a href="{{ item.link }}" target="_blank" rel="noopener" class="highlight-card">
+        {% if item.image %}
+        <img src="{{ item.image }}" alt="{{ item.title }}" class="highlight-image" />
+        {% endif %}
+        <div class="highlight-content">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Experience Section -->
+  {% if site.data.experience %}
+  <section id="experience" class="experience-section">
+    <h2>Experience</h2>
+    <div class="experience-list">
+      {% for job in site.data.experience.jobs %}
+      <div class="job-card">
+        <h3>{{ job.title }}</h3>
+        <p class="company">{{ job.company }}</p>
+        <p class="period">{{ job.period }}</p>
+        <ul class="achievements">
+          {% for achievement in job.achievements %}
+          <li>{{ achievement }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Projects Section -->
   {% if site.collections.projects %}
-  <section class="projects">
+  <section id="projects" class="projects-section">
     <h2>Projects</h2>
     <div class="project-grid">
       {% for item in site.collections.projects.items %}
       <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener" class="project-card">
         <div class="project-info">
-          {% if item.frontmatter.extra.category %}
-          <span class="category">{{ item.frontmatter.extra.category }}</span>
-          {% endif %}
           <h3>{{ item.title }}</h3>
-          <p>{{ item.content | striptags | truncate(length=150) }}</p>
+          <p>{{ item.content | striptags | truncate(length=120) }}</p>
           {% if item.frontmatter.extra.technologies %}
           <div class="technologies">
             {% for tech in item.frontmatter.extra.technologies %}
@@ -52,49 +100,85 @@
     </div>
   </section>
   {% endif %}
+
+  <!-- Education Section -->
+  {% if site.data.education %}
+  <section id="education" class="education-section">
+    <h2>Education</h2>
+    <div class="education-list">
+      {% for degree in site.data.education.degrees %}
+      <div class="education-card">
+        <h3>{{ degree.degree }}</h3>
+        <p class="institution">{{ degree.institution }}</p>
+        <p class="period">{{ degree.period }}</p>
+        <p class="description">{{ degree.description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Footer -->
+  <footer class="portfolio-footer">
+    <p>Built with <a href="https://github.com/matthewjberger/bamboo" target="_blank" rel="noopener">Bamboo</a></p>
+  </footer>
 </div>
 
 <style>
   .portfolio {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 2rem;
   }
 
-  .portfolio-hero {
+  .portfolio section {
+    padding: 5rem 2rem;
+  }
+
+  .portfolio h2 {
+    font-size: 2.5rem;
     text-align: center;
-    padding: 4rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 4rem;
+    margin-bottom: 3rem;
   }
 
-  .portfolio-hero h1 {
+  /* Hero */
+  .hero-section {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-avatar {
+    width: 180px;
+    height: 180px;
+    border-radius: 12px;
+    border: 2px solid #3b82f6;
+    object-fit: cover;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-section h1 {
     font-size: 3rem;
     margin-bottom: 0.5rem;
   }
 
+  .hero-section .highlight {
+    color: #3b82f6;
+  }
+
   .tagline {
     font-size: 1.25rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     margin-bottom: 2rem;
-  }
-
-  .intro {
-    max-width: 600px;
-    margin: 0 auto 2rem;
-    line-height: 1.8;
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .intro p {
-    margin-bottom: 1rem;
   }
 
   .social-links {
     display: flex;
-    justify-content: center;
     gap: 1rem;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .btn {
@@ -105,75 +189,171 @@
     border-radius: 8px;
     text-decoration: none;
     font-weight: 500;
-    transition: transform 0.2s, opacity 0.2s;
+    transition: all 0.2s;
+    white-space: nowrap;
   }
 
   .btn:hover {
     transform: translateY(-2px);
-    opacity: 0.9;
   }
 
-  .btn-linkedin {
-    background: #0077b5;
-    color: white;
+  .btn-purple { background: #8b5cf6; color: white; }
+  .btn-linkedin { background: #0077b5; color: white; }
+  .btn-github { background: #333; color: white; }
+  .btn-teal { background: #14b8a6; color: white; }
+
+  /* About */
+  .about-section {
+    background: rgba(255, 255, 255, 0.02);
   }
 
-  .btn-github {
-    background: #333;
-    color: white;
+  .about-content {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.8);
   }
 
-  .btn-email {
-    background: #6ee7b7;
-    color: #0a0a0a;
+  .about-content p {
+    margin-bottom: 1rem;
   }
 
-  .projects h2 {
-    font-size: 2rem;
-    margin-bottom: 2rem;
+  /* Highlights */
+  .highlights-section {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  }
+
+  .highlights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .highlight-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+  }
+
+  .highlight-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
+  }
+
+  .highlight-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .highlight-content {
+    padding: 1.5rem;
+  }
+
+  .highlight-content h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .highlight-content p {
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+  }
+
+  /* Experience */
+  .experience-section {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .experience-list {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .job-card {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1.5rem;
+  }
+
+  .job-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .job-card .company {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.25rem;
+  }
+
+  .job-card .period {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 1rem;
+  }
+
+  .job-card .achievements {
+    list-style: none;
+    padding: 0;
+  }
+
+  .job-card .achievements li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+  }
+
+  .job-card .achievements li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #3b82f6;
+  }
+
+  /* Projects */
+  .projects-section {
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
   }
 
   .project-card {
-    display: block;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 1.5rem;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.2s;
   }
 
   .project-card:hover {
     transform: scale(1.02);
-    border-color: rgba(110, 231, 183, 0.3);
+    border-color: rgba(59, 130, 246, 0.5);
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
-  }
-
-  .project-info .category {
-    display: inline-block;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #6ee7b7;
-    margin-bottom: 0.75rem;
   }
 
   .project-info h3 {
     font-size: 1.25rem;
     margin-bottom: 0.75rem;
-    color: #fff;
   }
 
   .project-info p {
     color: rgba(255, 255, 255, 0.6);
-    font-size: 0.95rem;
     line-height: 1.6;
     margin-bottom: 1rem;
   }
@@ -185,7 +365,6 @@
   }
 
   .tech-tag {
-    display: inline-block;
     padding: 0.25rem 0.75rem;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -194,12 +373,73 @@
     color: rgba(255, 255, 255, 0.7);
   }
 
-  @media (max-width: 600px) {
-    .portfolio-hero h1 {
+  /* Education */
+  .education-section {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .education-list {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .education-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  .education-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .education-card .institution {
+    font-size: 1.1rem;
+    color: #3b82f6;
+    margin-bottom: 0.25rem;
+  }
+
+  .education-card .period {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 1rem;
+  }
+
+  .education-card .description {
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+  }
+
+  /* Footer */
+  .portfolio-footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .portfolio-footer a {
+    color: #3b82f6;
+    text-decoration: none;
+  }
+
+  .portfolio-footer a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .hero-section h1 {
       font-size: 2rem;
     }
 
-    .project-grid {
+    .portfolio h2 {
+      font-size: 2rem;
+    }
+
+    .project-grid,
+    .highlights-grid {
       grid-template-columns: 1fr;
     }
   }
