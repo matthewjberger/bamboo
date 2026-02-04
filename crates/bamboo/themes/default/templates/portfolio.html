@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="portfolio">
+  <header class="portfolio-hero">
+    <h1>{{ site.config.title }}</h1>
+    {% if site.config.extra.tagline %}
+    <p class="tagline">{{ site.config.extra.tagline }}</p>
+    {% endif %}
+
+    {% if home %}
+    <div class="intro">
+      {{ home.content | safe }}
+    </div>
+    {% endif %}
+
+    <div class="social-links">
+      {% if site.config.extra.github %}
+      <a href="{{ site.config.extra.github }}" target="_blank" rel="noopener">GitHub</a>
+      {% endif %}
+      {% if site.config.extra.linkedin %}
+      <a href="{{ site.config.extra.linkedin }}" target="_blank" rel="noopener">LinkedIn</a>
+      {% endif %}
+      {% if site.config.extra.twitter %}
+      <a href="{{ site.config.extra.twitter }}" target="_blank" rel="noopener">Twitter</a>
+      {% endif %}
+      {% if site.config.extra.email %}
+      <a href="mailto:{{ site.config.extra.email }}">Email</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if site.collections.projects %}
+  <section class="projects">
+    <h2>Selected Work</h2>
+    <div class="project-grid">
+      {% for item in site.collections.projects.items %}
+      <a href="/projects/{{ item.slug }}/" class="project-card">
+        <div class="project-info">
+          {% if item.frontmatter.extra.category %}
+          <span class="category">{{ item.frontmatter.extra.category }}</span>
+          {% endif %}
+          <h3>{{ item.title }}</h3>
+          {% if item.frontmatter.extra.preview %}
+          <p>{{ item.frontmatter.extra.preview }}</p>
+          {% endif %}
+          {% if item.frontmatter.extra.year %}
+          <span class="year">{{ item.frontmatter.extra.year }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<style>
+  .portfolio {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .portfolio-hero {
+    text-align: center;
+    padding: 4rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 4rem;
+  }
+
+  .portfolio-hero h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tagline {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 2rem;
+  }
+
+  .intro {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .intro p {
+    margin-bottom: 1rem;
+  }
+
+  .social-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .social-links a {
+    color: #6ee7b7;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .social-links a:hover {
+    opacity: 0.8;
+  }
+
+  .projects h2 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 400;
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .project-card {
+    display: block;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(110, 231, 183, 0.3);
+  }
+
+  .project-info .category {
+    display: inline-block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #6ee7b7;
+    margin-bottom: 0.75rem;
+  }
+
+  .project-info h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #fff;
+  }
+
+  .project-info p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .project-info .year {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  @media (max-width: 600px) {
+    .portfolio-hero h1 {
+      font-size: 2rem;
+    }
+
+    .project-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}

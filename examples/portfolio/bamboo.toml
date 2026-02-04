@@ -1,0 +1,12 @@
+title = "Jane Doe"
+base_url = "http://localhost:3000"
+description = "Designer & Developer Portfolio"
+author = "Jane Doe"
+language = "en"
+
+[extra]
+tagline = "Designer & Developer"
+email = "hello@example.com"
+github = "https://github.com/janedoe"
+linkedin = "https://linkedin.com/in/janedoe"
+twitter = "https://twitter.com/janedoe"
