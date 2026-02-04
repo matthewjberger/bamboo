@@ -93,6 +93,6 @@ npx velocity start
 
 ## Next Steps
 
-- Learn about [Configuration](/docs/configuration/) options
-- Explore [Routing](/docs/content/) patterns
-- Add [Middleware](/docs/templating/) for authentication and logging
+- Learn about [Configuration](../configuration/) options
+- Explore [Routing](../content/) patterns
+- Add [Middleware](../templating/) for authentication and logging

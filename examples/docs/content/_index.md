@@ -9,10 +9,10 @@ Velocity is a blazing-fast, batteries-included web framework for building modern
 
 ## Quick Links
 
-- [Getting Started](/docs/getting-started/) - Install and build your first app
-- [Configuration](/docs/configuration/) - Configure your application settings
-- [Routing](/docs/content/) - Define routes and handle requests
-- [Middleware](/docs/templating/) - Add authentication, logging, and more
+- [Getting Started](./docs/getting-started/) - Install and build your first app
+- [Configuration](./docs/configuration/) - Configure your application settings
+- [Routing](./docs/content/) - Define routes and handle requests
+- [Middleware](./docs/templating/) - Add authentication, logging, and more
 
 ## Features
 
