@@ -28,7 +28,7 @@
           {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
         </div>
         <button
-          id="theme-toggle"
+          id="portfolio-theme-toggle"
           class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2"
           aria-label="Toggle theme"
         >
@@ -236,7 +236,7 @@
 </style>
 
 <script>
-  document.getElementById('theme-toggle').addEventListener('click', function() {
+  document.getElementById('portfolio-theme-toggle').addEventListener('click', function() {
     var html = document.documentElement;
     if (html.classList.contains('dark')) {
       html.classList.remove('dark');
