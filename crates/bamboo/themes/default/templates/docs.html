@@ -41,7 +41,9 @@
     prose-td:p-3 prose-td:border prose-td:border-gray-200 dark:prose-td:border-gray-700 prose-td:text-gray-600 dark:prose-td:text-gray-300
     prose-blockquote:border-blue-500 prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400
     prose-hr:border-gray-200 dark:prose-hr:border-gray-700">
-    {% if page %}
+    {% if item %}
+      {{ item.content | safe }}
+    {% elif page %}
       {{ page.content | safe }}
     {% elif home %}
       {{ home.content | safe }}
