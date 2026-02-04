@@ -249,6 +249,7 @@ The repository includes example sites:
 |---------|-------------|---------|
 | `blog` | Standard blog with posts, pages, collections | `just example blog` |
 | `docs` | Documentation site with sidebar navigation | `just example docs` |
+| `landing` | Product landing page with pricing | `just example landing` |
 | `portfolio` | Creative portfolio with project showcase | `just example portfolio` |
 | `slideshow` | Presentation/slideshow site | `just example slideshow` |
 

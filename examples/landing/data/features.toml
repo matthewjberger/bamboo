@@ -1,0 +1,29 @@
+[[items]]
+title = "Lightning Fast"
+description = "Built on modern infrastructure for sub-100ms response times globally."
+icon = "zap"
+
+[[items]]
+title = "Secure by Default"
+description = "Enterprise-grade security with encryption at rest and in transit."
+icon = "shield"
+
+[[items]]
+title = "Developer First"
+description = "Clean APIs, comprehensive docs, and SDKs for every language."
+icon = "code"
+
+[[items]]
+title = "Scale Infinitely"
+description = "From prototype to millions of users without changing a line of code."
+icon = "trending-up"
+
+[[items]]
+title = "Real-time Analytics"
+description = "Understand your users with built-in analytics and dashboards."
+icon = "activity"
+
+[[items]]
+title = "24/7 Support"
+description = "Our team is here to help whenever you need us."
+icon = "headphones"

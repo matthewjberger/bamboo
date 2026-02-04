@@ -1,0 +1,9 @@
+title = "Acme App"
+base_url = "http://localhost:3000"
+description = "The fastest way to build your next project"
+language = "en"
+
+[extra]
+tagline = "Build faster. Ship sooner."
+cta_text = "Get Started Free"
+cta_url = "#pricing"

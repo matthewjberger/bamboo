@@ -1,0 +1,14 @@
+[[items]]
+quote = "Acme App cut our development time in half. We shipped our MVP in two weeks instead of two months."
+author = "Sarah Chen"
+role = "CTO, TechStartup"
+
+[[items]]
+quote = "The best developer experience I've ever had. The documentation is phenomenal."
+author = "Marcus Johnson"
+role = "Lead Engineer, ScaleUp Inc"
+
+[[items]]
+quote = "We migrated from our legacy system in a weekend. The support team was incredibly helpful."
+author = "Emily Rodriguez"
+role = "Founder, AppWorks"

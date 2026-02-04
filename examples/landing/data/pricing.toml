@@ -1,0 +1,41 @@
+[[plans]]
+name = "Starter"
+price = "Free"
+description = "Perfect for side projects"
+features = [
+    "Up to 1,000 requests/month",
+    "Basic analytics",
+    "Community support",
+    "1 team member",
+]
+cta = "Start Free"
+
+[[plans]]
+name = "Pro"
+price = "$29"
+period = "/month"
+description = "For growing teams"
+featured = true
+features = [
+    "Up to 100,000 requests/month",
+    "Advanced analytics",
+    "Priority support",
+    "Up to 10 team members",
+    "Custom domains",
+    "API access",
+]
+cta = "Start Trial"
+
+[[plans]]
+name = "Enterprise"
+price = "Custom"
+description = "For large organizations"
+features = [
+    "Unlimited requests",
+    "Dedicated support",
+    "SLA guarantee",
+    "Unlimited team members",
+    "SSO/SAML",
+    "On-premise option",
+]
+cta = "Contact Sales"

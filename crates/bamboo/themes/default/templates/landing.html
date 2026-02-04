@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="landing">
+  <section class="hero">
+    <h1>{{ site.config.title }}</h1>
+    {% if site.config.extra.tagline %}
+    <p class="tagline">{{ site.config.extra.tagline }}</p>
+    {% endif %}
+
+    {% if home %}
+    <p class="description">{{ home.content | striptags }}</p>
+    {% endif %}
+
+    {% if site.config.extra.cta_text %}
+    <a href="{{ site.config.extra.cta_url | default(value='#') }}" class="cta-button">
+      {{ site.config.extra.cta_text }}
+    </a>
+    {% endif %}
+  </section>
+
+  {% if site.data.features %}
+  <section class="features" id="features">
+    <h2>Features</h2>
+    <div class="feature-grid">
+      {% for feature in site.data.features.items %}
+      <div class="feature-card">
+        <div class="feature-icon">
+          {% if feature.icon == "zap" %}⚡{% endif %}
+          {% if feature.icon == "shield" %}🛡️{% endif %}
+          {% if feature.icon == "code" %}💻{% endif %}
+          {% if feature.icon == "trending-up" %}📈{% endif %}
+          {% if feature.icon == "activity" %}📊{% endif %}
+          {% if feature.icon == "headphones" %}🎧{% endif %}
+        </div>
+        <h3>{{ feature.title }}</h3>
+        <p>{{ feature.description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if site.data.testimonials %}
+  <section class="testimonials" id="testimonials">
+    <h2>What People Say</h2>
+    <div class="testimonial-grid">
+      {% for testimonial in site.data.testimonials.items %}
+      <blockquote class="testimonial-card">
+        <p>"{{ testimonial.quote }}"</p>
+        <footer>
+          <strong>{{ testimonial.author }}</strong>
+          <span>{{ testimonial.role }}</span>
+        </footer>
+      </blockquote>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if site.data.pricing %}
+  <section class="pricing" id="pricing">
+    <h2>Pricing</h2>
+    <div class="pricing-grid">
+      {% for plan in site.data.pricing.plans %}
+      <div class="pricing-card{% if plan.featured %} featured{% endif %}">
+        {% if plan.featured %}<span class="badge">Most Popular</span>{% endif %}
+        <h3>{{ plan.name }}</h3>
+        <div class="price">
+          <span class="amount">{{ plan.price }}</span>
+          {% if plan.period %}<span class="period">{{ plan.period }}</span>{% endif %}
+        </div>
+        <p class="plan-description">{{ plan.description }}</p>
+        <ul class="feature-list">
+          {% for feature in plan.features %}
+          <li>{{ feature }}</li>
+          {% endfor %}
+        </ul>
+        <a href="#" class="plan-cta">{{ plan.cta }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="cta-section">
+    <h2>Ready to get started?</h2>
+    <p>Join thousands of developers building with Acme App.</p>
+    {% if site.config.extra.cta_text %}
+    <a href="{{ site.config.extra.cta_url | default(value='#') }}" class="cta-button">
+      {{ site.config.extra.cta_text }}
+    </a>
+    {% endif %}
+  </section>
+</div>
+
+<style>
+  .landing {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .landing section {
+    padding: 5rem 0;
+  }
+
+  .landing h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 6rem 0;
+  }
+
+  .hero h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff, #6ee7b7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero .tagline {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 1.5rem;
+  }
+
+  .hero .description {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+
+  .cta-button {
+    display: inline-block;
+    background: #6ee7b7;
+    color: #0a0a0a;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(110, 231, 183, 0.3);
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .feature-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .feature-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .feature-card p {
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.6;
+  }
+
+  .testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .testimonial-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 0;
+  }
+
+  .testimonial-card p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 1.5rem;
+  }
+
+  .testimonial-card footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .testimonial-card strong {
+    color: #fff;
+  }
+
+  .testimonial-card span {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .pricing-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .pricing-card.featured {
+    border-color: #6ee7b7;
+    transform: scale(1.05);
+  }
+
+  .pricing-card .badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #6ee7b7;
+    color: #0a0a0a;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .pricing-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .pricing-card .price {
+    margin-bottom: 1rem;
+  }
+
+  .pricing-card .amount {
+    font-size: 3rem;
+    font-weight: 700;
+  }
+
+  .pricing-card .period {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .pricing-card .plan-description {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 1.5rem;
+  }
+
+  .pricing-card .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    text-align: left;
+  }
+
+  .pricing-card .feature-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .pricing-card .feature-list li::before {
+    content: "✓ ";
+    color: #6ee7b7;
+  }
+
+  .pricing-card .plan-cta {
+    display: block;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .pricing-card .plan-cta:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .pricing-card.featured .plan-cta {
+    background: #6ee7b7;
+    color: #0a0a0a;
+    border-color: #6ee7b7;
+  }
+
+  .pricing-card.featured .plan-cta:hover {
+    background: #5dd6a6;
+  }
+
+  .cta-section {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 24px;
+    padding: 4rem 2rem;
+    margin-bottom: 4rem;
+  }
+
+  .cta-section h2 {
+    margin-bottom: 1rem;
+  }
+
+  .cta-section p {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 {
+      font-size: 2.5rem;
+    }
+
+    .pricing-card.featured {
+      transform: none;
+    }
+  }
+</style>
+{% endblock %}
