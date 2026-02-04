@@ -6,56 +6,93 @@ template = "docs.html"
 
 # Getting Started
 
-Learn how to install Bamboo and create your first site.
+Learn how to install Velocity and create your first application.
 
 ## Installation
 
-Install Bamboo using Cargo:
+Install Velocity using your preferred package manager:
 
 ```bash
-cargo install bamboo-cli
+npm install @velocity/core
+# or
+yarn add @velocity/core
+# or
+pnpm add @velocity/core
 ```
 
-## Create a New Site
+## Create a New Application
 
-Use the `new` command to scaffold a new site:
+Create a new file called `app.ts`:
 
-```bash
-bamboo new my-site
-cd my-site
+```typescript
+import { Velocity, Router } from '@velocity/core';
+
+const app = new Velocity();
+const router = new Router();
+
+router.get('/', (ctx) => {
+  return ctx.json({ message: 'Hello, Velocity!' });
+});
+
+router.get('/users/:id', (ctx) => {
+  const { id } = ctx.params;
+  return ctx.json({ user: { id, name: 'John Doe' } });
+});
+
+app.use(router.routes());
+
+app.listen(3000, () => {
+  console.log('Server running at http://localhost:3000');
+});
 ```
 
-This creates a new directory with the following structure:
+## Project Structure
+
+A typical Velocity project looks like this:
 
 ```
-my-site/
-├── bamboo.toml
-├── content/
-│   ├── _index.md
-│   ├── about.md
-│   └── posts/
-│       └── 2024-01-01-hello-world.md
-├── data/
-└── static/
-    └── images/
+my-app/
+├── src/
+│   ├── routes/
+│   │   ├── users.ts
+│   │   └── posts.ts
+│   ├── middleware/
+│   │   ├── auth.ts
+│   │   └── logger.ts
+│   ├── models/
+│   │   └── user.ts
+│   └── app.ts
+├── tests/
+├── package.json
+└── velocity.config.ts
 ```
 
 ## Development Server
 
-Start the development server with live reload:
+Start the development server with hot reload:
 
 ```bash
-bamboo serve
+npx velocity dev
 ```
 
-Open http://localhost:3000 to see your site. Edit any file and the browser will automatically refresh.
+Open http://localhost:3000 to see your API. Edit any file and the server will automatically restart.
 
 ## Build for Production
 
-Build your site for production:
+Build your application for production:
 
 ```bash
-bamboo build
+npx velocity build
 ```
 
-The output is written to `dist/` by default. Deploy these files to any static hosting provider.
+Then start the production server:
+
+```bash
+npx velocity start
+```
+
+## Next Steps
+
+- Learn about [Configuration](/docs/configuration/) options
+- Explore [Routing](/docs/content/) patterns
+- Add [Middleware](/docs/templating/) for authentication and logging

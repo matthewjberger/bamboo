@@ -3,32 +3,28 @@
 {% block title %}{{ page.title }} | {{ site.config.title }}{% endblock %}
 
 {% block content %}
-<article class="page">
-    <header class="page-header">
-        <h1>{{ page.title }}</h1>
+<article class="max-w-3xl mx-auto">
+    <header class="mb-10">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">{{ page.title }}</h1>
     </header>
 
-    <div class="content page-content">
+    <div class="prose prose-lg dark:prose-invert max-w-none
+        prose-headings:text-gray-900 dark:prose-headings:text-white
+        prose-p:text-gray-600 dark:prose-p:text-gray-300
+        prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:marker:text-gray-400 dark:prose-li:marker:text-gray-500
+        prose-ol:text-gray-600 dark:prose-ol:text-gray-300
+        prose-ul:text-gray-600 dark:prose-ul:text-gray-300
+        prose-a:text-blue-500 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+        prose-strong:text-gray-900 dark:prose-strong:text-white
+        prose-code:text-pink-600 dark:prose-code:text-pink-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+        prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700
+        prose-blockquote:border-blue-500 prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400
+        prose-img:rounded-xl
+        prose-table:text-gray-600 dark:prose-table:text-gray-300
+        prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:text-gray-900 dark:prose-th:text-white
+        prose-td:border-gray-200 dark:prose-td:border-gray-700
+        prose-hr:border-gray-200 dark:prose-hr:border-gray-700">
         {{ page.content | safe }}
     </div>
 </article>
-
-<style>
-    .page {
-        max-width: 48rem;
-        margin: 0 auto;
-    }
-
-    .page-header {
-        margin-bottom: 2rem;
-    }
-
-    .page-header h1 {
-        font-size: 2.5rem;
-    }
-
-    .page-content {
-        font-size: 1.0625rem;
-    }
-</style>
 {% endblock %}

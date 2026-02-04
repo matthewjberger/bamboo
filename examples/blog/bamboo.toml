@@ -1,8 +1,9 @@
-title = "Example Site"
+title = "Bamboo Blog"
 base_url = "http://localhost:3000"
-description = "An example Bamboo site"
-author = "Your Name"
+description = "Thoughts on software engineering, compression algorithms, and building the new internet."
+author = "Richard Hendricks"
 language = "en"
 
 [extra]
-github = "https://github.com/matthewjberger/bamboo"
+github = "https://github.com/richardhendricks"
+twitter = "@richardhendricks"

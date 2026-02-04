@@ -2,12 +2,8 @@
 title = "Home"
 +++
 
-Welcome to this example Bamboo site.
+Hey, I'm Richard. I write about software engineering, compression algorithms, and my journey building a decentralized internet.
 
-This demonstrates the features of the Bamboo static site generator:
+Currently the CEO of Pied Piper, working on middle-out compression and peer-to-peer networking. This blog is where I share technical deep dives, lessons learned from startup life, and the occasional rant about tabs vs spaces.
 
-- Markdown content with frontmatter
-- Blog posts with dates and tags
-- Custom collections
-- Data files
-- Syntax highlighting
+Feel free to explore the posts below or check out the [about](/about/) page to learn more.

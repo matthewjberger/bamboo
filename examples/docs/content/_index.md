@@ -3,20 +3,20 @@ title = "Documentation"
 template = "docs.html"
 +++
 
-# Welcome to Bamboo
+# Welcome to Velocity
 
-Bamboo is a fast static site generator written in Rust. It transforms markdown content with frontmatter into static HTML sites.
+Velocity is a blazing-fast, batteries-included web framework for building modern APIs and web applications. Designed for performance and developer productivity.
 
 ## Quick Links
 
-- [Getting Started](/docs/getting-started/) - Install and create your first site
-- [Configuration](/docs/configuration/) - Configure your site with bamboo.toml
-- [Content](/docs/content/) - Write content with markdown and frontmatter
-- [Templating](/docs/templating/) - Customize your site with Tera templates
+- [Getting Started](/docs/getting-started/) - Install and build your first app
+- [Configuration](/docs/configuration/) - Configure your application settings
+- [Routing](/docs/content/) - Define routes and handle requests
+- [Middleware](/docs/templating/) - Add authentication, logging, and more
 
 ## Features
 
-- **Fast** - Built with Rust for maximum performance
-- **Simple** - Markdown content with TOML or YAML frontmatter
-- **Flexible** - Tera templating with inheritance and partials
-- **Batteries Included** - Syntax highlighting, RSS, sitemaps out of the box
+- **Lightning Fast** - Built on async I/O with minimal overhead
+- **Type Safe** - Full TypeScript support with automatic inference
+- **Modular** - Use only what you need with pluggable middleware
+- **Developer Friendly** - Hot reload, detailed errors, and excellent tooling

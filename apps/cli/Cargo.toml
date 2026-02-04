@@ -16,7 +16,7 @@ name = "bamboo"
 path = "src/main.rs"
 
 [dependencies]
-bamboo-ssg = { version = "0.1.0", path = "../bamboo" }
+bamboo-ssg = { version = "0.1.0", path = "../../crates/bamboo" }
 clap = { version = "4", features = ["derive"] }
 notify = "8"
 axum = "0.8"

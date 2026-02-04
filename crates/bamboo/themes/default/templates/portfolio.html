@@ -1,45 +1,77 @@
 {% extends "base.html" %}
 
+{% block head %}
+<script>
+  (function() {
+    var theme = localStorage.getItem('theme');
+    if (theme !== 'light') {
+      document.documentElement.classList.add('dark');
+    }
+  })();
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="w-screen relative left-1/2 -ml-[50vw] -mt-[calc(var(--header-height)+3rem)] -mb-12">
   <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50 h-16">
+  <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md dark:shadow-none border-b border-gray-200 dark:border-gray-800 z-50 h-16">
     <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
-      <a href="#hero" class="text-xl font-bold text-white hover:text-blue-400 transition-colors">
+      <a href="#hero" class="text-xl font-bold text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
         {{ site.config.title }}
       </a>
-      <input type="checkbox" id="nav-toggle" class="hidden peer" />
-      <label for="nav-toggle" class="md:hidden flex items-center cursor-pointer text-white">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </label>
-      <div class="hidden md:flex space-x-8 items-center peer-checked:flex peer-checked:flex-col peer-checked:absolute peer-checked:top-16 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-gray-800 peer-checked:border-b peer-checked:border-gray-700 peer-checked:p-4 peer-checked:space-x-0 peer-checked:space-y-4 md:peer-checked:flex-row md:peer-checked:static md:peer-checked:bg-transparent md:peer-checked:border-0 md:peer-checked:p-0 md:peer-checked:space-x-8 md:peer-checked:space-y-0">
-        <a href="#about" class="text-gray-300 hover:text-blue-400 transition-colors">About</a>
-        {% if site.data.highlights %}<a href="#highlights" class="text-gray-300 hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
-        {% if site.data.experience %}<a href="#experience" class="text-gray-300 hover:text-blue-400 transition-colors">Experience</a>{% endif %}
-        {% if site.collections.projects %}<a href="#projects" class="text-gray-300 hover:text-blue-400 transition-colors">Projects</a>{% endif %}
-        {% if site.data.education %}<a href="#education" class="text-gray-300 hover:text-blue-400 transition-colors">Education</a>{% endif %}
+      <div class="flex items-center gap-4">
+        <div class="hidden md:flex space-x-8 items-center">
+          <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
+          {% if site.data.highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
+          {% if site.data.experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+          {% if site.collections.projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
+          {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
+        </div>
+        <button
+          id="theme-toggle"
+          class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2"
+          aria-label="Toggle theme"
+        >
+          <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+        <input type="checkbox" id="nav-toggle" class="hidden peer" />
+        <label for="nav-toggle" class="md:hidden flex items-center cursor-pointer text-gray-900 dark:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </label>
+      </div>
+      <div class="hidden peer-checked:flex peer-checked:flex-col peer-checked:absolute peer-checked:top-16 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-gray-100 dark:peer-checked:bg-gray-800 peer-checked:border-b peer-checked:border-gray-300 dark:peer-checked:border-gray-700 peer-checked:p-4 peer-checked:space-y-4 md:hidden">
+        <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
+        {% if site.data.highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
+        {% if site.data.experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+        {% if site.collections.projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
+        {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
       </div>
     </div>
   </nav>
 
   <!-- Hero Section -->
-  <section id="hero" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 pt-16">
+  <section id="hero" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16">
     <div class="text-center px-4">
       <img
         src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=180&h=180&fit=crop&crop=face"
         alt="{{ site.config.title }}"
-        class="rounded-lg mx-auto mb-6 border-2 border-blue-400 object-cover"
+        class="rounded-lg mx-auto mb-6 border-2 border-blue-500 dark:border-blue-400 object-cover"
         style="width: 180px; height: 180px;"
       />
-      <h1 class="text-5xl md:text-7xl font-bold text-white mb-4">
-        Hi, I'm <span class="text-blue-400">{{ site.config.title }}</span>
+      <h1 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4">
+        Hi, I'm <span class="text-blue-500 dark:text-blue-400">{{ site.config.title }}</span>
       </h1>
       {% if site.config.extra.extra.tagline %}
-      <p class="text-xl md:text-2xl text-gray-300 mb-8">{{ site.config.extra.extra.tagline }}</p>
+      <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">{{ site.config.extra.extra.tagline }}</p>
       {% elif site.config.extra.tagline %}
-      <p class="text-xl md:text-2xl text-gray-300 mb-8">{{ site.config.extra.tagline }}</p>
+      <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">{{ site.config.extra.tagline }}</p>
       {% endif %}
 
       <div class="flex gap-4 justify-center flex-wrap">
@@ -78,12 +110,12 @@
   </section>
 
   <!-- About Section -->
-  <section id="about" class="py-20 bg-gray-900">
+  <section id="about" class="py-20 bg-white dark:bg-gray-900">
     <div class="max-w-6xl mx-auto px-4">
-      <h2 class="text-4xl font-bold text-center mb-12 text-white">About Me</h2>
+      <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">About Me</h2>
       {% if home %}
       <div class="max-w-3xl mx-auto space-y-8">
-        <div class="text-gray-300 leading-relaxed text-lg text-center [&>p]:mb-8 [&>p:last-child]:mb-0">
+        <div class="text-gray-600 dark:text-gray-300 leading-relaxed text-lg text-center [&>p]:mb-8 [&>p:last-child]:mb-0">
           {{ home.content | safe }}
         </div>
       </div>
@@ -93,20 +125,20 @@
 
   <!-- Highlights Section -->
   {% if site.data.highlights %}
-  <section id="highlights" class="py-20 bg-gradient-to-br from-gray-900 to-gray-800">
+  <section id="highlights" class="py-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
     <div class="max-w-6xl mx-auto px-4">
       <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold text-white">Highlights</h2>
+        <h2 class="text-4xl font-bold text-gray-900 dark:text-white">Highlights</h2>
       </div>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.data.highlights.items %}
-        <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="block bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-700 hover:shadow-xl transition-all hover:scale-105 cursor-pointer flex flex-col">
+        <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all hover:scale-105 cursor-pointer flex flex-col">
           {% if item.image %}
           <img src="{{ item.image }}" alt="{{ item.title }}" class="w-full h-48 object-cover" />
           {% endif %}
           <div class="p-6 flex-1">
-            <h3 class="text-xl font-bold mb-3 text-white">{{ item.title }}</h3>
-            <p class="text-gray-300 leading-relaxed">{{ item.description }}</p>
+            <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
+            <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ item.description }}</p>
           </div>
         </a>
         {% endfor %}
@@ -117,20 +149,20 @@
 
   <!-- Experience Section -->
   {% if site.data.experience %}
-  <section id="experience" class="py-20 bg-gray-900">
+  <section id="experience" class="py-20 bg-white dark:bg-gray-900">
     <div class="max-w-4xl mx-auto px-4">
-      <h2 class="text-4xl font-bold text-center mb-12 text-white">Experience</h2>
+      <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Experience</h2>
       <div class="space-y-8">
         {% for job in site.data.experience.jobs %}
         <div class="border-l-4 border-blue-500 pl-6">
-          <h3 class="text-2xl font-bold text-white">{{ job.title }}</h3>
-          <p class="text-lg text-gray-300 mb-2">{{ job.company }}</p>
-          <p class="text-sm text-gray-400 mb-4">{{ job.period }}</p>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ job.title }}</h3>
+          <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">{{ job.company }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ job.period }}</p>
           <ul class="space-y-2">
             {% for achievement in job.achievements %}
             <li class="flex items-start">
-              <span class="text-blue-400 mr-2">&bull;</span>
-              <span class="text-gray-300">{{ achievement }}</span>
+              <span class="text-blue-500 dark:text-blue-400 mr-2">&bull;</span>
+              <span class="text-gray-600 dark:text-gray-300">{{ achievement }}</span>
             </li>
             {% endfor %}
           </ul>
@@ -143,19 +175,19 @@
 
   <!-- Projects Section -->
   {% if site.collections.projects %}
-  <section id="projects" class="py-20 bg-gray-800">
+  <section id="projects" class="py-20 bg-gray-100 dark:bg-gray-800">
     <div class="max-w-6xl mx-auto px-4">
-      <h2 class="text-4xl font-bold text-center mb-12 text-white">Projects</h2>
+      <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Projects</h2>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.collections.projects.items %}
-        <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener noreferrer" class="block bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-700 hover:scale-105 cursor-pointer">
+        <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:scale-105 cursor-pointer">
           <div class="p-6">
-            <h3 class="text-xl font-bold mb-3 text-white">{{ item.title }}</h3>
-            <p class="text-gray-300 mb-4 leading-relaxed">{{ item.content | striptags | truncate(length=120) }}</p>
+            <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{{ item.content | striptags | truncate(length=120) }}</p>
             {% if item.frontmatter.extra.technologies %}
             <div class="flex flex-wrap gap-2">
               {% for tech in item.frontmatter.extra.technologies %}
-              <span class="px-3 py-1 bg-gray-800 text-gray-300 rounded text-sm border border-gray-700">{{ tech }}</span>
+              <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded text-sm border border-gray-200 dark:border-gray-700">{{ tech }}</span>
               {% endfor %}
             </div>
             {% endif %}
@@ -169,16 +201,16 @@
 
   <!-- Education Section -->
   {% if site.data.education %}
-  <section id="education" class="py-20 bg-gray-800">
+  <section id="education" class="py-20 bg-gray-100 dark:bg-gray-800">
     <div class="max-w-4xl mx-auto px-4">
-      <h2 class="text-4xl font-bold text-center mb-12 text-white">Education</h2>
+      <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Education</h2>
       <div class="space-y-8">
         {% for degree in site.data.education.degrees %}
-        <div class="bg-gray-900 p-6 rounded-lg shadow-md border border-gray-700">
-          <h3 class="text-2xl font-bold text-white mb-2">{{ degree.degree }}</h3>
-          <p class="text-lg text-blue-400 mb-1">{{ degree.institution }}</p>
-          <p class="text-sm text-gray-400 mb-3">{{ degree.period }}</p>
-          <p class="text-gray-300">{{ degree.description }}</p>
+        <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ degree.degree }}</h3>
+          <p class="text-lg text-blue-500 dark:text-blue-400 mb-1">{{ degree.institution }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{{ degree.period }}</p>
+          <p class="text-gray-600 dark:text-gray-300">{{ degree.description }}</p>
         </div>
         {% endfor %}
       </div>
@@ -187,11 +219,11 @@
   {% endif %}
 
   <!-- Footer -->
-  <footer class="py-8 bg-black border-t border-gray-800">
+  <footer class="py-8 bg-gray-200 dark:bg-black border-t border-gray-300 dark:border-gray-800">
     <div class="max-w-6xl mx-auto px-4 text-center">
-      <p class="text-gray-400">
+      <p class="text-gray-500 dark:text-gray-400">
         Built with
-        <a href="https://github.com/matthewjberger/bamboo" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300">Bamboo</a>
+        <a href="https://github.com/matthewjberger/bamboo" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Bamboo</a>
       </p>
     </div>
   </footer>
@@ -202,4 +234,17 @@
     scroll-behavior: smooth;
   }
 </style>
+
+<script>
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    var html = document.documentElement;
+    if (html.classList.contains('dark')) {
+      html.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    } else {
+      html.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    }
+  });
+</script>
 {% endblock %}

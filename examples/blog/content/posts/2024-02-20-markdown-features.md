@@ -1,43 +1,45 @@
 +++
-title = "Markdown Features"
-tags = ["markdown", "features"]
+title = "Understanding Weissman Scores"
+tags = ["compression", "algorithms", "metrics"]
+excerpt = "A deep dive into how compression algorithm performance is actually measured."
 +++
 
-Bamboo supports standard markdown features.
+When we first demoed Pied Piper's compression, everyone asked about the Weissman Score. Here's what it actually means and why it matters.
 
-## Text Formatting
+## What is a Weissman Score?
 
-You can use **bold**, *italic*, and ~~strikethrough~~ text.
+The Weissman Score is a theoretical metric for comparing compression algorithms. It accounts for both:
 
-## Lists
+1. **Compression ratio** - How small the output is compared to input
+2. **Speed** - How fast the algorithm runs
 
-Unordered:
-- Item one
-- Item two
-- Item three
+The formula looks like this:
 
-Ordered:
-1. First
-2. Second
-3. Third
+```
+W = α * (r / r̄) * (log(T̄) / log(T))
+```
 
-## Task Lists
+Where:
+- `r` = compression ratio achieved
+- `r̄` = reference compression ratio
+- `T` = time to compress
+- `T̄` = reference time
+- `α` = scaling constant
 
-- [x] Completed task
-- [ ] Incomplete task
+## Why Both Matter
 
-## Blockquotes
+A naive approach might achieve 99% compression but take hours. A fast algorithm might run in milliseconds but barely compress anything. The Weissman Score captures the tradeoff.
 
-> This is a blockquote.
-> It can span multiple lines.
+## Our Results
 
-## Tables
+| Algorithm | Ratio | Time | Weissman |
+|-----------|-------|------|----------|
+| gzip | 2.8x | 1.2s | 2.1 |
+| bzip2 | 3.1x | 4.8s | 2.3 |
+| Pied Piper | 5.2x | 0.8s | 5.2 |
 
-| Name | Description |
-|------|-------------|
-| Bamboo | Static site generator |
-| Rust | Programming language |
+The middle-out approach gives us both better compression *and* faster execution.
 
-## Code
+## The Takeaway
 
-Inline `code` works too.
+Metrics matter. When evaluating any algorithm, make sure you're measuring what actually counts for your use case.

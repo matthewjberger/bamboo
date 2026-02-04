@@ -6,47 +6,97 @@ template = "docs.html"
 
 # Configuration
 
-Configure your site using the `bamboo.toml` file in your project root.
+Configure your Velocity application using the `velocity.config.ts` file.
 
 ## Basic Configuration
 
-```toml
-title = "My Site"
-base_url = "https://example.com"
-description = "A site built with Bamboo"
-author = "Your Name"
-language = "en"
+```typescript
+// velocity.config.ts
+import { defineConfig } from '@velocity/core';
+
+export default defineConfig({
+  port: 3000,
+  host: '0.0.0.0',
+  env: 'development',
+});
 ```
 
-## Custom Fields
+## Environment Variables
 
-Add any custom fields under the `[extra]` section:
+Velocity automatically loads `.env` files:
 
-```toml
-[extra]
-github = "https://github.com/username"
-twitter = "@username"
-analytics_id = "UA-XXXXX-Y"
+```bash
+# .env
+PORT=3000
+DATABASE_URL=postgres://localhost:5432/myapp
+JWT_SECRET=your-secret-key
 ```
 
-These are available in templates as `{{ site.config.extra.github }}`.
+Access them in your application:
+
+```typescript
+import { env } from '@velocity/core';
+
+const dbUrl = env.DATABASE_URL;
+const secret = env.JWT_SECRET;
+```
 
 ## Configuration Reference
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | string | yes | Site title |
-| `base_url` | string | yes | Production URL |
-| `description` | string | no | Site description for SEO |
-| `author` | string | no | Default author name |
-| `language` | string | no | Language code (default: en) |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `port` | number | 3000 | Server port |
+| `host` | string | localhost | Server host |
+| `env` | string | development | Environment mode |
+| `cors` | object | undefined | CORS configuration |
+| `bodyLimit` | string | 1mb | Request body size limit |
+| `trustProxy` | boolean | false | Trust reverse proxy headers |
 
-## Environment-Specific URLs
+## CORS Configuration
 
-Override the base URL when serving locally:
+Enable and configure Cross-Origin Resource Sharing:
 
-```bash
-bamboo serve --port 8080
+```typescript
+export default defineConfig({
+  cors: {
+    origin: ['https://example.com', 'https://app.example.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  },
+});
 ```
 
-The development server automatically uses `http://localhost:<port>` as the base URL.
+## Database Configuration
+
+Configure your database connection:
+
+```typescript
+export default defineConfig({
+  database: {
+    client: 'postgres',
+    connection: env.DATABASE_URL,
+    pool: {
+      min: 2,
+      max: 10,
+    },
+    migrations: {
+      directory: './migrations',
+    },
+  },
+});
+```
+
+## Environment-Specific Configuration
+
+Override settings based on environment:
+
+```typescript
+export default defineConfig({
+  port: 3000,
+  ...(process.env.NODE_ENV === 'production' && {
+    port: 8080,
+    trustProxy: true,
+  }),
+});
+```

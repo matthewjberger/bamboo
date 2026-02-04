@@ -1,98 +1,68 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if home %}
-<section class="hero">
-    <div class="content">
-        {{ home.content | safe }}
+<div class="space-y-16">
+  <!-- Hero/About Section -->
+  {% if home %}
+  <section>
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ site.config.title }}</h1>
+      <div class="h-px flex-1 bg-gradient-to-r from-gray-200 dark:from-gray-700 to-transparent ml-6"></div>
     </div>
-</section>
-{% else %}
-<section class="hero">
-    <h1>{{ site.config.title }}</h1>
+    <div class="prose prose-lg dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:marker:text-gray-400 dark:prose-li:marker:text-gray-500 prose-ol:text-gray-600 dark:prose-ol:text-gray-300 prose-ul:text-gray-600 dark:prose-ul:text-gray-300 prose-a:text-blue-500 dark:prose-a:text-blue-400 prose-strong:text-gray-900 dark:prose-strong:text-white">
+      {{ home.content | safe }}
+    </div>
+  </section>
+  {% else %}
+  <section class="py-12 text-center">
+    <h1 class="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+      {{ site.config.title }}
+    </h1>
     {% if site.config.description %}
-    <p class="hero-description">{{ site.config.description }}</p>
+    <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">{{ site.config.description }}</p>
     {% endif %}
-</section>
-{% endif %}
+  </section>
+  {% endif %}
 
-{% if site.posts | length > 0 %}
-<section class="posts-section">
-    <h2>Recent Posts</h2>
-    <div class="posts-grid">
-        {% for post in site.posts %}
-        <article class="card post-card">
-            <div class="post-meta">{{ post.date | date(format="%Y-%m-%d") }}</div>
-            <h3><a href="/posts/{{ post.slug }}/">{{ post.title }}</a></h3>
-            {% if post.excerpt %}
-            <p class="post-excerpt">{{ post.excerpt }}</p>
-            {% endif %}
-            {% if post.tags | length > 0 %}
-            <div class="tags">
-                {% for tag in post.tags %}
-                <span class="tag">{{ tag }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </article>
-        {% endfor %}
+  <!-- Blog Posts Section -->
+  {% if site.posts | length > 0 %}
+  <section>
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Recent Posts</h2>
+      <div class="h-px flex-1 bg-gradient-to-r from-gray-200 dark:from-gray-700 to-transparent ml-6"></div>
     </div>
-</section>
-{% endif %}
 
-<style>
-    .hero {
-        margin-bottom: 3rem;
-    }
-
-    .hero h1 {
-        font-size: 3rem;
-        background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .hero-description {
-        font-size: 1.25rem;
-        color: var(--color-text-muted);
-    }
-
-    .posts-section {
-        margin-top: 3rem;
-    }
-
-    .posts-section h2 {
-        margin-bottom: 1.5rem;
-    }
-
-    .posts-grid {
-        display: grid;
-        gap: 1.5rem;
-    }
-
-    .post-card h3 {
-        margin-bottom: 0.5rem;
-    }
-
-    .post-card h3 a {
-        color: var(--color-text);
-    }
-
-    .post-card h3 a:hover {
-        color: var(--color-primary);
-    }
-
-    .post-excerpt {
-        color: var(--color-text-muted);
-        font-size: 0.9375rem;
-        margin-bottom: 0.5rem;
-    }
-
-    @media (min-width: 768px) {
-        .posts-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-</style>
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      {% for post in site.posts %}
+      <article class="group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 dark:hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="relative p-6">
+          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <time>{{ post.date | date(format="%B %d, %Y") }}</time>
+          </div>
+          <h3 class="text-xl font-semibold mb-3 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <a href="/posts/{{ post.slug }}/" class="after:absolute after:inset-0">
+              {{ post.title }}
+            </a>
+          </h3>
+          {% if post.excerpt %}
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 line-clamp-3">{{ post.excerpt }}</p>
+          {% endif %}
+          {% if post.tags | length > 0 %}
+          <div class="flex flex-wrap gap-2 relative z-10">
+            {% for tag in post.tags %}
+            <span class="px-3 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium border border-blue-100 dark:border-blue-500/20">{{ tag }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
 {% endblock %}

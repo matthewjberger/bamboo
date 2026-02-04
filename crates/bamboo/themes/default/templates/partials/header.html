@@ -1,25 +1,5 @@
-<header class="site-header">
-    <div class="container">
+<header class="fixed top-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 h-16 flex items-center z-50 transition-colors duration-200">
+    <div class="max-w-6xl mx-auto px-4 w-full">
         {% include "partials/nav.html" %}
     </div>
 </header>
-
-<style>
-    .site-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: rgba(17, 24, 39, 0.95);
-        backdrop-filter: blur(8px);
-        border-bottom: 1px solid var(--color-border);
-        height: var(--header-height);
-        display: flex;
-        align-items: center;
-        z-index: 50;
-    }
-
-    .site-header .container {
-        width: 100%;
-    }
-</style>

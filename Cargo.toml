@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["crates/bamboo", "crates/bamboo-cli"]
+members = ["crates/*", "apps/*"]
