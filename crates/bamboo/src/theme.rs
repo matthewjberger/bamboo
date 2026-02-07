@@ -259,6 +259,7 @@ impl ThemeEngine {
         let asset_config = AssetConfig {
             minify: site.config.minify,
             fingerprint: site.config.fingerprint,
+            base_url: site.config.base_url.clone(),
         };
         if asset_config.minify || asset_config.fingerprint {
             crate::assets::process_assets(output_dir, &asset_config)?;

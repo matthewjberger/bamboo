@@ -10,6 +10,7 @@ use crate::error::Result;
 pub struct AssetConfig {
     pub minify: bool,
     pub fingerprint: bool,
+    pub base_url: String,
 }
 
 pub fn process_assets(output_dir: &Path, config: &AssetConfig) -> Result<HashMap<String, String>> {
@@ -22,7 +23,7 @@ pub fn process_assets(output_dir: &Path, config: &AssetConfig) -> Result<HashMap
 
     if config.fingerprint {
         path_mapping = fingerprint_assets(output_dir)?;
-        update_html_references(output_dir, &path_mapping)?;
+        update_html_references(output_dir, &path_mapping, &config.base_url)?;
     }
 
     if config.minify {
@@ -101,10 +102,21 @@ fn fingerprint_assets(output_dir: &Path) -> Result<HashMap<String, String>> {
     Ok(path_mapping)
 }
 
-fn update_html_references(output_dir: &Path, path_mapping: &HashMap<String, String>) -> Result<()> {
+fn html_escape_url(url: &str) -> String {
+    url.replace('/', "&#x2F;")
+}
+
+fn update_html_references(
+    output_dir: &Path,
+    path_mapping: &HashMap<String, String>,
+    base_url: &str,
+) -> Result<()> {
     if path_mapping.is_empty() {
         return Ok(());
     }
+
+    let base_url = base_url.trim_end_matches('/');
+    let escaped_base_url = html_escape_url(base_url);
 
     let mut sorted_mappings: Vec<(&String, &String)> = path_mapping.iter().collect();
     sorted_mappings.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
@@ -119,6 +131,17 @@ fn update_html_references(output_dir: &Path, path_mapping: &HashMap<String, Stri
 
         for (original_path, fingerprinted_path) in &sorted_mappings {
             for delimiter in ['"', '\''] {
+                let search_escaped_base_url =
+                    format!("={delimiter}{escaped_base_url}/{original_path}{delimiter}");
+                let replacement_escaped_base_url =
+                    format!("={delimiter}{escaped_base_url}/{fingerprinted_path}{delimiter}");
+                updated = updated.replace(&search_escaped_base_url, &replacement_escaped_base_url);
+
+                let search_base_url = format!("={delimiter}{base_url}/{original_path}{delimiter}");
+                let replacement_base_url =
+                    format!("={delimiter}{base_url}/{fingerprinted_path}{delimiter}");
+                updated = updated.replace(&search_base_url, &replacement_base_url);
+
                 let search_absolute = format!("={delimiter}/{original_path}{delimiter}");
                 let replacement_absolute = format!("={delimiter}/{fingerprinted_path}{delimiter}");
                 updated = updated.replace(&search_absolute, &replacement_absolute);
