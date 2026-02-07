@@ -1,10 +1,13 @@
 +++
 title = "Middle-Out Compression Explained"
 tags = ["compression", "algorithms", "pied-piper"]
+categories = ["engineering"]
 excerpt = "The core insight behind our compression algorithm and why it works so well."
 +++
 
 People keep asking me to explain middle-out compression. Here's my attempt at a non-technical explanation of the core insight.
+
+{{< youtube id="dQw4w9WgXcQ" title="Pied Piper middle-out compression demo" >}}
 
 ## Traditional Compression
 

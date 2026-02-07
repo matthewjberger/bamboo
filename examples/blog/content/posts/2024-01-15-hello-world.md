@@ -1,7 +1,9 @@
 +++
 title = "Why I Started This Blog"
 tags = ["personal", "writing"]
+categories = ["personal"]
 excerpt = "After years of keeping technical notes in private docs, I've decided to start sharing publicly."
+redirect_from = ["/blog/first-post/"]
 +++
 
 After years of keeping technical notes in private Google Docs and scattered markdown files, I've decided to start sharing publicly.
@@ -9,6 +11,8 @@ After years of keeping technical notes in private Google Docs and scattered mark
 ## Why Now?
 
 Building Pied Piper has taught me more about software engineering than my entire career before it. The problems we solve daily—compression at scale, distributed consensus, peer-to-peer networking—are fascinating, and I think others might find our learnings useful.
+
+{{< figure src="/images/placeholder.jpg" caption="The Pied Piper garage where it all started" alt="Pied Piper garage office" >}}
 
 ## What to Expect
 

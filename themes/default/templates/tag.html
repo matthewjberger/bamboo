@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag_name }} | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-8">
+        <a href="{{ site.config.base_url }}/tags/" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm font-medium transition-colors">&larr; All tags</a>
+    </div>
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">Posts tagged "{{ tag_name }}"</h1>
+
+    <div class="space-y-6">
+        {% for post in posts %}
+        <article class="group">
+            <div class="flex items-baseline gap-4">
+                <time class="text-sm text-gray-500 dark:text-gray-400 shrink-0 tabular-nums">{{ post.date | date(format="%Y-%m-%d") }}</time>
+                <h2 class="text-lg font-medium">
+                    <a href="{{ site.config.base_url }}/posts/{{ post.slug }}/" class="text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">{{ post.title }}</a>
+                </h2>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

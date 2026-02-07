@@ -1,0 +1,17 @@
+{% set note_type = type | default(value="info") %}
+{% if note_type == "warning" %}
+<div class="bamboo-note bamboo-note-warning" style="padding: 1rem 1.5rem; margin: 1.5rem 0; border-left: 4px solid #f59e0b; border-radius: 0 0.5rem 0.5rem 0;">
+  {% if title %}<strong style="color: #b45309;">{{ title }}</strong><br>{% endif %}
+  {{ body | safe }}
+</div>
+{% elif note_type == "error" %}
+<div class="bamboo-note bamboo-note-error" style="padding: 1rem 1.5rem; margin: 1.5rem 0; border-left: 4px solid #ef4444; border-radius: 0 0.5rem 0.5rem 0;">
+  {% if title %}<strong style="color: #b91c1c;">{{ title }}</strong><br>{% endif %}
+  {{ body | safe }}
+</div>
+{% else %}
+<div class="bamboo-note bamboo-note-info" style="padding: 1rem 1.5rem; margin: 1.5rem 0; border-left: 4px solid #3b82f6; border-radius: 0 0.5rem 0.5rem 0;">
+  {% if title %}<strong style="color: #1d4ed8;">{{ title }}</strong><br>{% endif %}
+  {{ body | safe }}
+</div>
+{% endif %}

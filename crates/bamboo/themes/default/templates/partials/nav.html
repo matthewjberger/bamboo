@@ -5,7 +5,7 @@
     <div class="flex items-center gap-6">
         <div class="hidden md:flex items-center gap-6">
             {% for page in site.pages %}
-            {% if page.slug != "index" %}
+            {% if page.slug != "index" and page.slug != "404" %}
             <a href="{{ site.config.base_url }}/{{ page.slug }}/" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">
                 {{ page.title }}
             </a>
@@ -39,7 +39,7 @@
 <div id="mobile-menu" class="hidden md:hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg">
     <div class="px-4 py-4 space-y-3">
         {% for page in site.pages %}
-        {% if page.slug != "index" %}
+        {% if page.slug != "index" and page.slug != "404" %}
         <a href="{{ site.config.base_url }}/{{ page.slug }}/" class="block py-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">
             {{ page.title }}
         </a>

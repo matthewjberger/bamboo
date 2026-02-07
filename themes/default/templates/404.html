@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto text-center py-20">
+    <h1 class="text-6xl font-bold text-gray-900 dark:text-white mb-4">404</h1>
+    <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">Page not found</p>
+    {% if page %}
+    <div class="prose prose-lg dark:prose-invert max-w-none mb-8">
+        {{ page.content | safe }}
+    </div>
+    {% endif %}
+    <a href="{{ site.config.base_url }}/" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to home
+    </a>
+</div>
+{% endblock %}

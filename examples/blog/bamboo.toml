@@ -3,6 +3,14 @@ base_url = "http://localhost:3000"
 description = "Thoughts on software engineering, compression algorithms, and building the new internet."
 author = "Richard Hendricks"
 language = "en"
+posts_per_page = 5
+minify = true
+fingerprint = true
+
+[images]
+widths = [320, 640, 1024]
+quality = 80
+formats = ["webp", "jpg"]
 
 [extra]
 github = "https://github.com/richardhendricks"

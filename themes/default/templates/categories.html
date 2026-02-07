@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Categories | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">Categories</h1>
+    <div class="flex flex-wrap gap-3">
+        {% for category in categories %}
+        <a href="{{ site.config.base_url }}/categories/{{ category.slug }}/"
+           class="px-4 py-2 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full font-medium border border-purple-100 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors">
+            {{ category.name }} <span class="text-purple-400 dark:text-purple-500">({{ category.count }})</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -59,18 +59,18 @@
   <!-- Hero Section -->
   <section id="hero" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16">
     <div class="text-center px-4">
+      {% if site.config.extra.avatar %}
       <img
-        src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=180&h=180&fit=crop&crop=face"
+        src="{{ site.config.extra.avatar }}"
         alt="{{ site.config.title }}"
         class="rounded-lg mx-auto mb-6 border-2 border-blue-500 dark:border-blue-400 object-cover"
         style="width: 180px; height: 180px;"
       />
+      {% endif %}
       <h1 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4">
         Hi, I'm <span class="text-blue-500 dark:text-blue-400">{{ site.config.title }}</span>
       </h1>
-      {% if site.config.extra.extra.tagline %}
-      <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">{{ site.config.extra.extra.tagline }}</p>
-      {% elif site.config.extra.tagline %}
+      {% if site.config.extra.tagline %}
       <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">{{ site.config.extra.tagline }}</p>
       {% endif %}
 
@@ -81,7 +81,7 @@
           </svg>
           Experience
         </a>
-        {% set linkedin_url = site.config.extra.extra.linkedin | default(value=site.config.extra.linkedin) %}
+        {% set linkedin_url = site.config.extra.linkedin | default(value="") %}
         {% if linkedin_url %}
         <a href="{{ linkedin_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
@@ -90,7 +90,7 @@
           LinkedIn
         </a>
         {% endif %}
-        {% set github_url = site.config.extra.extra.github | default(value=site.config.extra.github) %}
+        {% set github_url = site.config.extra.github | default(value="") %}
         {% if github_url %}
         <a href="{{ github_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">

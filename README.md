@@ -12,7 +12,7 @@
   <a href="https://matthewjberger.github.io/bamboo/">Live Demo</a> · <code>cargo install bamboo-cli</code>
 </p>
 
-Bamboo transforms markdown content with frontmatter into static HTML sites. It features syntax highlighting, Tera templating, live reload development, and generates RSS feeds and sitemaps automatically.
+Bamboo transforms markdown content with frontmatter into static HTML sites. It features syntax highlighting, Tera templating, live reload development, shortcodes, asset optimization, responsive images, and generates RSS/Atom feeds, sitemaps, and search indexes automatically.
 
 ## Features
 
@@ -22,20 +22,52 @@ Bamboo transforms markdown content with frontmatter into static HTML sites. It f
 | **Frontmatter** | TOML (`+++`) or YAML (`---`) metadata in content files |
 | **Syntax Highlighting** | Built-in highlighting via syntect with base16-ocean.dark theme |
 | **Templating** | Tera templates with inheritance, includes, filters, and macros |
+| **Shortcodes** | Inline (`{{</* name */>}}`) and block (`{{%/* name */%}}`) shortcodes with Tera templates |
 | **Collections** | Organize content beyond posts — projects, recipes, portfolios |
 | **Data Files** | Load TOML/YAML/JSON from `data/` directory into templates |
+| **Pagination** | Automatic pagination for post listings, tag pages, and category pages |
+| **Tags & Categories** | Auto-generated tag and category index/listing pages |
+| **Table of Contents** | Auto-generated heading-based TOC available in templates |
+| **Reading Time** | Word count and estimated reading time for all content |
+| **Search** | Client-side search with auto-generated JSON index and Fuse.js |
+| **Feeds** | Automatic RSS and Atom feed generation |
+| **Sitemap** | Automatic sitemap.xml generation |
+| **Redirects** | `redirect_from` frontmatter for old URL redirects |
+| **Asset Pipeline** | CSS/JS/HTML minification and content-hash fingerprinting |
+| **Responsive Images** | Automatic resizing and `<picture>` srcset generation |
 | **Live Reload** | Development server with automatic rebuild on file changes |
-| **SEO** | Automatic RSS feed and sitemap.xml generation |
+| **Themes** | Built-in default theme with light/dark mode, or use custom themes with overrides |
 
 ## Quick Start
 
 ```bash
+cargo install bamboo-cli
 bamboo new my-site
 cd my-site
 bamboo serve
 ```
 
 Open http://localhost:3000 to see your site. Edit files and watch them rebuild instantly.
+
+### Template
+
+Use the [bamboo-template](https://github.com/matthewjberger/bamboo-template) for a ready-to-deploy starter with GitHub Pages CI included.
+
+## CLI Commands
+
+```bash
+bamboo new <name>              # Create a new site in a new directory
+bamboo init                    # Initialize a site in the current directory
+bamboo build                   # Build the site to dist/
+bamboo build --drafts          # Include draft content
+bamboo build --theme ./mytheme # Use a custom theme
+bamboo build --output ./public # Custom output directory
+bamboo build --base-url <url>  # Override base URL
+bamboo serve                   # Dev server with live reload at localhost:3000
+bamboo serve --port 8080       # Custom port
+bamboo serve --open            # Open browser automatically
+bamboo serve --drafts          # Include drafts in dev server
+```
 
 ## Project Structure
 
@@ -45,14 +77,19 @@ my-site/
 ├── content/
 │   ├── _index.md            # Home page
 │   ├── about.md             # Static page → /about/
+│   ├── docs/                # Nested pages
+│   │   └── _index.md        # → /docs/
 │   ├── posts/               # Blog posts → /posts/<slug>/
 │   │   └── 2024-01-15-hello.md
-│   └── projects/            # Collection → /projects/<slug>/
+│   └── projects/            # Collection (needs _collection.toml)
+│       ├── _collection.toml
 │       └── my-project.md
 ├── data/                    # Data files accessible in templates
 │   └── nav.toml             # → {{ site.data.nav }}
-└── static/                  # Copied as-is to output
-    └── images/
+├── static/                  # Copied as-is to output
+│   └── images/
+└── templates/               # Site-level template overrides
+    └── shortcodes/          # Custom shortcode templates
 ```
 
 ## Configuration
@@ -65,10 +102,17 @@ base_url = "https://example.com"
 description = "A site built with Bamboo"
 author = "Your Name"
 language = "en"
+posts_per_page = 10    # Posts per page (0 = all on one page)
+minify = false         # Minify CSS, JS, and HTML output
+fingerprint = false    # Content-hash asset filenames for cache busting
+
+[images]               # Responsive image generation (optional)
+widths = [320, 640, 1024, 1920]
+quality = 80
+formats = ["webp", "jpg"]
 
 [extra]
 github = "https://github.com/username"
-twitter = "@username"
 ```
 
 All `[extra]` fields are available in templates as `{{ site.config.extra.github }}`.
@@ -82,11 +126,14 @@ TOML style:
 ```markdown
 +++
 title = "My Post"
-date = 2024-01-15
+date = "2024-01-15"
 tags = ["rust", "web"]
+categories = ["tutorials"]
 draft = false
 weight = 10
 template = "custom.html"
+excerpt = "Custom excerpt text"
+redirect_from = ["/old-url/"]
 +++
 
 Your content here...
@@ -108,67 +155,164 @@ Your content here...
 
 ### Frontmatter Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `title` | string | Page/post title (required) |
-| `date` | date | Publication date (posts only, or parsed from filename) |
-| `draft` | bool | Exclude from build unless `--drafts` flag |
-| `tags` | array | Post tags |
-| `categories` | array | Post categories |
-| `weight` | number | Sort order (lower = first) |
-| `template` | string | Override default template |
+| Field | Type | Applies to | Description |
+|-------|------|------------|-------------|
+| `title` | string | all | Page/post title (defaults to filename) |
+| `date` | date | posts | Publication date (or parsed from filename) |
+| `draft` | bool | all | Exclude from build unless `--drafts` flag |
+| `tags` | array | posts | Post tags for tag pages |
+| `categories` | array | posts | Post categories for category pages |
+| `weight` | number | pages, items | Sort order (lower = first) |
+| `template` | string | all | Override default template |
+| `excerpt` | string | posts | Custom excerpt (auto-generated from first paragraph if omitted) |
+| `redirect_from` | array | posts, pages | Old URLs that redirect to this content |
 
 ### Date from Filename
 
 Posts can embed dates in filenames: `2024-01-15-hello-world.md` extracts date `2024-01-15` and slug `hello-world`.
 
+### Nested Pages
+
+Pages can be organized in subdirectories. Use `_index.md` for directory index pages:
+
+- `content/docs/_index.md` → `/docs/`
+- `content/docs/getting-started.md` → `/docs/getting-started/`
+
+## Shortcodes
+
+Shortcodes embed reusable components in markdown content.
+
+### Inline Shortcodes
+
+```markdown
+{{</* youtube id="dQw4w9WgXcQ" */>}}
+{{</* figure src="/images/photo.jpg" caption="A photo" */>}}
+{{</* gist user="username" id="abc123" */>}}
+```
+
+### Block Shortcodes
+
+Block shortcodes wrap markdown content:
+
+```markdown
+{{%/* note type="warning" title="Heads up" */%}}
+This content is rendered as **markdown** inside the shortcode.
+{{%/* /note */%}}
+
+{{%/* details summary="Click to expand" */%}}
+Hidden content here.
+{{%/* /details */%}}
+```
+
+### Built-in Shortcodes
+
+| Shortcode | Type | Parameters |
+|-----------|------|------------|
+| `youtube` | inline | `id` (required), `title` |
+| `figure` | inline | `src` (required), `alt`, `caption`, `width`, `height`, `class` |
+| `gist` | inline | `user` (required), `id` (required), `file` |
+| `note` | block | `type` (info/warning/error), `title`, body content |
+| `details` | block | `summary`, `open`, body content |
+
+### Custom Shortcodes
+
+Place Tera HTML templates in `templates/shortcodes/`. Parameters become template variables:
+
+```html
+<!-- templates/shortcodes/alert.html -->
+<div class="alert alert-{{ level }}">{{ body }}</div>
+```
+
+```markdown
+{{%/* alert level="danger" */%}}
+Something went wrong!
+{{%/* /alert */%}}
+```
+
 ## Templating
 
-Bamboo uses [Tera](https://keats.github.io/tera/) for templating. Templates live in your theme's `templates/` directory.
+Bamboo uses [Tera](https://keats.github.io/tera/) for templating. Templates live in your theme's `templates/` directory. Site-level templates in `templates/` override theme templates.
 
 ### Template Context
 
 **All templates receive:**
 
-```
-site.config          # bamboo.toml contents
-site.config.title    # Site title
-site.config.base_url # Base URL
-site.config.extra.*  # Custom fields
-site.pages           # All pages
-site.posts           # All posts (newest first)
-site.collections     # Map of collection name → collection
-site.data            # Data from data/ directory
-```
+| Variable | Description |
+|----------|-------------|
+| `site.config` | bamboo.toml contents |
+| `site.config.title` | Site title |
+| `site.config.base_url` | Base URL |
+| `site.config.extra.*` | Custom fields from `[extra]` |
+| `site.pages` | All pages (for navigation) |
+| `site.data` | Data from `data/` directory |
+| `site.collections` | Map of collection name to collection |
 
-**Page templates (`page.html`):**
+**Index template (`index.html`):**
 
-```
-page.title           # Page title
-page.content         # Rendered HTML
-page.slug            # URL slug
-page.path            # Output path
-```
+| Variable | Description |
+|----------|-------------|
+| `posts` | Posts for current page (first `posts_per_page`) |
+| `home` / `page` | Home page content (from `_index.md`) |
+| `current_page` | Current page number |
+| `total_pages` | Total number of pages |
+| `next_page_url` | URL to next page (if exists) |
 
-**Post templates (`post.html`):**
+**Post template (`post.html`):**
 
-```
-post.title           # Post title
-post.content         # Rendered HTML
-post.date            # Publication date
-post.tags            # Tag list
-post.excerpt         # Auto-generated excerpt
-post.slug            # URL slug
-```
+| Variable | Description |
+|----------|-------------|
+| `post.title` | Post title |
+| `post.content` | Rendered HTML (use `{{ post.content \| safe }}`) |
+| `post.date` | Publication date |
+| `post.tags` | Tag list |
+| `post.categories` | Category list |
+| `post.excerpt` | Auto-generated or custom excerpt |
+| `post.slug` | URL slug |
+| `post.url` | Full URL path |
+| `post.word_count` | Word count |
+| `post.reading_time` | Estimated minutes to read |
+| `post.toc` | Table of contents entries |
+| `prev_post` | Previous (older) post |
+| `next_post` | Next (newer) post |
 
-**Collection templates:**
+**Page template (`page.html`):**
 
-```
-collection.name      # Collection name
-collection.items     # List of items
-item.title           # Item title
-item.content         # Rendered HTML
-```
+| Variable | Description |
+|----------|-------------|
+| `page.title` | Page title |
+| `page.content` | Rendered HTML |
+| `page.slug` | URL slug |
+| `page.url` | Full URL path |
+| `page.word_count` | Word count |
+| `page.reading_time` | Estimated minutes to read |
+| `page.toc` | Table of contents entries |
+
+**Tag/Category page templates (`tag.html`, `category.html`):**
+
+| Variable | Description |
+|----------|-------------|
+| `tag_name` / `category_name` | Display name |
+| `tag_slug` / `category_slug` | URL slug |
+| `posts` | Posts with this tag/category (paginated) |
+| `current_page`, `total_pages` | Pagination info |
+| `prev_page_url`, `next_page_url` | Pagination links |
+
+**Collection templates (`collection.html`, `collection_item.html`):**
+
+| Variable | Description |
+|----------|-------------|
+| `collection` | Collection with `name` and `items` |
+| `collection_name` | Collection name |
+| `item` | Current item (in item template) |
+
+### Custom Filters
+
+| Filter | Description |
+|--------|-------------|
+| `slugify` | Convert text to URL slug |
+| `reading_time` | Estimated minutes to read content |
+| `word_count` | Count words in content |
+| `toc` | Render table of contents as HTML (use with `\| safe`) |
 
 ### Template Example
 
@@ -179,10 +323,11 @@ item.content         # Rendered HTML
 <article>
   <h1>{{ post.title }}</h1>
   <time>{{ post.date | date(format="%B %d, %Y") }}</time>
+  <span>{{ post.reading_time }} min read</span>
 
   <div class="tags">
     {% for tag in post.tags %}
-    <span class="tag">{{ tag }}</span>
+    <a href="{{ site.config.base_url }}/tags/{{ tag | slugify }}/">{{ tag }}</a>
     {% endfor %}
   </div>
 
@@ -217,7 +362,7 @@ Nested directories work: `data/nav/main.toml` → `site.data.nav.main`
 
 ## Themes
 
-Bamboo includes a built-in theme with light/dark mode toggle. Create custom themes by specifying a theme directory:
+Bamboo includes a built-in default theme with light/dark mode toggle. Create custom themes by specifying a theme directory:
 
 ```bash
 bamboo build --theme ./my-theme
@@ -233,13 +378,27 @@ my-theme/
 │   ├── page.html
 │   ├── post.html
 │   ├── collection.html
+│   ├── collection_item.html
+│   ├── tags.html
+│   ├── tag.html
+│   ├── categories.html
+│   ├── category.html
+│   ├── pagination.html
+│   ├── search.html
+│   ├── 404.html
+│   ├── shortcodes/
+│   │   └── *.html
 │   └── partials/
 │       ├── header.html
-│       └── footer.html
-├── static/
-│   └── css/
-└── theme.toml
+│       ├── footer.html
+│       └── nav.html
+└── static/
+    └── css/
 ```
+
+### Theme Overrides
+
+Override specific templates without creating a full theme by placing templates in your site's `templates/` directory. These take priority over theme templates.
 
 ## Examples
 
@@ -260,16 +419,29 @@ Building generates:
 
 ```
 dist/
-├── index.html           # Home page
-├── about/index.html     # Static pages
+├── index.html               # Home page
+├── style.css                 # Theme stylesheet (built-in theme)
+├── 404.html                  # Not found page
+├── about/index.html          # Static pages
 ├── posts/
-│   └── hello/index.html # Blog posts
+│   └── hello/index.html      # Blog posts
+├── tags/
+│   ├── index.html            # Tags listing
+│   └── rust/index.html       # Per-tag post listing
+├── categories/
+│   ├── index.html            # Categories listing
+│   └── tutorials/index.html  # Per-category post listing
+├── page/
+│   └── 2/index.html          # Pagination pages
+├── search/
+│   └── index.html            # Search page
 ├── projects/
-│   ├── index.html       # Collection index
-│   └── my-project/index.html
-├── rss.xml              # RSS feed
-├── sitemap.xml          # Sitemap
-└── images/              # Copied from static/
+│   ├── index.html            # Collection index
+│   └── my-project/index.html # Collection items
+├── rss.xml                   # RSS feed
+├── atom.xml                  # Atom feed
+├── sitemap.xml               # Sitemap
+└── search-index.json         # Client-side search index
 ```
 
 ## As a Library
@@ -284,10 +456,11 @@ bamboo-ssg = "0.1"
 ```rust
 use bamboo_ssg::{SiteBuilder, ThemeEngine};
 
-let site = SiteBuilder::new("./my-site")
+let mut builder = SiteBuilder::new("./my-site")
     .base_url("https://example.com")
-    .include_drafts(false)
-    .build()?;
+    .include_drafts(false);
+
+let site = builder.build()?;
 
 let theme = ThemeEngine::new("default")?;
 theme.render_site(&site, "./dist")?;

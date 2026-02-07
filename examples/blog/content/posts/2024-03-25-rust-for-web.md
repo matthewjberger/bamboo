@@ -1,6 +1,7 @@
 +++
 title = "Why We Rewrote Our Core in Rust"
 tags = ["rust", "performance", "engineering"]
+categories = ["engineering"]
 excerpt = "The story of migrating our compression engine from C to Rust, and what we learned."
 +++
 

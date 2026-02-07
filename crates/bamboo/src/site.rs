@@ -1,9 +1,15 @@
 use crate::error::{BambooError, Result};
+use crate::images::ImageConfig;
 use crate::parsing::{
-    extract_excerpt, extract_frontmatter, parse_date_from_filename, parse_markdown,
+    extract_excerpt, extract_frontmatter, parse_date_from_filename, parse_markdown, reading_time,
+    word_count,
 };
-use crate::types::{Asset, Collection, CollectionItem, Page, Post, Site, SiteConfig};
-use chrono::{NaiveDate, TimeZone, Utc};
+use crate::search::strip_html_tags;
+use crate::shortcodes::ShortcodeProcessor;
+use crate::types::{
+    Asset, Collection, CollectionItem, Page, Post, Site, SiteConfig, default_posts_per_page,
+};
+use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -11,11 +17,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-#[derive(Debug, Clone)]
+const MAX_DATA_DEPTH: usize = 10;
+
 pub struct SiteBuilder {
     input_dir: PathBuf,
     include_drafts: bool,
     base_url_override: Option<String>,
+    shortcode_processor: Option<ShortcodeProcessor>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -28,7 +36,15 @@ struct RawSiteConfig {
     author: Option<String>,
     #[serde(default)]
     language: Option<String>,
-    #[serde(default, flatten)]
+    #[serde(default = "default_posts_per_page")]
+    posts_per_page: usize,
+    #[serde(default)]
+    minify: bool,
+    #[serde(default)]
+    fingerprint: bool,
+    #[serde(default)]
+    images: Option<ImageConfig>,
+    #[serde(default)]
     extra: HashMap<String, Value>,
 }
 
@@ -38,6 +54,7 @@ impl SiteBuilder {
             input_dir: input_dir.as_ref().to_path_buf(),
             include_drafts: false,
             base_url_override: None,
+            shortcode_processor: None,
         }
     }
 
@@ -51,11 +68,25 @@ impl SiteBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<Site> {
+    pub fn shortcode_dirs(mut self, dirs: &[PathBuf]) -> Result<Self> {
+        self.shortcode_processor = Some(ShortcodeProcessor::new(dirs)?);
+        Ok(self)
+    }
+
+    pub fn build(&mut self) -> Result<Site> {
         let mut config = self.load_config()?;
 
         if let Some(ref url) = self.base_url_override {
-            config.base_url = url.clone();
+            config.base_url = url.trim_end_matches('/').to_string();
+        }
+
+        if self.shortcode_processor.is_none() {
+            let mut dirs = Vec::new();
+            let site_shortcodes = self.input_dir.join("templates").join("shortcodes");
+            if site_shortcodes.is_dir() {
+                dirs.push(site_shortcodes);
+            }
+            self.shortcode_processor = Some(ShortcodeProcessor::new(&dirs)?);
         }
 
         let (home, mut pages) = self.load_pages()?;
@@ -99,10 +130,14 @@ impl SiteBuilder {
 
         Ok(SiteConfig {
             title: raw.title,
-            base_url: raw.base_url,
+            base_url: raw.base_url.trim_end_matches('/').to_string(),
             description: raw.description,
             author: raw.author,
             language: raw.language,
+            posts_per_page: raw.posts_per_page,
+            minify: raw.minify,
+            fingerprint: raw.fingerprint,
+            images: raw.images,
             extra: raw.extra,
         })
     }
@@ -111,15 +146,25 @@ impl SiteBuilder {
         let content_dir = self.input_dir.join("content");
         let mut pages = Vec::new();
         let mut home = None;
+        let mut seen_slugs: HashMap<String, PathBuf> = HashMap::new();
 
         if !content_dir.exists() {
             return Ok((home, pages));
         }
 
+        let skip_dirs = self.find_reserved_dirs(&content_dir)?;
+
         for entry in WalkDir::new(&content_dir)
             .min_depth(1)
-            .max_depth(1)
             .into_iter()
+            .filter_entry(|entry| {
+                let path = entry.path();
+                if path.is_dir() {
+                    !skip_dirs.contains(&path.to_path_buf())
+                } else {
+                    true
+                }
+            })
         {
             let entry = entry.map_err(|error| BambooError::WalkDir {
                 path: content_dir.clone(),
@@ -132,7 +177,11 @@ impl SiteBuilder {
                 continue;
             }
 
-            if path.extension().map(|e| e != "md").unwrap_or(true) {
+            if path
+                .extension()
+                .map(|extension| extension != "md")
+                .unwrap_or(true)
+            {
                 continue;
             }
 
@@ -142,11 +191,34 @@ impl SiteBuilder {
                 continue;
             }
 
-            let page = self.parse_page(path)?;
+            let relative =
+                path.strip_prefix(&content_dir)
+                    .map_err(|_| BambooError::InvalidPath {
+                        path: path.to_path_buf(),
+                    })?;
 
-            if page.slug == "index" {
+            let page = self.parse_page(path, relative)?;
+
+            if page.draft && !self.include_drafts {
+                continue;
+            }
+
+            if page.slug == "index"
+                && relative
+                    .parent()
+                    .map(|parent| parent == Path::new(""))
+                    .unwrap_or(true)
+            {
                 home = Some(page);
             } else {
+                if let Some(existing_path) = seen_slugs.get(&page.slug) {
+                    return Err(BambooError::DuplicatePage {
+                        slug: page.slug,
+                        path: path.to_path_buf(),
+                        existing_path: existing_path.clone(),
+                    });
+                }
+                seen_slugs.insert(page.slug.clone(), path.to_path_buf());
                 pages.push(page);
             }
         }
@@ -154,13 +226,46 @@ impl SiteBuilder {
         Ok((home, pages))
     }
 
-    fn parse_page(&self, path: &Path) -> Result<Page> {
+    fn find_reserved_dirs(&self, content_dir: &Path) -> Result<Vec<PathBuf>> {
+        let mut reserved = vec![content_dir.join("posts")];
+
+        for entry in WalkDir::new(content_dir)
+            .min_depth(1)
+            .max_depth(1)
+            .into_iter()
+        {
+            let entry = entry.map_err(|error| BambooError::WalkDir {
+                path: content_dir.to_path_buf(),
+                message: error.to_string(),
+            })?;
+            let path = entry.path();
+            if path.is_dir() && path.join("_collection.toml").exists() {
+                reserved.push(path.to_path_buf());
+            }
+        }
+
+        Ok(reserved)
+    }
+
+    fn process_shortcodes(&self, content: &str) -> Result<String> {
+        if let Some(ref processor) = self.shortcode_processor {
+            processor.process(content)
+        } else {
+            Ok(content.to_string())
+        }
+    }
+
+    fn parse_page(&self, path: &Path, relative: &Path) -> Result<Page> {
         let content = fs::read_to_string(path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&content, path)?;
-        let html_content = parse_markdown(&raw_content);
+        let processed_content = self.process_shortcodes(&raw_content)?;
+        let rendered = parse_markdown(&processed_content);
 
         let filename = path.file_name().unwrap().to_string_lossy();
-        let slug = if filename == "_index.md" {
+
+        let relative_dir = relative.parent().unwrap_or(Path::new(""));
+
+        let file_slug = if filename == "_index.md" {
             "index".to_string()
         } else {
             filename
@@ -169,12 +274,25 @@ impl SiteBuilder {
                 .to_string()
         };
 
+        let slug = if relative_dir == Path::new("") {
+            file_slug.clone()
+        } else {
+            let dir_part = relative_dir.to_string_lossy().replace('\\', "/");
+            if file_slug == "index" {
+                dir_part.to_string()
+            } else {
+                format!("{}/{}", dir_part, file_slug)
+            }
+        };
+
         let title = frontmatter
             .get_string("title")
-            .unwrap_or_else(|| slug.clone());
+            .unwrap_or_else(|| file_slug.clone());
 
         let template = frontmatter.get_string("template");
         let weight = frontmatter.get_i64("weight").unwrap_or(0) as i32;
+        let draft = frontmatter.get_bool("draft").unwrap_or(false);
+        let redirect_from = frontmatter.get_array("redirect_from").unwrap_or_default();
 
         let output_path = if slug == "index" {
             PathBuf::from("index.html")
@@ -182,15 +300,30 @@ impl SiteBuilder {
             PathBuf::from(&slug).join("index.html")
         };
 
+        let url = if slug == "index" {
+            "/".to_string()
+        } else {
+            format!("/{}/", slug)
+        };
+
+        let plain_text = strip_html_tags(&rendered.html);
+        let words = word_count(&plain_text);
+
         Ok(Page {
             slug,
             title,
-            content: html_content,
+            content: rendered.html,
             raw_content,
             frontmatter,
             path: output_path,
             template,
             weight,
+            word_count: words,
+            reading_time: reading_time(words),
+            toc: rendered.toc,
+            url,
+            draft,
+            redirect_from,
         })
     }
 
@@ -218,7 +351,11 @@ impl SiteBuilder {
                 continue;
             }
 
-            if path.extension().map(|e| e != "md").unwrap_or(true) {
+            if path
+                .extension()
+                .map(|extension| extension != "md")
+                .unwrap_or(true)
+            {
                 continue;
             }
 
@@ -245,7 +382,8 @@ impl SiteBuilder {
     fn parse_post(&self, path: &Path) -> Result<Post> {
         let content = fs::read_to_string(path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&content, path)?;
-        let html_content = parse_markdown(&raw_content);
+        let processed_content = self.process_shortcodes(&raw_content)?;
+        let rendered = parse_markdown(&processed_content);
 
         let filename = path.file_name().unwrap().to_string_lossy();
 
@@ -265,7 +403,7 @@ impl SiteBuilder {
                     path: path.to_path_buf(),
                 }
             })?;
-            Utc.from_utc_datetime(&naive.and_hms_opt(0, 0, 0).unwrap())
+            Utc.from_utc_datetime(&naive.and_time(NaiveTime::MIN))
         } else {
             return Err(BambooError::MissingField {
                 field: "date".to_string(),
@@ -280,18 +418,22 @@ impl SiteBuilder {
         let tags = frontmatter.get_array("tags").unwrap_or_default();
         let categories = frontmatter.get_array("categories").unwrap_or_default();
         let template = frontmatter.get_string("template");
+        let redirect_from = frontmatter.get_array("redirect_from").unwrap_or_default();
 
         let excerpt = frontmatter
             .get_string("excerpt")
             .or_else(|| extract_excerpt(&raw_content, 200));
 
         let output_path = PathBuf::from("posts").join(&slug).join("index.html");
+        let url = format!("/posts/{}/", slug);
+        let plain_text = strip_html_tags(&rendered.html);
+        let words = word_count(&plain_text);
 
         Ok(Post {
             slug,
             title,
             date,
-            content: html_content,
+            content: rendered.html,
             raw_content,
             excerpt,
             frontmatter,
@@ -300,6 +442,11 @@ impl SiteBuilder {
             tags,
             categories,
             template,
+            word_count: words,
+            reading_time: reading_time(words),
+            toc: rendered.toc,
+            url,
+            redirect_from,
         })
     }
 
@@ -360,7 +507,11 @@ impl SiteBuilder {
                 continue;
             }
 
-            if path.extension().map(|e| e != "md").unwrap_or(true) {
+            if path
+                .extension()
+                .map(|extension| extension != "md")
+                .unwrap_or(true)
+            {
                 continue;
             }
 
@@ -383,7 +534,8 @@ impl SiteBuilder {
     fn parse_collection_item(&self, path: &Path, collection_name: &str) -> Result<CollectionItem> {
         let content = fs::read_to_string(path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&content, path)?;
-        let html_content = parse_markdown(&raw_content);
+        let processed_content = self.process_shortcodes(&raw_content)?;
+        let rendered = parse_markdown(&processed_content);
 
         let filename = path.file_name().unwrap().to_string_lossy();
         let slug = filename
@@ -401,15 +553,23 @@ impl SiteBuilder {
             .join(&slug)
             .join("index.html");
 
+        let url = format!("/{}/{}/", collection_name, slug);
+        let plain_text = strip_html_tags(&rendered.html);
+        let words = word_count(&plain_text);
+
         Ok(CollectionItem {
             slug,
             title,
-            content: html_content,
+            content: rendered.html,
             raw_content,
             frontmatter,
             path: output_path,
             template,
             weight,
+            word_count: words,
+            reading_time: reading_time(words),
+            toc: rendered.toc,
+            url,
         })
     }
 
@@ -421,7 +581,11 @@ impl SiteBuilder {
             return Ok(data);
         }
 
-        for entry in WalkDir::new(&data_dir).min_depth(1).into_iter() {
+        for entry in WalkDir::new(&data_dir)
+            .min_depth(1)
+            .max_depth(MAX_DATA_DEPTH)
+            .into_iter()
+        {
             let entry = entry.map_err(|error| BambooError::WalkDir {
                 path: data_dir.clone(),
                 message: error.to_string(),
@@ -433,7 +597,7 @@ impl SiteBuilder {
                 continue;
             }
 
-            let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
             if !["toml", "yaml", "yml", "json"].contains(&extension) {
                 continue;
@@ -509,7 +673,12 @@ impl SiteBuilder {
 fn build_data_key(path: &Path) -> Vec<String> {
     let mut parts: Vec<String> = path
         .parent()
-        .map(|p| p.iter().map(|s| s.to_string_lossy().to_string()).collect())
+        .map(|parent| {
+            parent
+                .iter()
+                .map(|segment| segment.to_string_lossy().to_string())
+                .collect()
+        })
         .unwrap_or_default();
 
     if let Some(stem) = path.file_stem() {
@@ -525,6 +694,18 @@ fn insert_nested_value(data: &mut HashMap<String, Value>, keys: &[String], value
     }
 
     if keys.len() == 1 {
+        if let Some(existing) = data.get(&keys[0])
+            && existing.is_object()
+        {
+            if let Value::Object(new_map) = &value
+                && let Some(Value::Object(existing_map)) = data.get_mut(&keys[0])
+            {
+                for (key, val) in new_map {
+                    existing_map.insert(key.clone(), val.clone());
+                }
+            }
+            return;
+        }
         data.insert(keys[0].clone(), value);
         return;
     }
@@ -536,11 +717,54 @@ fn insert_nested_value(data: &mut HashMap<String, Value>, keys: &[String], value
         .entry(first.clone())
         .or_insert_with(|| Value::Object(serde_json::Map::new()));
 
+    if !nested.is_object() {
+        return;
+    }
+
     if let Value::Object(map) = nested {
-        let mut nested_map: HashMap<String, Value> =
-            map.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-        insert_nested_value(&mut nested_map, rest, value);
-        *nested = Value::Object(nested_map.into_iter().collect());
+        insert_nested_value_map(map, rest, value);
+    }
+}
+
+fn insert_nested_value_map(
+    map: &mut serde_json::Map<String, Value>,
+    keys: &[String],
+    value: Value,
+) {
+    if keys.is_empty() {
+        return;
+    }
+
+    if keys.len() == 1 {
+        if let Some(existing) = map.get(&keys[0])
+            && existing.is_object()
+        {
+            if let Value::Object(new_map) = &value
+                && let Some(Value::Object(existing_map)) = map.get_mut(&keys[0])
+            {
+                for (key, val) in new_map {
+                    existing_map.insert(key.clone(), val.clone());
+                }
+            }
+            return;
+        }
+        map.insert(keys[0].clone(), value);
+        return;
+    }
+
+    let first = &keys[0];
+    let rest = &keys[1..];
+
+    let nested = map
+        .entry(first.clone())
+        .or_insert_with(|| Value::Object(serde_json::Map::new()));
+
+    if !nested.is_object() {
+        return;
+    }
+
+    if let Value::Object(inner_map) = nested {
+        insert_nested_value_map(inner_map, rest, value);
     }
 }
 
@@ -616,7 +840,8 @@ Second paragraph."#,
     #[test]
     fn test_build_site() {
         let dir = create_test_site();
-        let site = SiteBuilder::new(dir.path()).build().unwrap();
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
 
         assert_eq!(site.config.title, "Test Site");
         assert!(site.home.is_some());
@@ -627,7 +852,8 @@ Second paragraph."#,
     #[test]
     fn test_page_sorting_by_weight() {
         let dir = create_test_site();
-        let site = SiteBuilder::new(dir.path()).build().unwrap();
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
 
         assert_eq!(site.pages[0].slug, "contact");
         assert_eq!(site.pages[1].slug, "about");
@@ -636,7 +862,8 @@ Second paragraph."#,
     #[test]
     fn test_post_excerpt() {
         let dir = create_test_site();
-        let site = SiteBuilder::new(dir.path()).build().unwrap();
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
 
         let post = &site.posts[0];
         assert!(post.excerpt.is_some());
@@ -646,10 +873,8 @@ Second paragraph."#,
     #[test]
     fn test_base_url_override() {
         let dir = create_test_site();
-        let site = SiteBuilder::new(dir.path())
-            .base_url("https://custom.com")
-            .build()
-            .unwrap();
+        let mut builder = SiteBuilder::new(dir.path()).base_url("https://custom.com");
+        let site = builder.build().unwrap();
 
         assert_eq!(site.config.base_url, "https://custom.com");
     }
@@ -669,7 +894,8 @@ url = "/"
         )
         .unwrap();
 
-        let site = SiteBuilder::new(dir.path()).build().unwrap();
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
 
         assert!(site.data.contains_key("nav"));
         let nav = site.data.get("nav").unwrap();

@@ -13,11 +13,11 @@
     {% endif %}
 
     <div class="flex justify-center gap-6">
-      {% set github_url = site.config.extra.extra.github | default(value=site.config.extra.github) %}
+      {% set github_url = site.config.extra.github | default(value="") %}
       {% if github_url %}
       <a href="{{ github_url }}" target="_blank" rel="noopener" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">GitHub</a>
       {% endif %}
-      {% set docs_url = site.config.extra.extra.docs | default(value=site.config.extra.docs) %}
+      {% set docs_url = site.config.extra.docs | default(value="") %}
       {% if docs_url %}
       <a href="{{ docs_url }}" target="_blank" rel="noopener" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Documentation</a>
       {% endif %}

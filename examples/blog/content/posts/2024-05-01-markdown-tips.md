@@ -1,6 +1,7 @@
 +++
 title = "Tabs vs Spaces: A Mathematical Proof"
 tags = ["programming", "humor", "opinions"]
+categories = ["opinions"]
 excerpt = "I finally have mathematical proof that tabs are objectively superior. Fight me."
 +++
 

@@ -1,8 +1,13 @@
 +++
 title = "Understanding Weissman Scores"
 tags = ["compression", "algorithms", "metrics"]
+categories = ["engineering"]
 excerpt = "A deep dive into how compression algorithm performance is actually measured."
 +++
+
+{{% note type="info" title="Background" %}}
+This post assumes basic familiarity with compression algorithms. If you're new to the topic, check out our [Middle-Out Compression Explained](/posts/building-static-sites/) post first.
+{{% /note %}}
 
 When we first demoed Pied Piper's compression, everyone asked about the Weissman Score. Here's what it actually means and why it matters.
 
@@ -39,6 +44,10 @@ A naive approach might achieve 99% compression but take hours. A fast algorithm 
 | Pied Piper | 5.2x | 0.8s | 5.2 |
 
 The middle-out approach gives us both better compression *and* faster execution.
+
+{{% details summary="How we benchmarked these results" %}}
+All benchmarks were run on identical hardware (32-core AMD EPYC, 128GB RAM) using the Canterbury Corpus dataset. Each algorithm was given the same input files and measured over 100 iterations to account for variance. The Weissman Score was calculated using the standard formula with gzip as the reference implementation.
+{{% /details %}}
 
 ## The Takeaway
 

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Search | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">Search</h1>
+
+    <div class="mb-8">
+        <input
+            type="text"
+            id="search-input"
+            placeholder="Type to search..."
+            class="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            autofocus
+        >
+    </div>
+
+    <div id="search-results" class="space-y-6"></div>
+    <div id="search-status" class="text-gray-500 dark:text-gray-400 text-center py-4"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0" integrity="sha384-PCSoOZTpbkikBEtd/+uV3WNdc676i9KUf01KOA8CnJotvlx8rRrETbDuwdjqTYvt" crossorigin="anonymous"></script>
+<script>
+(function() {
+    var searchInput = document.getElementById('search-input');
+    var resultsContainer = document.getElementById('search-results');
+    var statusContainer = document.getElementById('search-status');
+    var searchIndex = null;
+    var fuse = null;
+
+    fetch('{{ site.config.base_url | replace(from="\\", to="\\\\") | replace(from="'", to="\\'") | safe }}/search-index.json')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            searchIndex = data;
+            fuse = new Fuse(data, {
+                keys: [
+                    { name: 'title', weight: 0.4 },
+                    { name: 'tags', weight: 0.2 },
+                    { name: 'excerpt', weight: 0.2 },
+                    { name: 'content', weight: 0.2 }
+                ],
+                threshold: 0.3,
+                includeMatches: true,
+                minMatchCharLength: 2
+            });
+        });
+
+    var debounceTimer;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(performSearch, 200);
+    });
+
+    function performSearch() {
+        var query = searchInput.value.trim();
+        resultsContainer.innerHTML = '';
+
+        if (!query || !fuse) {
+            statusContainer.textContent = '';
+            return;
+        }
+
+        var results = fuse.search(query);
+
+        if (results.length === 0) {
+            statusContainer.textContent = 'No results found for "' + query + '"';
+            return;
+        }
+
+        statusContainer.textContent = results.length + ' result' + (results.length === 1 ? '' : 's') + ' found';
+
+        results.forEach(function(result) {
+            var item = result.item;
+            var article = document.createElement('article');
+            article.className = 'group';
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'flex items-baseline gap-4';
+
+            if (item.date) {
+                var time = document.createElement('time');
+                time.className = 'text-sm text-gray-500 dark:text-gray-400 shrink-0 tabular-nums';
+                time.textContent = item.date;
+                wrapper.appendChild(time);
+            }
+
+            var content = document.createElement('div');
+            var heading = document.createElement('h2');
+            heading.className = 'text-lg font-medium';
+            var link = document.createElement('a');
+            link.href = item.url;
+            link.className = 'text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors';
+            link.textContent = item.title;
+            heading.appendChild(link);
+            content.appendChild(heading);
+
+            if (item.excerpt) {
+                var excerpt = document.createElement('p');
+                excerpt.className = 'text-gray-600 dark:text-gray-400 text-sm mt-1';
+                excerpt.textContent = item.excerpt;
+                content.appendChild(excerpt);
+            }
+
+            wrapper.appendChild(content);
+            article.appendChild(wrapper);
+            resultsContainer.appendChild(article);
+        });
+    }
+})();
+</script>
+{% endblock %}

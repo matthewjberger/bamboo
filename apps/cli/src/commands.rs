@@ -12,6 +12,15 @@ use tower_http::services::ServeDir;
 
 const DEBOUNCE_DURATION: Duration = Duration::from_millis(300);
 
+fn escape_toml_string(input: &str) -> String {
+    input
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+}
+
 pub fn new_site(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let site_dir = Path::new(name);
 
@@ -23,8 +32,9 @@ pub fn new_site(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(site_dir.join("data"))?;
     fs::create_dir_all(site_dir.join("static").join("images"))?;
 
+    let escaped_name = escape_toml_string(name);
     let config = format!(
-        r#"title = "{name}"
+        r#"title = "{escaped_name}"
 base_url = "http://localhost:3000"
 description = "A new Bamboo site"
 language = "en"
@@ -99,9 +109,11 @@ pub fn init_site() -> Result<(), Box<dyn std::error::Error>> {
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "My Site".to_string());
 
+    let escaped_name = escape_toml_string(&name);
     let config = format!(
-        r#"title = "{name}"
+        r#"title = "{escaped_name}"
 base_url = "http://localhost:3000"
+description = "A new Bamboo site"
 language = "en"
 "#
     );
@@ -135,9 +147,24 @@ pub fn build_site(
         builder = builder.base_url(url);
     }
 
+    let mut shortcode_dirs = Vec::new();
+    let site_shortcodes = input_dir.join("templates").join("shortcodes");
+    if site_shortcodes.is_dir() {
+        shortcode_dirs.push(site_shortcodes);
+    }
+    let theme_path = std::path::Path::new(theme);
+    let theme_shortcodes = theme_path.join("templates").join("shortcodes");
+    if theme_shortcodes.is_dir() {
+        shortcode_dirs.push(theme_shortcodes);
+    }
+    if !shortcode_dirs.is_empty() {
+        builder = builder.shortcode_dirs(&shortcode_dirs)?;
+    }
+
     let site = builder.build()?;
 
-    let theme_engine = ThemeEngine::new(theme)?;
+    let override_dir = input_dir.to_path_buf();
+    let theme_engine = ThemeEngine::new_with_overrides(theme, &override_dir)?;
     theme_engine.render_site(&site, output)?;
 
     let elapsed = start.elapsed();
@@ -159,6 +186,7 @@ pub async fn serve_site(
     drafts: bool,
     port: u16,
     clean: bool,
+    open_browser: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let serve_base_url = format!("http://localhost:{}", port);
     build_site(theme, input, output, drafts, Some(&serve_base_url), clean)?;
@@ -195,6 +223,16 @@ pub async fn serve_site(
     let config_path = input_dir.join("bamboo.toml");
     if config_path.exists() {
         watcher.watch(&config_path, RecursiveMode::NonRecursive)?;
+    }
+
+    let theme_path = Path::new(&theme_str);
+    if theme_path.exists() && theme_path.is_dir() {
+        watcher.watch(theme_path, RecursiveMode::Recursive)?;
+    }
+
+    let templates_dir = input_dir.join("templates");
+    if templates_dir.exists() {
+        watcher.watch(&templates_dir, RecursiveMode::Recursive)?;
     }
 
     let serve_url = format!("http://localhost:{}", port);
@@ -237,6 +275,13 @@ pub async fn serve_site(
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     println!("Serving at http://{addr}");
     println!("Press Ctrl+C to stop");
+
+    if open_browser {
+        let url = format!("http://localhost:{}", port);
+        if let Err(error) = open::that(&url) {
+            eprintln!("Failed to open browser: {error}");
+        }
+    }
 
     let livereload = tower_livereload::LiveReloadLayer::new();
     let reloader = livereload.reloader();

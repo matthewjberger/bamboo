@@ -7,5 +7,9 @@ label = "About"
 url = "/about/"
 
 [[items]]
+label = "Guides"
+url = "/guides/"
+
+[[items]]
 label = "Projects"
 url = "/projects/"

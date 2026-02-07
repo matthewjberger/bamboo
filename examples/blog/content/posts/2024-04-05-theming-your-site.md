@@ -1,6 +1,7 @@
 +++
 title = "Distributed Consensus is Hard"
 tags = ["distributed-systems", "consensus", "pipernet"]
+categories = ["engineering"]
 excerpt = "Building PiperNet taught me why distributed consensus is one of the hardest problems in computer science."
 +++
 

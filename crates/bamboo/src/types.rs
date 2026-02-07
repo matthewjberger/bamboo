@@ -4,6 +4,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use crate::images::ImageConfig;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Site {
     pub config: SiteConfig,
@@ -25,8 +27,27 @@ pub struct SiteConfig {
     pub author: Option<String>,
     #[serde(default)]
     pub language: Option<String>,
+    #[serde(default = "default_posts_per_page")]
+    pub posts_per_page: usize,
+    #[serde(default)]
+    pub minify: bool,
+    #[serde(default)]
+    pub fingerprint: bool,
+    #[serde(default)]
+    pub images: Option<ImageConfig>,
     #[serde(default)]
     pub extra: HashMap<String, Value>,
+}
+
+pub fn default_posts_per_page() -> usize {
+    10
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TocEntry {
+    pub level: u32,
+    pub id: String,
+    pub title: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,6 +62,18 @@ pub struct Page {
     pub template: Option<String>,
     #[serde(default)]
     pub weight: i32,
+    #[serde(default)]
+    pub word_count: usize,
+    #[serde(default)]
+    pub reading_time: usize,
+    #[serde(default)]
+    pub toc: Vec<TocEntry>,
+    #[serde(default)]
+    pub url: String,
+    #[serde(default)]
+    pub draft: bool,
+    #[serde(default)]
+    pub redirect_from: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,6 +95,16 @@ pub struct Post {
     pub categories: Vec<String>,
     #[serde(default)]
     pub template: Option<String>,
+    #[serde(default)]
+    pub word_count: usize,
+    #[serde(default)]
+    pub reading_time: usize,
+    #[serde(default)]
+    pub toc: Vec<TocEntry>,
+    #[serde(default)]
+    pub url: String,
+    #[serde(default)]
+    pub redirect_from: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,6 +125,14 @@ pub struct CollectionItem {
     pub template: Option<String>,
     #[serde(default)]
     pub weight: i32,
+    #[serde(default)]
+    pub word_count: usize,
+    #[serde(default)]
+    pub reading_time: usize,
+    #[serde(default)]
+    pub toc: Vec<TocEntry>,
+    #[serde(default)]
+    pub url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

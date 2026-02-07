@@ -1,14 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="{{ site.config.language | default(value='en') }}" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-      }
-    </script>
+    <link rel="stylesheet" href="/style.css">
     <script>
       (function() {
         var theme = localStorage.getItem('theme');
@@ -21,22 +16,8 @@
     {% if site.config.description %}
     <meta name="description" content="{{ site.config.description }}">
     {% endif %}
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            line-height: 1.7;
-        }
-    </style>
+    <link rel="alternate" type="application/rss+xml" title="{{ site.config.title }} RSS" href="{{ site.config.base_url }}/rss.xml">
+    <link rel="alternate" type="application/atom+xml" title="{{ site.config.title }} Atom" href="{{ site.config.base_url }}/atom.xml">
     {% block head %}{% endblock %}
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
@@ -49,7 +30,8 @@
     {% include "partials/footer.html" %}
 
     <script>
-      document.getElementById('theme-toggle').addEventListener('click', function() {
+      var toggle = document.getElementById('theme-toggle');
+      if (toggle) toggle.addEventListener('click', function() {
         var html = document.documentElement;
         if (html.classList.contains('dark')) {
           html.classList.remove('dark');

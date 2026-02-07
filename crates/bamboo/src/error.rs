@@ -38,6 +38,22 @@ pub enum BambooError {
 
     #[error("Directory walk error in {path}: {message}")]
     WalkDir { path: PathBuf, message: String },
+
+    #[error("Shortcode parse error: {message}")]
+    ShortcodeParse { message: String },
+
+    #[error("Shortcode render error in '{name}': {message}")]
+    ShortcodeRender { name: String, message: String },
+
+    #[error("Image processing error: {message}")]
+    ImageProcessing { message: String },
+
+    #[error("Duplicate page slug '{slug}' in {path} conflicts with {existing_path}")]
+    DuplicatePage {
+        slug: String,
+        path: PathBuf,
+        existing_path: PathBuf,
+    },
 }
 
 pub type Result<T> = std::result::Result<T, BambooError>;

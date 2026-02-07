@@ -54,6 +54,9 @@ enum Commands {
 
         #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         clean: bool,
+
+        #[arg(long)]
+        open: bool,
     },
 }
 
@@ -86,7 +89,10 @@ async fn main() {
             drafts,
             port,
             clean,
-        } => commands::serve_site(&theme, input.as_deref(), &output, drafts, port, clean).await,
+            open,
+        } => {
+            commands::serve_site(&theme, input.as_deref(), &output, drafts, port, clean, open).await
+        }
     };
 
     if let Err(error) = result {

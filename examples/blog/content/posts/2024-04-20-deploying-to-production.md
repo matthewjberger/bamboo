@@ -1,6 +1,7 @@
 +++
 title = "Startup Lessons: Technical Debt"
 tags = ["startups", "engineering", "lessons"]
+categories = ["startups"]
 excerpt = "What I've learned about managing technical debt while trying to ship fast."
 +++
 
