@@ -422,3 +422,145 @@ fn find_closing_code_fence(content: &str, fence_marker: &str) -> Option<usize> {
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn processor() -> ShortcodeProcessor {
+        ShortcodeProcessor::new(&[]).unwrap()
+    }
+
+    #[test]
+    fn test_parse_shortcode_args_simple() {
+        let (name, args) = parse_shortcode_args("youtube id=\"abc123\"").unwrap();
+        assert_eq!(name, "youtube");
+        assert_eq!(args.get("id").unwrap(), "abc123");
+    }
+
+    #[test]
+    fn test_parse_shortcode_args_multiple() {
+        let (name, args) = parse_shortcode_args("figure src=\"img.png\" alt=\"test\"").unwrap();
+        assert_eq!(name, "figure");
+        assert_eq!(args.get("src").unwrap(), "img.png");
+        assert_eq!(args.get("alt").unwrap(), "test");
+    }
+
+    #[test]
+    fn test_parse_shortcode_args_escape_sequences() {
+        let (_, args) = parse_shortcode_args("test key=\"value with \\\"quotes\\\"\"").unwrap();
+        assert_eq!(args.get("key").unwrap(), "value with \"quotes\"");
+    }
+
+    #[test]
+    fn test_parse_shortcode_args_empty_name() {
+        assert!(parse_shortcode_args("").is_err());
+    }
+
+    #[test]
+    fn test_inline_shortcode() {
+        let processor = processor();
+        let input = "before {{< youtube id=\"abc\" >}} after";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("before"));
+        assert!(result.contains("after"));
+        assert!(result.contains("abc"));
+    }
+
+    #[test]
+    fn test_block_shortcode_with_body() {
+        let processor = processor();
+        let input = "before {{% note type=\"info\" %}}This is a note{{% /note %}} after";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("before"));
+        assert!(result.contains("after"));
+        assert!(result.contains("note"));
+    }
+
+    #[test]
+    fn test_code_fence_skipping() {
+        let processor = processor();
+        let input = "```\n{{< youtube id=\"skip\" >}}\n```\n\noutside";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("{{< youtube id=\"skip\" >}}"));
+        assert!(result.contains("outside"));
+    }
+
+    #[test]
+    fn test_no_shortcodes() {
+        let processor = processor();
+        let input = "just plain text";
+        let result = processor.process(input).unwrap();
+        assert_eq!(result, "just plain text");
+    }
+
+    #[test]
+    fn test_multiple_inline_shortcodes() {
+        let processor = processor();
+        let input = "{{< youtube id=\"abc\" >}} and {{< youtube id=\"def\" >}}";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("abc"));
+        assert!(result.contains("def"));
+    }
+
+    #[test]
+    fn test_nested_block_shortcodes() {
+        let processor = processor();
+        let input = "{{% note type=\"info\" %}}Outer {{% details summary=\"Click\" %}}Inner{{% /details %}}{{% /note %}}";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("Outer"));
+        assert!(result.contains("Inner"));
+    }
+
+    #[test]
+    fn test_unclosed_inline_shortcode_error() {
+        let processor = processor();
+        let input = "{{< youtube id=\"abc\"";
+        let result = processor.process(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_missing_closing_tag_error() {
+        let processor = processor();
+        let input = "{{% note type=\"info\" %}}content without closing";
+        let result = processor.process(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_shortcode_args_missing_equals() {
+        let result = parse_shortcode_args("test key");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_shortcode_args_missing_quote() {
+        let result = parse_shortcode_args("test key=value");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_shortcode_args_unclosed_string() {
+        let result = parse_shortcode_args("test key=\"unclosed");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_mixed_inline_and_block() {
+        let processor = processor();
+        let input = "{{< youtube id=\"vid\" >}} then {{% note type=\"warning\" %}}Warning text{{% /note %}}";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("vid"));
+        assert!(result.contains("Warning"));
+    }
+
+    #[test]
+    fn test_tilde_code_fence_skipping() {
+        let processor = processor();
+        let input = "~~~\n{{< youtube id=\"skip\" >}}\n~~~\n\noutside";
+        let result = processor.process(input).unwrap();
+        assert!(result.contains("{{< youtube id=\"skip\" >}}"));
+        assert!(result.contains("outside"));
+    }
+}

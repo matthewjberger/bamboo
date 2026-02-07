@@ -6,7 +6,6 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 use image::codecs::jpeg::JpegEncoder;
-use image::codecs::webp::WebPEncoder;
 use image::imageops::FilterType;
 use image::{ImageEncoder, ImageReader};
 
@@ -96,9 +95,23 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
         let source_image = match ImageReader::open(path) {
             Ok(reader) => match reader.decode() {
                 Ok(image) => image,
-                Err(_) => continue,
+                Err(error) => {
+                    eprintln!(
+                        "Warning: failed to decode image {}: {}",
+                        path.display(),
+                        error
+                    );
+                    continue;
+                }
             },
-            Err(_) => continue,
+            Err(error) => {
+                eprintln!(
+                    "Warning: failed to open image {}: {}",
+                    path.display(),
+                    error
+                );
+                continue;
+            }
         };
 
         let original_width = source_image.width();
@@ -133,17 +146,14 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
 
                 match format.as_str() {
                     "webp" => {
-                        let file = File::create(&variant_path)?;
-                        let encoder = WebPEncoder::new_lossless(&file);
                         let rgba_image = resized.to_rgba8();
-                        encoder
-                            .write_image(
-                                rgba_image.as_raw(),
-                                resized.width(),
-                                resized.height(),
-                                image::ExtendedColorType::Rgba8,
-                            )
-                            .map_err(|error| std::io::Error::other(error.to_string()))?;
+                        let encoder = webp::Encoder::from_rgba(
+                            rgba_image.as_raw(),
+                            resized.width(),
+                            resized.height(),
+                        );
+                        let encoded = encoder.encode(config.quality as f32);
+                        fs::write(&variant_path, &*encoded)?;
                     }
                     "jpg" | "jpeg" => {
                         let file = File::create(&variant_path)?;
@@ -190,11 +200,11 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
 pub fn generate_srcset(original_path: &str, manifest: &ImageManifest) -> String {
     let escaped_path = crate::xml::escape(original_path);
     let Some(image_variants) = manifest.variants.get(original_path) else {
-        return format!("<img src=\"{}\">", escaped_path);
+        return format!("<img src=\"/{}\">", escaped_path);
     };
 
     if image_variants.is_empty() {
-        return format!("<img src=\"{}\">", escaped_path);
+        return format!("<img src=\"/{}\">", escaped_path);
     }
 
     let mut formats_seen: Vec<String> = Vec::new();
@@ -229,7 +239,7 @@ pub fn generate_srcset(original_path: &str, manifest: &ImageManifest) -> String 
             let mime_type = format_to_mime(format);
             let srcset_entries: Vec<String> = matching
                 .iter()
-                .map(|variant| format!("{} {}w", crate::xml::escape(&variant.path), variant.width))
+                .map(|variant| format!("/{} {}w", crate::xml::escape(&variant.path), variant.width))
                 .collect();
             parts.push(format!(
                 "<source type=\"{}\" srcset=\"{}\">",
@@ -239,7 +249,7 @@ pub fn generate_srcset(original_path: &str, manifest: &ImageManifest) -> String 
         }
     }
 
-    parts.push(format!("<img src=\"{}\">", escaped_path));
+    parts.push(format!("<img src=\"/{}\">", escaped_path));
     parts.push("</picture>".to_string());
 
     parts.join("")
@@ -459,4 +469,109 @@ fn extract_src_attribute(tag: &str) -> Option<String> {
         return Some(crate::xml::unescape(&rest[..value_end]));
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_image_file() {
+        assert!(is_image_file(Path::new("photo.jpg")));
+        assert!(is_image_file(Path::new("photo.jpeg")));
+        assert!(is_image_file(Path::new("photo.png")));
+        assert!(is_image_file(Path::new("photo.gif")));
+        assert!(is_image_file(Path::new("photo.webp")));
+        assert!(!is_image_file(Path::new("style.css")));
+        assert!(!is_image_file(Path::new("readme.md")));
+    }
+
+    #[test]
+    fn test_is_generated_variant() {
+        let widths = vec![320, 640, 1024];
+        assert!(is_generated_variant(Path::new("photo-320w.webp"), &widths));
+        assert!(is_generated_variant(Path::new("photo-640w.jpg"), &widths));
+        assert!(!is_generated_variant(Path::new("photo.jpg"), &widths));
+        assert!(!is_generated_variant(Path::new("photo-500w.jpg"), &widths));
+    }
+
+    #[test]
+    fn test_generate_srcset_no_variants() {
+        let manifest = ImageManifest {
+            variants: HashMap::new(),
+        };
+        let result = generate_srcset("images/photo.jpg", &manifest);
+        assert_eq!(result, "<img src=\"/images/photo.jpg\">");
+    }
+
+    #[test]
+    fn test_generate_srcset_with_variants() {
+        let mut variants = HashMap::new();
+        variants.insert(
+            "images/photo.jpg".to_string(),
+            vec![
+                ImageVariant {
+                    path: "images/photo-320w.webp".to_string(),
+                    width: 320,
+                    format: "webp".to_string(),
+                },
+                ImageVariant {
+                    path: "images/photo-320w.jpg".to_string(),
+                    width: 320,
+                    format: "jpg".to_string(),
+                },
+            ],
+        );
+        let manifest = ImageManifest { variants };
+        let result = generate_srcset("images/photo.jpg", &manifest);
+        assert!(result.contains("<picture>"));
+        assert!(result.contains("</picture>"));
+        assert!(result.contains("<source"));
+        assert!(result.contains("image/webp"));
+        assert!(result.contains("320w"));
+    }
+
+    #[test]
+    fn test_replace_img_tags_with_srcset() {
+        let mut variants = HashMap::new();
+        variants.insert(
+            "images/photo.jpg".to_string(),
+            vec![ImageVariant {
+                path: "images/photo-320w.webp".to_string(),
+                width: 320,
+                format: "webp".to_string(),
+            }],
+        );
+        let manifest = ImageManifest { variants };
+        let html = r#"<p><img src="/images/photo.jpg"></p>"#;
+        let result = replace_img_tags_with_srcset(html, &manifest);
+        assert!(result.contains("<picture>"));
+        assert!(result.contains("</picture>"));
+    }
+
+    #[test]
+    fn test_extract_src_attribute_double_quotes() {
+        assert_eq!(
+            extract_src_attribute(r#"<img src="test.jpg">"#),
+            Some("test.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_src_attribute_single_quotes() {
+        assert_eq!(
+            extract_src_attribute("<img src='test.jpg'>"),
+            Some("test.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_src_attribute_no_src() {
+        assert_eq!(extract_src_attribute("<img alt=\"test\">"), None);
+    }
+
+    #[test]
+    fn test_extract_src_does_not_match_data_src() {
+        assert_eq!(extract_src_attribute(r#"<img data-src="lazy.jpg">"#), None);
+    }
 }

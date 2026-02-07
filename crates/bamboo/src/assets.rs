@@ -160,378 +160,50 @@ fn update_html_references(
     Ok(())
 }
 
-fn minify_css(source: &str) -> String {
-    let mut result = String::with_capacity(source.len());
-    let chars: Vec<char> = source.chars().collect();
-    let length = chars.len();
-    let mut position = 0;
-
-    while position < length {
-        if position + 1 < length && chars[position] == '/' && chars[position + 1] == '*' {
-            position += 2;
-            let mut found_end = false;
-            while position + 1 < length {
-                if chars[position] == '*' && chars[position + 1] == '/' {
-                    position += 2;
-                    found_end = true;
-                    break;
-                }
-                position += 1;
-            }
-            if !found_end {
-                position = length;
-            }
-            continue;
-        }
-
-        if chars[position] == '"' || chars[position] == '\'' {
-            let quote = chars[position];
-            result.push(quote);
-            position += 1;
-            while position < length {
-                if chars[position] == '\\' && position + 1 < length {
-                    result.push(chars[position]);
-                    result.push(chars[position + 1]);
-                    position += 2;
-                    continue;
-                }
-                if chars[position] == quote {
-                    result.push(quote);
-                    position += 1;
-                    break;
-                }
-                result.push(chars[position]);
-                position += 1;
-            }
-            continue;
-        }
-
-        if chars[position].is_ascii_whitespace() {
-            while position < length && chars[position].is_ascii_whitespace() {
-                position += 1;
-            }
-            if !result.is_empty() {
-                let last_char = result.chars().last().unwrap_or(' ');
-                let next_char = if position < length {
-                    chars[position]
-                } else {
-                    ' '
-                };
-                let structural = matches!(last_char, '{' | '}' | ':' | ';' | ',');
-                let next_structural = matches!(next_char, '{' | '}' | ';' | ',');
-                if !structural && !next_structural {
-                    result.push(' ');
-                }
-            }
-            continue;
-        }
-
-        if chars[position] == ';' && position + 1 < length {
-            let mut lookahead = position + 1;
-            while lookahead < length && chars[lookahead].is_ascii_whitespace() {
-                lookahead += 1;
-            }
-            if lookahead < length && chars[lookahead] == '}' {
-                position += 1;
-                continue;
-            }
-        }
-
-        result.push(chars[position]);
-        position += 1;
-    }
-
-    result.trim().to_string()
-}
-
-fn is_regex_predecessor(character: char) -> bool {
-    matches!(
-        character,
-        '=' | '('
-            | '['
-            | '!'
-            | '&'
-            | '|'
-            | '?'
-            | '{'
-            | '}'
-            | ';'
-            | ','
-            | '~'
-            | '^'
-            | ':'
-            | '<'
-            | '>'
-            | '+'
-            | '-'
-            | '*'
-            | '%'
-            | '\n'
-            | '\r'
-    )
-}
-
-const REGEX_KEYWORDS: &[&str] = &[
-    "return",
-    "typeof",
-    "instanceof",
-    "in",
-    "delete",
-    "void",
-    "throw",
-    "new",
-    "case",
-    "yield",
-    "await",
-];
-
-fn ends_with_regex_keyword(result: &str) -> bool {
-    let trimmed = result.trim_end();
-    for keyword in REGEX_KEYWORDS {
-        if let Some(before) = trimmed.strip_suffix(keyword)
-            && (before.is_empty()
-                || !before.ends_with(|character: char| {
-                    character.is_ascii_alphanumeric() || character == '_' || character == '$'
-                }))
-        {
-            return true;
-        }
-    }
-    false
-}
-
-fn last_significant_char(result: &str) -> Option<char> {
-    result
-        .chars()
-        .rev()
-        .find(|character| !character.is_ascii_whitespace())
-}
-
-fn minify_js(source: &str) -> String {
-    let mut result = String::with_capacity(source.len());
-    let chars: Vec<char> = source.chars().collect();
-    let length = chars.len();
-    let mut position = 0;
-
-    while position < length {
-        if chars[position] == '"' || chars[position] == '\'' {
-            let quote = chars[position];
-            result.push(quote);
-            position += 1;
-            while position < length {
-                if chars[position] == '\\' && position + 1 < length {
-                    result.push(chars[position]);
-                    result.push(chars[position + 1]);
-                    position += 2;
-                    continue;
-                }
-                if chars[position] == quote {
-                    result.push(quote);
-                    position += 1;
-                    break;
-                }
-                result.push(chars[position]);
-                position += 1;
-            }
-            continue;
-        }
-
-        if chars[position] == '`' {
-            result.push('`');
-            position += 1;
-            while position < length {
-                if chars[position] == '\\' && position + 1 < length {
-                    result.push(chars[position]);
-                    result.push(chars[position + 1]);
-                    position += 2;
-                    continue;
-                }
-                if chars[position] == '$' && position + 1 < length && chars[position + 1] == '{' {
-                    result.push('$');
-                    result.push('{');
-                    position += 2;
-                    let mut brace_depth = 1;
-                    while position < length && brace_depth > 0 {
-                        if chars[position] == '\\' && position + 1 < length {
-                            result.push(chars[position]);
-                            result.push(chars[position + 1]);
-                            position += 2;
-                            continue;
-                        }
-                        if chars[position] == '\'' || chars[position] == '"' {
-                            let inner_quote = chars[position];
-                            result.push(inner_quote);
-                            position += 1;
-                            while position < length {
-                                if chars[position] == '\\' && position + 1 < length {
-                                    result.push(chars[position]);
-                                    result.push(chars[position + 1]);
-                                    position += 2;
-                                    continue;
-                                }
-                                if chars[position] == inner_quote {
-                                    result.push(inner_quote);
-                                    position += 1;
-                                    break;
-                                }
-                                result.push(chars[position]);
-                                position += 1;
-                            }
-                            continue;
-                        }
-                        if chars[position] == '{' {
-                            brace_depth += 1;
-                        } else if chars[position] == '}' {
-                            brace_depth -= 1;
-                            if brace_depth == 0 {
-                                result.push('}');
-                                position += 1;
-                                break;
-                            }
-                        }
-                        result.push(chars[position]);
-                        position += 1;
-                    }
-                    continue;
-                }
-                if chars[position] == '`' {
-                    result.push('`');
-                    position += 1;
-                    break;
-                }
-                result.push(chars[position]);
-                position += 1;
-            }
-            continue;
-        }
-
-        if chars[position] == '/'
-            && position + 1 < length
-            && chars[position + 1] != '/'
-            && chars[position + 1] != '*'
-        {
-            let predecessor = last_significant_char(&result);
-            if predecessor.is_none()
-                || predecessor.is_some_and(is_regex_predecessor)
-                || ends_with_regex_keyword(&result)
-            {
-                result.push('/');
-                position += 1;
-                while position < length {
-                    if chars[position] == '\\' && position + 1 < length {
-                        result.push(chars[position]);
-                        result.push(chars[position + 1]);
-                        position += 2;
-                        continue;
-                    }
-                    if chars[position] == '/' {
-                        result.push('/');
-                        position += 1;
-                        while position < length && chars[position].is_ascii_alphanumeric() {
-                            result.push(chars[position]);
-                            position += 1;
-                        }
-                        break;
-                    }
-                    if chars[position] == '[' {
-                        result.push('[');
-                        position += 1;
-                        while position < length && chars[position] != ']' {
-                            if chars[position] == '\\' && position + 1 < length {
-                                result.push(chars[position]);
-                                result.push(chars[position + 1]);
-                                position += 2;
-                                continue;
-                            }
-                            result.push(chars[position]);
-                            position += 1;
-                        }
-                        if position < length {
-                            result.push(']');
-                            position += 1;
-                        }
-                        continue;
-                    }
-                    result.push(chars[position]);
-                    position += 1;
-                }
-                continue;
-            }
-        }
-
-        if position + 1 < length && chars[position] == '/' && chars[position + 1] == '/' {
-            position += 2;
-            while position < length && chars[position] != '\n' {
-                position += 1;
-            }
-            if position < length {
-                result.push('\n');
-                position += 1;
-            }
-            continue;
-        }
-
-        if position + 1 < length && chars[position] == '/' && chars[position + 1] == '*' {
-            position += 2;
-            let mut found_end = false;
-            while position + 1 < length {
-                if chars[position] == '*' && chars[position + 1] == '/' {
-                    position += 2;
-                    found_end = true;
-                    break;
-                }
-                position += 1;
-            }
-            if !found_end {
-                position = length;
-            }
-            continue;
-        }
-
-        if chars[position].is_ascii_whitespace() {
-            let mut contains_newline = false;
-            while position < length && chars[position].is_ascii_whitespace() {
-                if chars[position] == '\n' || chars[position] == '\r' {
-                    contains_newline = true;
-                }
-                position += 1;
-            }
-            if !result.is_empty() {
-                let last = result.chars().last().unwrap_or(' ');
-                if last != ' ' && last != '\n' {
-                    if contains_newline {
-                        result.push('\n');
-                    } else {
-                        result.push(' ');
-                    }
-                }
-            }
-            continue;
-        }
-
-        result.push(chars[position]);
-        position += 1;
-    }
-
-    result.trim().to_string()
-}
-
 fn minify_css_files(output_dir: &Path) -> Result<()> {
+    use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet};
     let css_files = collect_files_with_extension(output_dir, "css")?;
     for file_path in css_files {
-        let content = fs::read_to_string(&file_path)?;
-        let minified = minify_css(&content);
-        fs::write(&file_path, minified)?;
+        let source = fs::read_to_string(&file_path)?;
+        let mut stylesheet = StyleSheet::parse(&source, ParserOptions::default())
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        stylesheet
+            .minify(MinifyOptions::default())
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        let result = stylesheet
+            .to_css(PrinterOptions {
+                minify: true,
+                ..Default::default()
+            })
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        fs::write(&file_path, result.code)?;
     }
     Ok(())
 }
 
 fn minify_js_files(output_dir: &Path) -> Result<()> {
     let js_files = collect_files_with_extension(output_dir, "js")?;
+    let session = minify_js::Session::new();
     for file_path in js_files {
-        let content = fs::read_to_string(&file_path)?;
-        let minified = minify_js(&content);
-        fs::write(&file_path, minified)?;
+        let source = fs::read(&file_path)?;
+        let mut output = Vec::new();
+        match minify_js::minify(
+            &session,
+            minify_js::TopLevelMode::Global,
+            &source,
+            &mut output,
+        ) {
+            Ok(()) => {
+                fs::write(&file_path, output)?;
+            }
+            Err(error) => {
+                eprintln!(
+                    "Warning: failed to minify {}: {}",
+                    file_path.display(),
+                    error
+                );
+            }
+        }
     }
     Ok(())
 }
@@ -551,4 +223,91 @@ fn minify_html_files(output_dir: &Path) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_fingerprint_renaming() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(dir.path().join("style.css"), "body { color: red; }").unwrap();
+
+        let mapping = fingerprint_assets(dir.path()).unwrap();
+        assert_eq!(mapping.len(), 1);
+
+        let (original, fingerprinted) = mapping.iter().next().unwrap();
+        assert_eq!(original, "style.css");
+        assert!(fingerprinted.starts_with("style."));
+        assert!(fingerprinted.ends_with(".css"));
+        assert!(fingerprinted.len() > "style..css".len());
+    }
+
+    #[test]
+    fn test_html_reference_rewriting() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(dir.path().join("style.css"), "body{}").unwrap();
+        fs::write(
+            dir.path().join("index.html"),
+            r#"<link rel="stylesheet" href="/style.css">"#,
+        )
+        .unwrap();
+
+        let mapping = fingerprint_assets(dir.path()).unwrap();
+        update_html_references(dir.path(), &mapping, "https://example.com").unwrap();
+
+        let html = fs::read_to_string(dir.path().join("index.html")).unwrap();
+        assert!(!html.contains("style.css\""));
+        let (_, fingerprinted) = mapping.iter().next().unwrap();
+        assert!(html.contains(fingerprinted.as_str()));
+    }
+
+    #[test]
+    fn test_css_minification() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(
+            dir.path().join("test.css"),
+            "body {\n  color: red;\n  margin: 0;\n}\n",
+        )
+        .unwrap();
+
+        minify_css_files(dir.path()).unwrap();
+
+        let minified = fs::read_to_string(dir.path().join("test.css")).unwrap();
+        assert!(!minified.contains('\n'));
+        assert!(minified.contains("color"));
+    }
+
+    #[test]
+    fn test_js_minification() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(
+            dir.path().join("test.js"),
+            "function hello() {\n  var x = 1;\n  return x;\n}\n",
+        )
+        .unwrap();
+
+        minify_js_files(dir.path()).unwrap();
+
+        let minified = fs::read_to_string(dir.path().join("test.js")).unwrap();
+        assert!(minified.len() < "function hello() {\n  var x = 1;\n  return x;\n}\n".len());
+    }
+
+    #[test]
+    fn test_html_minification() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(
+            dir.path().join("test.html"),
+            "<html>\n  <body>\n    <p>Hello</p>\n  </body>\n</html>",
+        )
+        .unwrap();
+
+        minify_html_files(dir.path()).unwrap();
+
+        let minified = fs::read_to_string(dir.path().join("test.html")).unwrap();
+        assert!(minified.len() < "<html>\n  <body>\n    <p>Hello</p>\n  </body>\n</html>".len());
+        assert!(minified.contains("Hello"));
+    }
 }

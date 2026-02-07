@@ -127,50 +127,59 @@ pub fn generate_search_index(site: &Site, output_dir: &Path) -> Result<()> {
 
     if let Some(ref home) = site.home {
         entries.push(SearchEntry {
-            title: home.title.clone(),
-            url: home.url.clone(),
+            title: home.content.title.clone(),
+            url: home.content.url.clone(),
             tags: Vec::new(),
             date: String::new(),
             excerpt: String::new(),
-            content: truncate_content(&strip_html_tags(&home.content), MAX_SEARCH_CONTENT_CHARS),
+            content: truncate_content(
+                &strip_html_tags(&home.content.html),
+                MAX_SEARCH_CONTENT_CHARS,
+            ),
         });
     }
 
     for post in &site.posts {
         entries.push(SearchEntry {
-            title: post.title.clone(),
-            url: post.url.clone(),
+            title: post.content.title.clone(),
+            url: post.content.url.clone(),
             tags: post.tags.clone(),
             date: post.date.format("%Y-%m-%d").to_string(),
             excerpt: post.excerpt.clone().unwrap_or_default(),
-            content: truncate_content(&strip_html_tags(&post.content), MAX_SEARCH_CONTENT_CHARS),
+            content: truncate_content(
+                &strip_html_tags(&post.content.html),
+                MAX_SEARCH_CONTENT_CHARS,
+            ),
         });
     }
 
     for page in &site.pages {
-        if page.slug == "404" {
+        if page.content.slug == "404" {
             continue;
         }
         entries.push(SearchEntry {
-            title: page.title.clone(),
-            url: page.url.clone(),
+            title: page.content.title.clone(),
+            url: page.content.url.clone(),
             tags: Vec::new(),
             date: String::new(),
             excerpt: String::new(),
-            content: truncate_content(&strip_html_tags(&page.content), MAX_SEARCH_CONTENT_CHARS),
+            content: truncate_content(
+                &strip_html_tags(&page.content.html),
+                MAX_SEARCH_CONTENT_CHARS,
+            ),
         });
     }
 
     for collection in site.collections.values() {
         for item in &collection.items {
             entries.push(SearchEntry {
-                title: item.title.clone(),
-                url: item.url.clone(),
+                title: item.content.title.clone(),
+                url: item.content.url.clone(),
                 tags: Vec::new(),
                 date: String::new(),
                 excerpt: String::new(),
                 content: truncate_content(
-                    &strip_html_tags(&item.content),
+                    &strip_html_tags(&item.content.html),
                     MAX_SEARCH_CONTENT_CHARS,
                 ),
             });
@@ -181,4 +190,93 @@ pub fn generate_search_index(site: &Site, output_dir: &Path) -> Result<()> {
     std::fs::write(output_dir.join("search-index.json"), json)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strip_html_tags_basic() {
+        assert_eq!(strip_html_tags("<p>hello</p>"), "hello");
+        assert_eq!(strip_html_tags("<b>bold</b> text"), "bold text");
+    }
+
+    #[test]
+    fn test_strip_html_tags_script_and_style() {
+        assert_eq!(
+            strip_html_tags("<p>before</p><script>alert('x')</script><p>after</p>"),
+            "beforeafter"
+        );
+        assert_eq!(
+            strip_html_tags("<style>.foo { color: red; }</style><p>visible</p>"),
+            "visible"
+        );
+    }
+
+    #[test]
+    fn test_strip_html_tags_entities() {
+        assert_eq!(strip_html_tags("&lt;tag&gt;"), "<tag>");
+        assert_eq!(strip_html_tags("&amp;"), "&");
+        assert_eq!(strip_html_tags("&quot;quoted&quot;"), "\"quoted\"");
+    }
+
+    #[test]
+    fn test_strip_html_tags_numeric_entities() {
+        assert_eq!(strip_html_tags("&#65;"), "A");
+        assert_eq!(strip_html_tags("&#x41;"), "A");
+    }
+
+    #[test]
+    fn test_strip_html_tags_whitespace_normalization() {
+        assert_eq!(strip_html_tags("hello   world"), "hello world");
+        assert_eq!(strip_html_tags("  leading  trailing  "), "leading trailing");
+    }
+
+    #[test]
+    fn test_truncate_content_short() {
+        assert_eq!(truncate_content("hello", 10), "hello");
+    }
+
+    #[test]
+    fn test_truncate_content_long() {
+        let result = truncate_content("hello world", 5);
+        assert_eq!(result, "hello");
+    }
+
+    #[test]
+    fn test_generate_search_index() {
+        use crate::types::*;
+        use std::collections::HashMap;
+
+        let site = Site {
+            config: SiteConfig {
+                title: "Test".to_string(),
+                base_url: "https://example.com".to_string(),
+                description: None,
+                author: None,
+                language: None,
+                posts_per_page: 10,
+                minify: false,
+                fingerprint: false,
+                images: None,
+                extra: HashMap::new(),
+            },
+            home: None,
+            pages: vec![],
+            posts: vec![],
+            collections: HashMap::new(),
+            data: HashMap::new(),
+            assets: vec![],
+        };
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_search_index(&site, output_dir.path()).unwrap();
+
+        let index_path = output_dir.path().join("search-index.json");
+        assert!(index_path.exists());
+        let content = std::fs::read_to_string(index_path).unwrap();
+        let entries: Vec<serde_json::Value> = serde_json::from_str(&content).unwrap();
+        assert!(entries.is_empty());
+    }
 }

@@ -1,10 +1,17 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum BambooError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("{operation} '{path}': {source}")]
+    IoPath {
+        operation: &'static str,
+        path: PathBuf,
+        source: std::io::Error,
+    },
 
     #[error("TOML parse error in {path}: {message}")]
     TomlParse { path: PathBuf, message: String },
@@ -57,3 +64,17 @@ pub enum BambooError {
 }
 
 pub type Result<T> = std::result::Result<T, BambooError>;
+
+pub trait IoContext<T> {
+    fn io_context(self, operation: &'static str, path: &Path) -> Result<T>;
+}
+
+impl<T> IoContext<T> for std::result::Result<T, std::io::Error> {
+    fn io_context(self, operation: &'static str, path: &Path) -> Result<T> {
+        self.map_err(|source| BambooError::IoPath {
+            operation,
+            path: path.to_path_buf(),
+            source,
+        })
+    }
+}

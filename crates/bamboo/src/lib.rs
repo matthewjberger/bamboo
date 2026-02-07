@@ -12,7 +12,7 @@ pub mod theme;
 pub mod types;
 pub mod xml;
 
-pub use error::{BambooError, Result};
+pub use error::{BambooError, IoContext, Result};
 pub use parsing::{
     RenderedMarkdown, extract_excerpt, extract_frontmatter, parse_date_from_filename,
     parse_markdown, reading_time, slugify, word_count,
@@ -20,5 +20,5 @@ pub use parsing::{
 pub use site::SiteBuilder;
 pub use theme::{ThemeEngine, clean_output_dir};
 pub use types::{
-    Asset, Collection, CollectionItem, Frontmatter, Page, Post, Site, SiteConfig, TocEntry,
+    Asset, Collection, CollectionItem, Content, Frontmatter, Page, Post, Site, SiteConfig, TocEntry,
 };

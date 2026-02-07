@@ -17,13 +17,13 @@ pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
     ));
 
     for page in &site.pages {
-        if page.slug == "404" {
+        if page.content.slug == "404" {
             continue;
         }
         urls.push_str(&format!(
             "  <url>\n    <loc>{}/{}/</loc>\n  </url>\n",
             escaped_base_url,
-            escape(&page.slug)
+            escape(&page.content.slug)
         ));
     }
 
@@ -32,7 +32,7 @@ pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
         urls.push_str(&format!(
             "  <url>\n    <loc>{}/posts/{}/</loc>\n    <lastmod>{}</lastmod>\n  </url>\n",
             escaped_base_url,
-            escape(&post.slug),
+            escape(&post.content.slug),
             lastmod
         ));
     }
@@ -63,7 +63,7 @@ pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
                 "  <url>\n    <loc>{}/{}/{}/</loc>\n  </url>\n",
                 escaped_base_url,
                 escape(name),
-                escape(&item.slug)
+                escape(&item.content.slug)
             ));
         }
     }
@@ -149,4 +149,189 @@ pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
     fs::write(output_dir.join("sitemap.xml"), sitemap)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::*;
+    use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    fn minimal_site() -> Site {
+        Site {
+            config: SiteConfig {
+                title: "Test".to_string(),
+                base_url: "https://example.com".to_string(),
+                description: None,
+                author: None,
+                language: None,
+                posts_per_page: 10,
+                minify: false,
+                fingerprint: false,
+                images: None,
+                extra: HashMap::new(),
+            },
+            home: None,
+            pages: vec![],
+            posts: vec![],
+            collections: HashMap::new(),
+            data: HashMap::new(),
+            assets: vec![],
+        }
+    }
+
+    fn make_post(slug: &str, tags: Vec<&str>, categories: Vec<&str>) -> Post {
+        let date = Utc.from_utc_datetime(
+            &NaiveDate::from_ymd_opt(2024, 1, 1)
+                .unwrap()
+                .and_time(NaiveTime::MIN),
+        );
+        Post {
+            content: Content {
+                slug: slug.to_string(),
+                title: slug.to_string(),
+                html: String::new(),
+                raw_content: String::new(),
+                frontmatter: Frontmatter::default(),
+                path: PathBuf::from(format!("posts/{}/index.html", slug)),
+                template: None,
+                weight: 0,
+                word_count: 0,
+                reading_time: 0,
+                toc: vec![],
+                url: format!("/posts/{}/", slug),
+            },
+            date,
+            excerpt: None,
+            draft: false,
+            tags: tags.into_iter().map(String::from).collect(),
+            categories: categories.into_iter().map(String::from).collect(),
+            redirect_from: vec![],
+        }
+    }
+
+    #[test]
+    fn test_sitemap_basic_urls() {
+        let mut site = minimal_site();
+        site.pages.push(Page {
+            content: Content {
+                slug: "about".to_string(),
+                title: "About".to_string(),
+                html: String::new(),
+                raw_content: String::new(),
+                frontmatter: Frontmatter::default(),
+                path: PathBuf::from("about/index.html"),
+                template: None,
+                weight: 0,
+                word_count: 0,
+                reading_time: 0,
+                toc: vec![],
+                url: "/about/".to_string(),
+            },
+            draft: false,
+            redirect_from: vec![],
+        });
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_sitemap(&site, output_dir.path()).unwrap();
+
+        let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
+        assert!(content.contains("https://example.com/"));
+        assert!(content.contains("https://example.com/about/"));
+    }
+
+    #[test]
+    fn test_sitemap_excludes_404() {
+        let mut site = minimal_site();
+        site.pages.push(Page {
+            content: Content {
+                slug: "404".to_string(),
+                title: "Not Found".to_string(),
+                html: String::new(),
+                raw_content: String::new(),
+                frontmatter: Frontmatter::default(),
+                path: PathBuf::from("404.html"),
+                template: None,
+                weight: 0,
+                word_count: 0,
+                reading_time: 0,
+                toc: vec![],
+                url: "/404/".to_string(),
+            },
+            draft: false,
+            redirect_from: vec![],
+        });
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_sitemap(&site, output_dir.path()).unwrap();
+
+        let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
+        assert!(!content.contains("/404/"));
+    }
+
+    #[test]
+    fn test_sitemap_tags_and_categories() {
+        let mut site = minimal_site();
+        site.posts
+            .push(make_post("hello", vec!["rust"], vec!["tech"]));
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_sitemap(&site, output_dir.path()).unwrap();
+
+        let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
+        assert!(content.contains("/tags/"));
+        assert!(content.contains("/tags/rust/"));
+        assert!(content.contains("/categories/"));
+        assert!(content.contains("/categories/tech/"));
+    }
+
+    #[test]
+    fn test_sitemap_pagination() {
+        let mut site = minimal_site();
+        site.config.posts_per_page = 1;
+        site.posts.push(make_post("a", vec![], vec![]));
+        site.posts.push(make_post("b", vec![], vec![]));
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_sitemap(&site, output_dir.path()).unwrap();
+
+        let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
+        assert!(content.contains("/page/2/"));
+    }
+
+    #[test]
+    fn test_sitemap_collections() {
+        let mut site = minimal_site();
+        site.collections.insert(
+            "docs".to_string(),
+            Collection {
+                name: "docs".to_string(),
+                items: vec![CollectionItem {
+                    content: Content {
+                        slug: "intro".to_string(),
+                        title: "Intro".to_string(),
+                        html: String::new(),
+                        raw_content: String::new(),
+                        frontmatter: Frontmatter::default(),
+                        path: PathBuf::from("docs/intro/index.html"),
+                        template: None,
+                        weight: 0,
+                        word_count: 0,
+                        reading_time: 0,
+                        toc: vec![],
+                        url: "/docs/intro/".to_string(),
+                    },
+                }],
+            },
+        );
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_sitemap(&site, output_dir.path()).unwrap();
+
+        let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
+        assert!(content.contains("/docs/"));
+        assert!(content.contains("/docs/intro/"));
+    }
 }

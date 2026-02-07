@@ -260,91 +260,103 @@ pub fn extract_excerpt(content: &str, max_chars: usize) -> Option<String> {
 
 fn strip_markdown_syntax(text: &str) -> String {
     let mut output = String::with_capacity(text.len());
-    let chars: Vec<char> = text.chars().collect();
-    let length = chars.len();
-    let mut position = 0;
+    let mut chars = text.chars().peekable();
+    let mut previous_character: Option<char> = None;
 
-    while position < length {
-        if position + 1 < length && chars[position] == '!' && chars[position + 1] == '[' {
-            position += 2;
-            while position < length && chars[position] != ']' {
-                output.push(chars[position]);
-                position += 1;
-            }
-            if position < length {
-                position += 1;
-            }
-            if position < length && chars[position] == '(' {
-                position += 1;
-                let mut paren_depth = 1;
-                while position < length && paren_depth > 0 {
-                    if chars[position] == '(' {
-                        paren_depth += 1;
-                    } else if chars[position] == ')' {
-                        paren_depth -= 1;
+    while let Some(&current) = chars.peek() {
+        if current == '!' {
+            chars.next();
+            if chars.peek() == Some(&'[') {
+                chars.next();
+                while let Some(&character) = chars.peek() {
+                    if character == ']' {
+                        chars.next();
+                        break;
                     }
-                    position += 1;
+                    output.push(character);
+                    chars.next();
                 }
+                skip_paren_link(&mut chars);
+                previous_character = Some(')');
+                continue;
             }
+            output.push('!');
+            previous_character = Some('!');
             continue;
         }
 
-        if chars[position] == '[' {
-            position += 1;
-            while position < length && chars[position] != ']' {
-                output.push(chars[position]);
-                position += 1;
-            }
-            if position < length {
-                position += 1;
-            }
-            if position < length && chars[position] == '(' {
-                position += 1;
-                let mut paren_depth = 1;
-                while position < length && paren_depth > 0 {
-                    if chars[position] == '(' {
-                        paren_depth += 1;
-                    } else if chars[position] == ')' {
-                        paren_depth -= 1;
-                    }
-                    position += 1;
+        if current == '[' {
+            chars.next();
+            while let Some(&character) = chars.peek() {
+                if character == ']' {
+                    chars.next();
+                    break;
                 }
+                output.push(character);
+                chars.next();
             }
+            skip_paren_link(&mut chars);
+            previous_character = Some(')');
             continue;
         }
 
-        if chars[position] == '#' && (position == 0 || chars[position - 1] == '\n') {
-            while position < length && chars[position] == '#' {
-                position += 1;
+        if current == '#' && (previous_character.is_none() || previous_character == Some('\n')) {
+            while chars.peek() == Some(&'#') {
+                chars.next();
             }
-            if position < length && chars[position] == ' ' {
-                position += 1;
+            if chars.peek() == Some(&' ') {
+                chars.next();
             }
+            previous_character = Some('#');
             continue;
         }
 
-        if chars[position] == '*' || chars[position] == '_' {
-            let prev_is_alnum = position > 0 && chars[position - 1].is_alphanumeric();
-            let next_is_alnum = position + 1 < length && chars[position + 1].is_alphanumeric();
+        if current == '*' || current == '_' {
+            let prev_is_alnum = previous_character
+                .map(|character| character.is_alphanumeric())
+                .unwrap_or(false);
+            chars.next();
+            let next_is_alnum = chars
+                .peek()
+                .map(|character| character.is_alphanumeric())
+                .unwrap_or(false);
             if prev_is_alnum && next_is_alnum {
-                output.push(chars[position]);
-                position += 1;
-            } else {
-                position += 1;
+                output.push(current);
             }
+            previous_character = Some(current);
             continue;
         }
 
-        if chars[position] == '`' {
-            position += 1;
+        if current == '`' {
+            chars.next();
+            previous_character = Some('`');
             continue;
         }
 
-        output.push(chars[position]);
-        position += 1;
+        output.push(current);
+        previous_character = Some(current);
+        chars.next();
     }
 
     output
+}
+
+fn skip_paren_link(chars: &mut std::iter::Peekable<std::str::Chars>) {
+    if chars.peek() == Some(&'(') {
+        chars.next();
+        let mut paren_depth = 1;
+        while let Some(&character) = chars.peek() {
+            if character == '(' {
+                paren_depth += 1;
+            } else if character == ')' {
+                paren_depth -= 1;
+            }
+            chars.next();
+            if paren_depth == 0 {
+                break;
+            }
+        }
+    }
 }
 
 pub fn extract_frontmatter(content: &str, path: &Path) -> Result<(Frontmatter, String)> {
@@ -403,7 +415,7 @@ fn parse_yaml_frontmatter(content: &str, path: &Path) -> Result<(Frontmatter, St
     let body = &rest[end_index + 3..];
 
     let raw: HashMap<String, Value> =
-        serde_yaml::from_str(frontmatter_str).map_err(|error| BambooError::YamlParse {
+        serde_yml::from_str(frontmatter_str).map_err(|error| BambooError::YamlParse {
             path: path.to_path_buf(),
             message: error.to_string(),
         })?;

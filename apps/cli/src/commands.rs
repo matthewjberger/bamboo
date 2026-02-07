@@ -13,12 +13,23 @@ use tower_http::services::ServeDir;
 const DEBOUNCE_DURATION: Duration = Duration::from_millis(300);
 
 fn escape_toml_string(input: &str) -> String {
-    input
-        .replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
-        .replace('\t', "\\t")
+    let mut output = String::with_capacity(input.len());
+    for character in input.chars() {
+        match character {
+            '\\' => output.push_str("\\\\"),
+            '"' => output.push_str("\\\""),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            '\u{0008}' => output.push_str("\\b"),
+            '\u{000C}' => output.push_str("\\f"),
+            control if control < '\u{0020}' => {
+                output.push_str(&format!("\\u{:04X}", control as u32));
+            }
+            other => output.push(other),
+        }
+    }
+    output
 }
 
 pub fn new_site(name: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -257,7 +268,7 @@ pub async fn serve_site(
                         &output_dir,
                         drafts,
                         Some(&serve_url),
-                        false,
+                        true,
                     ) {
                         eprintln!("Rebuild error: {error}");
                     } else {
@@ -303,4 +314,59 @@ pub async fn serve_site(
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_escape_toml_string_plain() {
+        assert_eq!(escape_toml_string("hello world"), "hello world");
+    }
+
+    #[test]
+    fn test_escape_toml_string_backslash() {
+        assert_eq!(escape_toml_string("path\\to\\file"), "path\\\\to\\\\file");
+    }
+
+    #[test]
+    fn test_escape_toml_string_quotes() {
+        assert_eq!(escape_toml_string("say \"hello\""), "say \\\"hello\\\"");
+    }
+
+    #[test]
+    fn test_escape_toml_string_newline() {
+        assert_eq!(escape_toml_string("line1\nline2"), "line1\\nline2");
+    }
+
+    #[test]
+    fn test_escape_toml_string_tab() {
+        assert_eq!(escape_toml_string("col1\tcol2"), "col1\\tcol2");
+    }
+
+    #[test]
+    fn test_escape_toml_string_carriage_return() {
+        assert_eq!(escape_toml_string("line\r"), "line\\r");
+    }
+
+    #[test]
+    fn test_escape_toml_string_backspace() {
+        assert_eq!(escape_toml_string("back\u{0008}space"), "back\\bspace");
+    }
+
+    #[test]
+    fn test_escape_toml_string_form_feed() {
+        assert_eq!(escape_toml_string("form\u{000C}feed"), "form\\ffeed");
+    }
+
+    #[test]
+    fn test_escape_toml_string_control_char() {
+        assert_eq!(escape_toml_string("null\u{0000}byte"), "null\\u0000byte");
+    }
+
+    #[test]
+    fn test_escape_toml_string_bell() {
+        assert_eq!(escape_toml_string("bell\u{0007}char"), "bell\\u0007char");
+    }
 }

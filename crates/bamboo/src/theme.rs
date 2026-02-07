@@ -44,17 +44,18 @@ const DEFAULT_SEARCH_TEMPLATE: &str = include_str!("../themes/default/templates/
 const DEFAULT_STYLESHEET: &str = include_str!("../themes/default/static/style.css");
 
 #[derive(Debug, Clone, Serialize)]
-struct TagInfo {
+struct TaxonomyInfo {
     name: String,
     slug: String,
     count: usize,
 }
 
-#[derive(Debug, Clone, Serialize)]
-struct CategoryInfo {
-    name: String,
-    slug: String,
-    count: usize,
+struct TaxonomyConfig<'a> {
+    taxonomy_name: &'a str,
+    index_template: &'a str,
+    item_template: &'a str,
+    name_context_key: &'a str,
+    slug_context_key: &'a str,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -212,7 +213,7 @@ impl ThemeEngine {
         self.render_index(site, output_dir)?;
 
         for page in &site.pages {
-            if page.slug == "404" {
+            if page.content.slug == "404" {
                 continue;
             }
             self.render_page(site, page, output_dir)?;
@@ -294,7 +295,7 @@ impl ThemeEngine {
         let template_name = if let Some(home) = &site.home {
             context.insert("home", home);
             context.insert("page", home);
-            home.template.as_deref().unwrap_or("index.html")
+            home.content.template.as_deref().unwrap_or("index.html")
         } else {
             "index.html"
         };
@@ -313,10 +314,10 @@ impl ThemeEngine {
         context.insert("site", &metadata);
         context.insert("page", page);
 
-        let template_name = page.template.as_deref().unwrap_or("page.html");
+        let template_name = page.content.template.as_deref().unwrap_or("page.html");
         let rendered = self.tera.render(template_name, &context)?;
 
-        let output_path = output_dir.join(&page.path);
+        let output_path = output_dir.join(&page.content.path);
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -346,10 +347,10 @@ impl ThemeEngine {
             context.insert("next_post", next);
         }
 
-        let template_name = post.template.as_deref().unwrap_or("post.html");
+        let template_name = post.content.template.as_deref().unwrap_or("post.html");
         let rendered = self.tera.render(template_name, &context)?;
 
-        let output_path = output_dir.join(&post.path);
+        let output_path = output_dir.join(&post.content.path);
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -402,115 +403,56 @@ impl ThemeEngine {
     }
 
     fn render_tag_pages(&self, site: &Site, output_dir: &Path) -> Result<()> {
-        let mut slug_posts: HashMap<String, Vec<&crate::types::Post>> = HashMap::new();
-        let mut slug_display_name: HashMap<String, String> = HashMap::new();
-
-        for post in &site.posts {
-            for tag in &post.tags {
-                let slug = slugify(tag);
-                slug_posts.entry(slug.clone()).or_default().push(post);
-                slug_display_name.entry(slug).or_insert_with(|| tag.clone());
-            }
-        }
-
-        if slug_posts.is_empty() {
-            return Ok(());
-        }
-
-        let mut tags: Vec<TagInfo> = slug_posts
-            .iter()
-            .map(|(slug, posts)| TagInfo {
-                name: slug_display_name
-                    .get(slug)
-                    .cloned()
-                    .unwrap_or_else(|| slug.clone()),
-                slug: slug.clone(),
-                count: posts.len(),
-            })
-            .collect();
-        tags.sort_by(|a, b| a.name.cmp(&b.name));
-
-        let metadata = self.site_metadata(site);
-
-        let mut context = Context::new();
-        context.insert("site", &metadata);
-        context.insert("tags", &tags);
-
-        let tags_dir = output_dir.join("tags");
-        let tags_index = tags_dir.join("index.html");
-        if !tags_index.exists() {
-            let rendered = self.tera.render("tags.html", &context)?;
-            fs::create_dir_all(&tags_dir)?;
-            fs::write(tags_index, rendered)?;
-        }
-
-        let posts_per_page = site.config.posts_per_page;
-
-        for (slug, posts) in &slug_posts {
-            let tag_name = slug_display_name.get(slug.as_str()).unwrap_or(slug);
-            let tag_dir = tags_dir.join(slug);
-            let effective_per_page = if posts_per_page == 0 {
-                posts.len().max(1)
-            } else {
-                posts_per_page
-            };
-            let total_pages = posts.len().div_ceil(effective_per_page);
-            let base_url = site.config.base_url.trim_end_matches('/');
-
-            for page_number in 1..=total_pages {
-                let start = (page_number - 1) * effective_per_page;
-                let end = (start + effective_per_page).min(posts.len());
-                let page_posts = &posts[start..end];
-
-                let mut context = Context::new();
-                context.insert("site", &metadata);
-                context.insert("tag_name", tag_name);
-                context.insert("tag_slug", &slug);
-                context.insert("posts", page_posts);
-                context.insert("current_page", &page_number);
-                context.insert("total_pages", &total_pages);
-
-                if page_number > 1 {
-                    let prev_url = if page_number == 2 {
-                        format!("{}/tags/{}/", base_url, slug)
-                    } else {
-                        format!("{}/tags/{}/page/{}/", base_url, slug, page_number - 1)
-                    };
-                    context.insert("prev_page_url", &prev_url);
-                }
-
-                if page_number < total_pages {
-                    let next_url = format!("{}/tags/{}/page/{}/", base_url, slug, page_number + 1);
-                    context.insert("next_page_url", &next_url);
-                }
-
-                if page_number == 1 {
-                    let rendered = self.tera.render("tag.html", &context)?;
-                    fs::create_dir_all(&tag_dir)?;
-                    fs::write(tag_dir.join("index.html"), rendered)?;
-                } else {
-                    let rendered = self.tera.render("tag.html", &context)?;
-                    let page_dir = tag_dir.join("page").join(page_number.to_string());
-                    fs::create_dir_all(&page_dir)?;
-                    fs::write(page_dir.join("index.html"), rendered)?;
-                }
-            }
-        }
-
-        Ok(())
+        self.render_taxonomy_pages(
+            site,
+            output_dir,
+            TaxonomyConfig {
+                taxonomy_name: "tags",
+                index_template: "tags.html",
+                item_template: "tag.html",
+                name_context_key: "tag_name",
+                slug_context_key: "tag_slug",
+            },
+            |post| post.tags.iter(),
+        )
     }
 
     fn render_category_pages(&self, site: &Site, output_dir: &Path) -> Result<()> {
+        self.render_taxonomy_pages(
+            site,
+            output_dir,
+            TaxonomyConfig {
+                taxonomy_name: "categories",
+                index_template: "categories.html",
+                item_template: "category.html",
+                name_context_key: "category_name",
+                slug_context_key: "category_slug",
+            },
+            |post| post.categories.iter(),
+        )
+    }
+
+    fn render_taxonomy_pages<'a, F, I>(
+        &self,
+        site: &'a Site,
+        output_dir: &Path,
+        taxonomy_config: TaxonomyConfig,
+        extract_terms: F,
+    ) -> Result<()>
+    where
+        F: Fn(&'a crate::types::Post) -> I,
+        I: Iterator<Item = &'a String>,
+    {
         let mut slug_posts: HashMap<String, Vec<&crate::types::Post>> = HashMap::new();
         let mut slug_display_name: HashMap<String, String> = HashMap::new();
 
         for post in &site.posts {
-            for category in &post.categories {
-                let slug = slugify(category);
+            for term in extract_terms(post) {
+                let slug = slugify(term);
                 slug_posts.entry(slug.clone()).or_default().push(post);
                 slug_display_name
                     .entry(slug)
-                    .or_insert_with(|| category.clone());
+                    .or_insert_with(|| term.clone());
             }
         }
 
@@ -518,9 +460,9 @@ impl ThemeEngine {
             return Ok(());
         }
 
-        let mut categories: Vec<CategoryInfo> = slug_posts
+        let mut taxonomy_items: Vec<TaxonomyInfo> = slug_posts
             .iter()
-            .map(|(slug, posts)| CategoryInfo {
+            .map(|(slug, posts)| TaxonomyInfo {
                 name: slug_display_name
                     .get(slug)
                     .cloned()
@@ -529,27 +471,25 @@ impl ThemeEngine {
                 count: posts.len(),
             })
             .collect();
-        categories.sort_by(|a, b| a.name.cmp(&b.name));
+        taxonomy_items.sort_by(|a, b| a.name.cmp(&b.name));
 
         let metadata = self.site_metadata(site);
 
         let mut context = Context::new();
         context.insert("site", &metadata);
-        context.insert("categories", &categories);
+        context.insert(taxonomy_config.taxonomy_name, &taxonomy_items);
 
-        let categories_dir = output_dir.join("categories");
-        let categories_index = categories_dir.join("index.html");
-        if !categories_index.exists() {
-            let rendered = self.tera.render("categories.html", &context)?;
-            fs::create_dir_all(&categories_dir)?;
-            fs::write(categories_index, rendered)?;
-        }
+        let taxonomy_dir = output_dir.join(taxonomy_config.taxonomy_name);
+        let taxonomy_index = taxonomy_dir.join("index.html");
+        let rendered = self.tera.render(taxonomy_config.index_template, &context)?;
+        fs::create_dir_all(&taxonomy_dir)?;
+        fs::write(taxonomy_index, rendered)?;
 
         let posts_per_page = site.config.posts_per_page;
 
         for (slug, posts) in &slug_posts {
-            let category_name = slug_display_name.get(slug.as_str()).unwrap_or(slug);
-            let category_dir = categories_dir.join(slug.as_str());
+            let display_name = slug_display_name.get(slug.as_str()).unwrap_or(slug);
+            let term_dir = taxonomy_dir.join(slug);
             let effective_per_page = if posts_per_page == 0 {
                 posts.len().max(1)
             } else {
@@ -565,34 +505,45 @@ impl ThemeEngine {
 
                 let mut context = Context::new();
                 context.insert("site", &metadata);
-                context.insert("category_name", category_name);
-                context.insert("category_slug", &slug);
+                context.insert(taxonomy_config.name_context_key, display_name);
+                context.insert(taxonomy_config.slug_context_key, &slug);
                 context.insert("posts", page_posts);
                 context.insert("current_page", &page_number);
                 context.insert("total_pages", &total_pages);
 
                 if page_number > 1 {
                     let prev_url = if page_number == 2 {
-                        format!("{}/categories/{}/", base_url, slug)
+                        format!("{}/{}/{}/", base_url, taxonomy_config.taxonomy_name, slug)
                     } else {
-                        format!("{}/categories/{}/page/{}/", base_url, slug, page_number - 1)
+                        format!(
+                            "{}/{}/{}/page/{}/",
+                            base_url,
+                            taxonomy_config.taxonomy_name,
+                            slug,
+                            page_number - 1
+                        )
                     };
                     context.insert("prev_page_url", &prev_url);
                 }
 
                 if page_number < total_pages {
-                    let next_url =
-                        format!("{}/categories/{}/page/{}/", base_url, slug, page_number + 1);
+                    let next_url = format!(
+                        "{}/{}/{}/page/{}/",
+                        base_url,
+                        taxonomy_config.taxonomy_name,
+                        slug,
+                        page_number + 1
+                    );
                     context.insert("next_page_url", &next_url);
                 }
 
                 if page_number == 1 {
-                    let rendered = self.tera.render("category.html", &context)?;
-                    fs::create_dir_all(&category_dir)?;
-                    fs::write(category_dir.join("index.html"), rendered)?;
+                    let rendered = self.tera.render(taxonomy_config.item_template, &context)?;
+                    fs::create_dir_all(&term_dir)?;
+                    fs::write(term_dir.join("index.html"), rendered)?;
                 } else {
-                    let rendered = self.tera.render("category.html", &context)?;
-                    let page_dir = category_dir.join("page").join(page_number.to_string());
+                    let rendered = self.tera.render(taxonomy_config.item_template, &context)?;
+                    let page_dir = term_dir.join("page").join(page_number.to_string());
                     fs::create_dir_all(&page_dir)?;
                     fs::write(page_dir.join("index.html"), rendered)?;
                 }
@@ -607,7 +558,7 @@ impl ThemeEngine {
         let metadata = self.site_metadata(site);
         context.insert("site", &metadata);
 
-        let four_oh_four_page = site.pages.iter().find(|page| page.slug == "404");
+        let four_oh_four_page = site.pages.iter().find(|page| page.content.slug == "404");
         if let Some(page) = four_oh_four_page {
             context.insert("page", page);
         }
@@ -621,9 +572,6 @@ impl ThemeEngine {
     fn render_search(&self, site: &Site, output_dir: &Path) -> Result<()> {
         let search_dir = output_dir.join("search");
         let search_index = search_dir.join("index.html");
-        if search_index.exists() {
-            return Ok(());
-        }
 
         let mut context = Context::new();
         let metadata = self.site_metadata(site);
@@ -653,10 +601,8 @@ impl ThemeEngine {
         if let Some(parent) = index_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        if !index_path.exists() {
-            let index_rendered = self.tera.render("collection.html", &context)?;
-            fs::write(index_path, index_rendered)?;
-        }
+        let index_rendered = self.tera.render("collection.html", &context)?;
+        fs::write(index_path, index_rendered)?;
 
         for item in &collection.items {
             self.render_collection_item(site, name, collection, item, output_dir)?;
@@ -680,7 +626,11 @@ impl ThemeEngine {
         context.insert("collection", collection);
         context.insert("collection_name", collection_name);
 
-        let template_name = item.template.as_deref().unwrap_or("collection_item.html");
+        let template_name = item
+            .content
+            .template
+            .as_deref()
+            .unwrap_or("collection_item.html");
 
         let template_name = if self
             .tera
@@ -694,7 +644,7 @@ impl ThemeEngine {
         };
 
         let rendered = self.tera.render(template_name, &context)?;
-        let output_path = output_dir.join(&item.path);
+        let output_path = output_dir.join(&item.content.path);
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -755,13 +705,8 @@ fn register_custom_filters(tera: &mut Tera) {
         |value: &tera::Value, _args: &HashMap<String, tera::Value>| {
             let raw_text = value.as_str().unwrap_or("");
             let plain_text = crate::search::strip_html_tags(raw_text);
-            let words = plain_text.split_whitespace().count();
-            let minutes = words / 200;
-            let result = if minutes == 0 && words > 0 {
-                1
-            } else {
-                minutes
-            };
+            let words = crate::parsing::word_count(&plain_text);
+            let result = crate::parsing::reading_time(words);
             Ok(tera::Value::Number(serde_json::Number::from(result)))
         },
     );
@@ -771,7 +716,7 @@ fn register_custom_filters(tera: &mut Tera) {
         |value: &tera::Value, _args: &HashMap<String, tera::Value>| {
             let raw_text = value.as_str().unwrap_or("");
             let plain_text = crate::search::strip_html_tags(raw_text);
-            let count = plain_text.split_whitespace().count();
+            let count = crate::parsing::word_count(&plain_text);
             Ok(tera::Value::Number(serde_json::Number::from(count)))
         },
     );
@@ -912,4 +857,280 @@ fn dirs_home() -> Option<PathBuf> {
         .or_else(|_| std::env::var("USERPROFILE"))
         .ok()
         .map(PathBuf::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_escape_glob_path_no_special() {
+        assert_eq!(
+            escape_glob_path("/home/user/templates"),
+            "/home/user/templates"
+        );
+    }
+
+    #[test]
+    fn test_escape_glob_path_with_brackets() {
+        assert_eq!(escape_glob_path("path/[test]"), "path/[[]test[]]");
+    }
+
+    #[test]
+    fn test_escape_glob_path_with_braces() {
+        assert_eq!(escape_glob_path("path/{test}"), "path/[{]test[}]");
+    }
+
+    #[test]
+    fn test_escape_glob_path_with_wildcards() {
+        assert_eq!(escape_glob_path("path/*.html"), "path/[*].html");
+    }
+
+    #[test]
+    fn test_is_filesystem_root_unix_root() {
+        assert!(is_filesystem_root(Path::new("/")));
+    }
+
+    #[test]
+    fn test_is_filesystem_root_normal_path() {
+        assert!(!is_filesystem_root(Path::new("/home/user/project")));
+    }
+
+    #[test]
+    fn test_is_direct_child_of_root() {
+        assert!(!is_direct_child_of_root(Path::new("/home/user/project")));
+    }
+
+    #[test]
+    fn test_clean_output_dir_nonexistent() {
+        let result = clean_output_dir(Path::new("/nonexistent/path/that/does/not/exist"));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_clean_output_dir_removes_directory() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let output = dir.path().join("output");
+        fs::create_dir_all(&output).unwrap();
+        fs::write(output.join("test.html"), "test").unwrap();
+
+        clean_output_dir(&output).unwrap();
+        assert!(!output.exists());
+    }
+
+    #[test]
+    fn test_clean_output_dir_rejects_project_root() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(dir.path().join("bamboo.toml"), "title = \"Test\"").unwrap();
+
+        let result = clean_output_dir(dir.path());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_builtin_default_theme() {
+        let engine = ThemeEngine::new("default").unwrap();
+        assert!(engine.is_builtin_default);
+    }
+
+    #[test]
+    fn test_nonexistent_theme_error() {
+        let result = ThemeEngine::new("nonexistent-theme-12345");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_render_site_basic() {
+        use crate::types::*;
+        use std::collections::HashMap;
+
+        let site = Site {
+            config: SiteConfig {
+                title: "Test".to_string(),
+                base_url: "https://example.com".to_string(),
+                description: None,
+                author: None,
+                language: None,
+                posts_per_page: 10,
+                minify: false,
+                fingerprint: false,
+                images: None,
+                extra: HashMap::new(),
+            },
+            home: None,
+            pages: vec![],
+            posts: vec![],
+            collections: HashMap::new(),
+            data: HashMap::new(),
+            assets: vec![],
+        };
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        let engine = ThemeEngine::new("default").unwrap();
+        engine.render_site(&site, output_dir.path()).unwrap();
+
+        assert!(output_dir.path().join("index.html").exists());
+        assert!(output_dir.path().join("404.html").exists());
+        assert!(output_dir.path().join("style.css").exists());
+        assert!(output_dir.path().join("rss.xml").exists());
+        assert!(output_dir.path().join("atom.xml").exists());
+        assert!(output_dir.path().join("sitemap.xml").exists());
+        assert!(output_dir.path().join("search-index.json").exists());
+    }
+
+    #[test]
+    fn test_render_site_with_posts() {
+        use crate::types::*;
+        use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
+        use std::collections::HashMap;
+
+        let date = Utc.from_utc_datetime(
+            &NaiveDate::from_ymd_opt(2024, 1, 1)
+                .unwrap()
+                .and_time(NaiveTime::MIN),
+        );
+
+        let site = Site {
+            config: SiteConfig {
+                title: "Test Blog".to_string(),
+                base_url: "https://example.com".to_string(),
+                description: Some("A test blog".to_string()),
+                author: Some("Author".to_string()),
+                language: Some("en".to_string()),
+                posts_per_page: 10,
+                minify: false,
+                fingerprint: false,
+                images: None,
+                extra: HashMap::new(),
+            },
+            home: None,
+            pages: vec![Page {
+                content: Content {
+                    slug: "about".to_string(),
+                    title: "About".to_string(),
+                    html: "<p>About page</p>".to_string(),
+                    raw_content: "About page".to_string(),
+                    frontmatter: Frontmatter::default(),
+                    path: PathBuf::from("about/index.html"),
+                    template: None,
+                    weight: 0,
+                    word_count: 2,
+                    reading_time: 1,
+                    toc: vec![],
+                    url: "/about/".to_string(),
+                },
+                draft: false,
+                redirect_from: vec![],
+            }],
+            posts: vec![Post {
+                content: Content {
+                    slug: "hello".to_string(),
+                    title: "Hello".to_string(),
+                    html: "<p>Hello world</p>".to_string(),
+                    raw_content: "Hello world".to_string(),
+                    frontmatter: Frontmatter::default(),
+                    path: PathBuf::from("posts/hello/index.html"),
+                    template: None,
+                    weight: 0,
+                    word_count: 2,
+                    reading_time: 1,
+                    toc: vec![],
+                    url: "/posts/hello/".to_string(),
+                },
+                date,
+                excerpt: Some("Hello world".to_string()),
+                draft: false,
+                tags: vec!["test".to_string()],
+                categories: vec!["general".to_string()],
+                redirect_from: vec![],
+            }],
+            collections: HashMap::new(),
+            data: HashMap::new(),
+            assets: vec![],
+        };
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        let engine = ThemeEngine::new("default").unwrap();
+        engine.render_site(&site, output_dir.path()).unwrap();
+
+        assert!(output_dir.path().join("about/index.html").exists());
+        assert!(output_dir.path().join("posts/hello/index.html").exists());
+        assert!(output_dir.path().join("tags/index.html").exists());
+        assert!(output_dir.path().join("tags/test/index.html").exists());
+        assert!(output_dir.path().join("categories/index.html").exists());
+        assert!(
+            output_dir
+                .path()
+                .join("categories/general/index.html")
+                .exists()
+        );
+        assert!(output_dir.path().join("search/index.html").exists());
+    }
+
+    #[test]
+    fn test_render_pagination() {
+        use crate::types::*;
+        use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
+        use std::collections::HashMap;
+
+        let date = Utc.from_utc_datetime(
+            &NaiveDate::from_ymd_opt(2024, 1, 1)
+                .unwrap()
+                .and_time(NaiveTime::MIN),
+        );
+
+        let mut posts = Vec::new();
+        for index in 0..3 {
+            posts.push(Post {
+                content: Content {
+                    slug: format!("post-{}", index),
+                    title: format!("Post {}", index),
+                    html: format!("<p>Post {}</p>", index),
+                    raw_content: format!("Post {}", index),
+                    frontmatter: Frontmatter::default(),
+                    path: PathBuf::from(format!("posts/post-{}/index.html", index)),
+                    template: None,
+                    weight: 0,
+                    word_count: 2,
+                    reading_time: 1,
+                    toc: vec![],
+                    url: format!("/posts/post-{}/", index),
+                },
+                date,
+                excerpt: None,
+                draft: false,
+                tags: vec![],
+                categories: vec![],
+                redirect_from: vec![],
+            });
+        }
+
+        let site = Site {
+            config: SiteConfig {
+                title: "Test".to_string(),
+                base_url: "https://example.com".to_string(),
+                description: None,
+                author: None,
+                language: None,
+                posts_per_page: 1,
+                minify: false,
+                fingerprint: false,
+                images: None,
+                extra: HashMap::new(),
+            },
+            home: None,
+            pages: vec![],
+            posts,
+            collections: HashMap::new(),
+            data: HashMap::new(),
+            assets: vec![],
+        };
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        let engine = ThemeEngine::new("default").unwrap();
+        engine.render_site(&site, output_dir.path()).unwrap();
+
+        assert!(output_dir.path().join("page/2/index.html").exists());
+        assert!(output_dir.path().join("page/3/index.html").exists());
+    }
 }

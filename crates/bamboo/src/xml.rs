@@ -49,3 +49,63 @@ pub fn unescape(input: &str) -> String {
 
     after_numeric.replace("&amp;", "&")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_escape_special_chars() {
+        assert_eq!(escape("&"), "&amp;");
+        assert_eq!(escape("<"), "&lt;");
+        assert_eq!(escape(">"), "&gt;");
+        assert_eq!(escape("\""), "&quot;");
+        assert_eq!(escape("'"), "&apos;");
+    }
+
+    #[test]
+    fn test_escape_combined() {
+        assert_eq!(
+            escape("<a href=\"test\">foo & bar</a>"),
+            "&lt;a href=&quot;test&quot;&gt;foo &amp; bar&lt;/a&gt;"
+        );
+    }
+
+    #[test]
+    fn test_escape_plain_text() {
+        assert_eq!(escape("hello world"), "hello world");
+    }
+
+    #[test]
+    fn test_unescape_named_entities() {
+        assert_eq!(unescape("&amp;"), "&");
+        assert_eq!(unescape("&lt;"), "<");
+        assert_eq!(unescape("&gt;"), ">");
+        assert_eq!(unescape("&quot;"), "\"");
+        assert_eq!(unescape("&apos;"), "'");
+    }
+
+    #[test]
+    fn test_unescape_numeric_decimal() {
+        assert_eq!(unescape("&#65;"), "A");
+        assert_eq!(unescape("&#97;"), "a");
+    }
+
+    #[test]
+    fn test_unescape_numeric_hex() {
+        assert_eq!(unescape("&#x41;"), "A");
+        assert_eq!(unescape("&#X61;"), "a");
+    }
+
+    #[test]
+    fn test_roundtrip() {
+        let original = "Hello <world> & \"friends\" 'always'";
+        assert_eq!(unescape(&escape(original)), original);
+    }
+
+    #[test]
+    fn test_unescape_invalid_numeric() {
+        assert_eq!(unescape("&#xZZZ;"), "&#xZZZ;");
+        assert_eq!(unescape("&#abc;"), "&#abc;");
+    }
+}

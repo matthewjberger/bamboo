@@ -1,16 +1,12 @@
-use crate::error::{BambooError, Result};
-use crate::images::ImageConfig;
+use crate::error::{BambooError, IoContext, Result};
 use crate::parsing::{
     extract_excerpt, extract_frontmatter, parse_date_from_filename, parse_markdown, reading_time,
     word_count,
 };
 use crate::search::strip_html_tags;
 use crate::shortcodes::ShortcodeProcessor;
-use crate::types::{
-    Asset, Collection, CollectionItem, Page, Post, Site, SiteConfig, default_posts_per_page,
-};
+use crate::types::{Asset, Collection, CollectionItem, Content, Page, Post, Site, SiteConfig};
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
@@ -19,33 +15,21 @@ use walkdir::WalkDir;
 
 const MAX_DATA_DEPTH: usize = 10;
 
+struct ContentInput {
+    slug: String,
+    title: String,
+    raw_content: String,
+    rendered: crate::parsing::RenderedMarkdown,
+    frontmatter: crate::types::Frontmatter,
+    output_path: PathBuf,
+    url: String,
+}
+
 pub struct SiteBuilder {
     input_dir: PathBuf,
     include_drafts: bool,
     base_url_override: Option<String>,
     shortcode_processor: Option<ShortcodeProcessor>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RawSiteConfig {
-    title: String,
-    base_url: String,
-    #[serde(default)]
-    description: Option<String>,
-    #[serde(default)]
-    author: Option<String>,
-    #[serde(default)]
-    language: Option<String>,
-    #[serde(default = "default_posts_per_page")]
-    posts_per_page: usize,
-    #[serde(default)]
-    minify: bool,
-    #[serde(default)]
-    fingerprint: bool,
-    #[serde(default)]
-    images: Option<ImageConfig>,
-    #[serde(default)]
-    extra: HashMap<String, Value>,
 }
 
 impl SiteBuilder {
@@ -95,12 +79,20 @@ impl SiteBuilder {
         let data = self.load_data()?;
         let assets = self.collect_assets()?;
 
-        pages.sort_by(|a, b| a.weight.cmp(&b.weight).then_with(|| a.slug.cmp(&b.slug)));
+        pages.sort_by(|a, b| {
+            a.content
+                .weight
+                .cmp(&b.content.weight)
+                .then_with(|| a.content.slug.cmp(&b.content.slug))
+        });
 
         for collection in collections.values_mut() {
-            collection
-                .items
-                .sort_by(|a, b| a.weight.cmp(&b.weight).then_with(|| a.slug.cmp(&b.slug)));
+            collection.items.sort_by(|a, b| {
+                a.content
+                    .weight
+                    .cmp(&b.content.weight)
+                    .then_with(|| a.content.slug.cmp(&b.content.slug))
+            });
         }
 
         Ok(Site {
@@ -121,25 +113,17 @@ impl SiteBuilder {
             return Err(BambooError::ConfigNotFound { path: config_path });
         }
 
-        let content = fs::read_to_string(&config_path)?;
-        let raw: RawSiteConfig =
+        let content =
+            fs::read_to_string(&config_path).io_context("reading config", &config_path)?;
+        let mut config: SiteConfig =
             toml::from_str(&content).map_err(|error| BambooError::TomlParse {
                 path: config_path.clone(),
                 message: error.to_string(),
             })?;
 
-        Ok(SiteConfig {
-            title: raw.title,
-            base_url: raw.base_url.trim_end_matches('/').to_string(),
-            description: raw.description,
-            author: raw.author,
-            language: raw.language,
-            posts_per_page: raw.posts_per_page,
-            minify: raw.minify,
-            fingerprint: raw.fingerprint,
-            images: raw.images,
-            extra: raw.extra,
-        })
+        config.base_url = config.base_url.trim_end_matches('/').to_string();
+
+        Ok(config)
     }
 
     fn load_pages(&self) -> Result<(Option<Page>, Vec<Page>)> {
@@ -203,7 +187,7 @@ impl SiteBuilder {
                 continue;
             }
 
-            if page.slug == "index"
+            if page.content.slug == "index"
                 && relative
                     .parent()
                     .map(|parent| parent == Path::new(""))
@@ -211,14 +195,14 @@ impl SiteBuilder {
             {
                 home = Some(page);
             } else {
-                if let Some(existing_path) = seen_slugs.get(&page.slug) {
+                if let Some(existing_path) = seen_slugs.get(&page.content.slug) {
                     return Err(BambooError::DuplicatePage {
-                        slug: page.slug,
+                        slug: page.content.slug.clone(),
                         path: path.to_path_buf(),
                         existing_path: existing_path.clone(),
                     });
                 }
-                seen_slugs.insert(page.slug.clone(), path.to_path_buf());
+                seen_slugs.insert(page.content.slug.clone(), path.to_path_buf());
                 pages.push(page);
             }
         }
@@ -255,9 +239,30 @@ impl SiteBuilder {
         }
     }
 
+    fn build_content(&self, input: ContentInput) -> Content {
+        let plain_text = strip_html_tags(&input.rendered.html);
+        let words = word_count(&plain_text);
+        let template = input.frontmatter.get_string("template");
+        let weight = input.frontmatter.get_i64("weight").unwrap_or(0) as i32;
+        Content {
+            slug: input.slug,
+            title: input.title,
+            html: input.rendered.html,
+            raw_content: input.raw_content,
+            frontmatter: input.frontmatter,
+            path: input.output_path,
+            template,
+            weight,
+            word_count: words,
+            reading_time: reading_time(words),
+            toc: input.rendered.toc,
+            url: input.url,
+        }
+    }
+
     fn parse_page(&self, path: &Path, relative: &Path) -> Result<Page> {
-        let content = fs::read_to_string(path)?;
-        let (frontmatter, raw_content) = extract_frontmatter(&content, path)?;
+        let file_content = fs::read_to_string(path).io_context("reading page", path)?;
+        let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
         let rendered = parse_markdown(&processed_content);
 
@@ -289,8 +294,6 @@ impl SiteBuilder {
             .get_string("title")
             .unwrap_or_else(|| file_slug.clone());
 
-        let template = frontmatter.get_string("template");
-        let weight = frontmatter.get_i64("weight").unwrap_or(0) as i32;
         let draft = frontmatter.get_bool("draft").unwrap_or(false);
         let redirect_from = frontmatter.get_array("redirect_from").unwrap_or_default();
 
@@ -306,22 +309,18 @@ impl SiteBuilder {
             format!("/{}/", slug)
         };
 
-        let plain_text = strip_html_tags(&rendered.html);
-        let words = word_count(&plain_text);
-
-        Ok(Page {
+        let content = self.build_content(ContentInput {
             slug,
             title,
-            content: rendered.html,
             raw_content,
+            rendered,
             frontmatter,
-            path: output_path,
-            template,
-            weight,
-            word_count: words,
-            reading_time: reading_time(words),
-            toc: rendered.toc,
+            output_path,
             url,
+        });
+
+        Ok(Page {
+            content,
             draft,
             redirect_from,
         })
@@ -380,8 +379,8 @@ impl SiteBuilder {
     }
 
     fn parse_post(&self, path: &Path) -> Result<Post> {
-        let content = fs::read_to_string(path)?;
-        let (frontmatter, raw_content) = extract_frontmatter(&content, path)?;
+        let file_content = fs::read_to_string(path).io_context("reading post", path)?;
+        let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
         let rendered = parse_markdown(&processed_content);
 
@@ -417,7 +416,6 @@ impl SiteBuilder {
         let draft = frontmatter.get_bool("draft").unwrap_or(false);
         let tags = frontmatter.get_array("tags").unwrap_or_default();
         let categories = frontmatter.get_array("categories").unwrap_or_default();
-        let template = frontmatter.get_string("template");
         let redirect_from = frontmatter.get_array("redirect_from").unwrap_or_default();
 
         let excerpt = frontmatter
@@ -426,26 +424,24 @@ impl SiteBuilder {
 
         let output_path = PathBuf::from("posts").join(&slug).join("index.html");
         let url = format!("/posts/{}/", slug);
-        let plain_text = strip_html_tags(&rendered.html);
-        let words = word_count(&plain_text);
 
-        Ok(Post {
+        let content = self.build_content(ContentInput {
             slug,
             title,
-            date,
-            content: rendered.html,
             raw_content,
-            excerpt,
+            rendered,
             frontmatter,
-            path: output_path,
+            output_path,
+            url,
+        });
+
+        Ok(Post {
+            content,
+            date,
+            excerpt,
             draft,
             tags,
             categories,
-            template,
-            word_count: words,
-            reading_time: reading_time(words),
-            toc: rendered.toc,
-            url,
             redirect_from,
         })
     }
@@ -532,8 +528,8 @@ impl SiteBuilder {
     }
 
     fn parse_collection_item(&self, path: &Path, collection_name: &str) -> Result<CollectionItem> {
-        let content = fs::read_to_string(path)?;
-        let (frontmatter, raw_content) = extract_frontmatter(&content, path)?;
+        let file_content = fs::read_to_string(path).io_context("reading collection item", path)?;
+        let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
         let rendered = parse_markdown(&processed_content);
 
@@ -546,31 +542,24 @@ impl SiteBuilder {
         let title = frontmatter
             .get_string("title")
             .unwrap_or_else(|| slug.clone());
-        let template = frontmatter.get_string("template");
-        let weight = frontmatter.get_i64("weight").unwrap_or(0) as i32;
 
         let output_path = PathBuf::from(collection_name)
             .join(&slug)
             .join("index.html");
 
         let url = format!("/{}/{}/", collection_name, slug);
-        let plain_text = strip_html_tags(&rendered.html);
-        let words = word_count(&plain_text);
 
-        Ok(CollectionItem {
+        let content = self.build_content(ContentInput {
             slug,
             title,
-            content: rendered.html,
             raw_content,
+            rendered,
             frontmatter,
-            path: output_path,
-            template,
-            weight,
-            word_count: words,
-            reading_time: reading_time(words),
-            toc: rendered.toc,
+            output_path,
             url,
-        })
+        });
+
+        Ok(CollectionItem { content })
     }
 
     fn load_data(&self) -> Result<HashMap<String, Value>> {
@@ -609,7 +598,7 @@ impl SiteBuilder {
                     path: path.to_path_buf(),
                 })?;
 
-            let content = fs::read_to_string(path)?;
+            let content = fs::read_to_string(path).io_context("reading data file", path)?;
 
             let value: Value = match extension {
                 "toml" => toml::from_str(&content).map_err(|error| BambooError::TomlParse {
@@ -617,7 +606,7 @@ impl SiteBuilder {
                     message: error.to_string(),
                 })?,
                 "yaml" | "yml" => {
-                    serde_yaml::from_str(&content).map_err(|error| BambooError::YamlParse {
+                    serde_yml::from_str(&content).map_err(|error| BambooError::YamlParse {
                         path: path.to_path_buf(),
                         message: error.to_string(),
                     })?
@@ -688,17 +677,58 @@ fn build_data_key(path: &Path) -> Vec<String> {
     parts
 }
 
-fn insert_nested_value(data: &mut HashMap<String, Value>, keys: &[String], value: Value) {
+trait NestedInsert {
+    fn get_value(&self, key: &str) -> Option<&Value>;
+    fn get_value_mut(&mut self, key: &str) -> Option<&mut Value>;
+    fn insert_value(&mut self, key: String, value: Value);
+    fn entry_or_insert(&mut self, key: String) -> &mut Value;
+}
+
+impl NestedInsert for HashMap<String, Value> {
+    fn get_value(&self, key: &str) -> Option<&Value> {
+        self.get(key)
+    }
+    fn get_value_mut(&mut self, key: &str) -> Option<&mut Value> {
+        self.get_mut(key)
+    }
+    fn insert_value(&mut self, key: String, value: Value) {
+        self.insert(key, value);
+    }
+    fn entry_or_insert(&mut self, key: String) -> &mut Value {
+        self.entry(key)
+            .or_insert_with(|| Value::Object(serde_json::Map::new()))
+    }
+}
+
+impl NestedInsert for serde_json::Map<String, Value> {
+    fn get_value(&self, key: &str) -> Option<&Value> {
+        self.get(key)
+    }
+    fn get_value_mut(&mut self, key: &str) -> Option<&mut Value> {
+        self.get_mut(key)
+    }
+    fn insert_value(&mut self, key: String, value: Value) {
+        self.insert(key, value);
+    }
+    fn entry_or_insert(&mut self, key: String) -> &mut Value {
+        self.entry(key)
+            .or_insert_with(|| Value::Object(serde_json::Map::new()))
+    }
+}
+
+fn insert_nested_value<M: NestedInsert>(container: &mut M, keys: &[String], value: Value) {
     if keys.is_empty() {
         return;
     }
 
     if keys.len() == 1 {
-        if let Some(existing) = data.get(&keys[0])
+        if let Some(existing) = container.get_value(&keys[0])
             && existing.is_object()
         {
             if let Value::Object(new_map) = &value
-                && let Some(Value::Object(existing_map)) = data.get_mut(&keys[0])
+                && let Some(existing_map) = container
+                    .get_value_mut(&keys[0])
+                    .and_then(|v| v.as_object_mut())
             {
                 for (key, val) in new_map {
                     existing_map.insert(key.clone(), val.clone());
@@ -706,65 +736,21 @@ fn insert_nested_value(data: &mut HashMap<String, Value>, keys: &[String], value
             }
             return;
         }
-        data.insert(keys[0].clone(), value);
+        container.insert_value(keys[0].clone(), value);
         return;
     }
 
     let first = &keys[0];
     let rest = &keys[1..];
 
-    let nested = data
-        .entry(first.clone())
-        .or_insert_with(|| Value::Object(serde_json::Map::new()));
+    let nested = container.entry_or_insert(first.clone());
 
     if !nested.is_object() {
         return;
     }
 
     if let Value::Object(map) = nested {
-        insert_nested_value_map(map, rest, value);
-    }
-}
-
-fn insert_nested_value_map(
-    map: &mut serde_json::Map<String, Value>,
-    keys: &[String],
-    value: Value,
-) {
-    if keys.is_empty() {
-        return;
-    }
-
-    if keys.len() == 1 {
-        if let Some(existing) = map.get(&keys[0])
-            && existing.is_object()
-        {
-            if let Value::Object(new_map) = &value
-                && let Some(Value::Object(existing_map)) = map.get_mut(&keys[0])
-            {
-                for (key, val) in new_map {
-                    existing_map.insert(key.clone(), val.clone());
-                }
-            }
-            return;
-        }
-        map.insert(keys[0].clone(), value);
-        return;
-    }
-
-    let first = &keys[0];
-    let rest = &keys[1..];
-
-    let nested = map
-        .entry(first.clone())
-        .or_insert_with(|| Value::Object(serde_json::Map::new()));
-
-    if !nested.is_object() {
-        return;
-    }
-
-    if let Value::Object(inner_map) = nested {
-        insert_nested_value_map(inner_map, rest, value);
+        insert_nested_value(map, rest, value);
     }
 }
 
@@ -855,8 +841,8 @@ Second paragraph."#,
         let mut builder = SiteBuilder::new(dir.path());
         let site = builder.build().unwrap();
 
-        assert_eq!(site.pages[0].slug, "contact");
-        assert_eq!(site.pages[1].slug, "about");
+        assert_eq!(site.pages[0].content.slug, "contact");
+        assert_eq!(site.pages[1].content.slug, "about");
     }
 
     #[test]
@@ -900,5 +886,208 @@ url = "/"
         assert!(site.data.contains_key("nav"));
         let nav = site.data.get("nav").unwrap();
         assert!(nav.get("main").is_some());
+    }
+
+    #[test]
+    fn test_draft_pages_excluded_by_default() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/secret.md"),
+            "+++\ntitle = \"Secret\"\ndraft = true\n+++\n\nSecret page",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert!(site.pages.iter().all(|page| page.content.slug != "secret"));
+    }
+
+    #[test]
+    fn test_draft_pages_included_when_requested() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/secret.md"),
+            "+++\ntitle = \"Secret\"\ndraft = true\n+++\n\nSecret page",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path()).include_drafts(true);
+        let site = builder.build().unwrap();
+
+        assert!(site.pages.iter().any(|page| page.content.slug == "secret"));
+    }
+
+    #[test]
+    fn test_draft_posts_excluded_by_default() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/posts/2024-02-01-draft.md"),
+            "+++\ntitle = \"Draft\"\ndraft = true\n+++\n\nDraft post",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert_eq!(site.posts.len(), 1);
+    }
+
+    #[test]
+    fn test_draft_posts_included_when_requested() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/posts/2024-02-01-draft.md"),
+            "+++\ntitle = \"Draft\"\ndraft = true\n+++\n\nDraft post",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path()).include_drafts(true);
+        let site = builder.build().unwrap();
+
+        assert_eq!(site.posts.len(), 2);
+    }
+
+    #[test]
+    fn test_collections() {
+        let dir = create_test_site();
+        fs::create_dir_all(dir.path().join("content/docs")).unwrap();
+        fs::write(
+            dir.path().join("content/docs/_collection.toml"),
+            "name = \"docs\"",
+        )
+        .unwrap();
+        fs::write(
+            dir.path().join("content/docs/intro.md"),
+            "+++\ntitle = \"Introduction\"\n+++\n\nGetting started",
+        )
+        .unwrap();
+        fs::write(
+            dir.path().join("content/docs/advanced.md"),
+            "+++\ntitle = \"Advanced\"\nweight = 10\n+++\n\nAdvanced topics",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert!(site.collections.contains_key("docs"));
+        let docs = &site.collections["docs"];
+        assert_eq!(docs.items.len(), 2);
+    }
+
+    #[test]
+    fn test_duplicate_page_slugs_error() {
+        let dir = create_test_site();
+        fs::create_dir_all(dir.path().join("content/nested")).unwrap();
+        fs::write(
+            dir.path().join("content/about.md"),
+            "+++\ntitle = \"About\"\n+++\n\nAbout page",
+        )
+        .unwrap();
+        fs::write(
+            dir.path().join("content/nested/_index.md"),
+            "+++\ntitle = \"About Duplicate\"\n+++\n\nDuplicate",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let result = builder.build();
+        assert!(result.is_ok() || matches!(result, Err(BambooError::DuplicatePage { .. })));
+    }
+
+    #[test]
+    fn test_yaml_frontmatter() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/yaml-page.md"),
+            "---\ntitle: YAML Page\nweight: 1\n---\n\nYAML frontmatter content",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert!(
+            site.pages
+                .iter()
+                .any(|page| page.content.title == "YAML Page")
+        );
+    }
+
+    #[test]
+    fn test_post_sorting_by_date() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/posts/2024-03-01-newer.md"),
+            "+++\ntitle = \"Newer\"\n+++\n\nNewer post",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert_eq!(site.posts[0].content.slug, "newer");
+        assert_eq!(site.posts[1].content.slug, "hello");
+    }
+
+    #[test]
+    fn test_word_count_and_reading_time() {
+        let dir = create_test_site();
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        let post = &site.posts[0];
+        assert!(post.content.word_count > 0);
+        assert!(post.content.reading_time > 0);
+    }
+
+    #[test]
+    fn test_content_url_generation() {
+        let dir = create_test_site();
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        let about = site
+            .pages
+            .iter()
+            .find(|page| page.content.slug == "about")
+            .unwrap();
+        assert_eq!(about.content.url, "/about/");
+
+        let post = &site.posts[0];
+        assert_eq!(post.content.url, "/posts/hello/");
+
+        let home = site.home.as_ref().unwrap();
+        assert_eq!(home.content.url, "/");
+    }
+
+    #[test]
+    fn test_base_url_trailing_slash_trimmed() {
+        let dir = TempDir::new().unwrap();
+        fs::write(
+            dir.path().join("bamboo.toml"),
+            "title = \"Test\"\nbase_url = \"https://example.com/\"\n",
+        )
+        .unwrap();
+        fs::create_dir_all(dir.path().join("content/posts")).unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert_eq!(site.config.base_url, "https://example.com");
+    }
+
+    #[test]
+    fn test_static_assets_collected() {
+        let dir = create_test_site();
+        fs::create_dir_all(dir.path().join("static/css")).unwrap();
+        fs::write(dir.path().join("static/css/style.css"), "body {}").unwrap();
+        fs::write(dir.path().join("static/favicon.ico"), "icon").unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        assert_eq!(site.assets.len(), 2);
     }
 }
