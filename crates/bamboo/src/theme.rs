@@ -27,6 +27,7 @@ const DEFAULT_DOCS_TEMPLATE: &str = include_str!("../themes/default/templates/do
 const DEFAULT_PORTFOLIO_TEMPLATE: &str = include_str!("../themes/default/templates/portfolio.html");
 const DEFAULT_LANDING_TEMPLATE: &str = include_str!("../themes/default/templates/landing.html");
 const DEFAULT_CHANGELOG_TEMPLATE: &str = include_str!("../themes/default/templates/changelog.html");
+const DEFAULT_BOOK_TEMPLATE: &str = include_str!("../themes/default/templates/book.html");
 const DEFAULT_TAGS_TEMPLATE: &str = include_str!("../themes/default/templates/tags.html");
 const DEFAULT_TAG_TEMPLATE: &str = include_str!("../themes/default/templates/tag.html");
 const DEFAULT_CATEGORIES_TEMPLATE: &str =
@@ -148,6 +149,7 @@ impl ThemeEngine {
         tera.add_raw_template("portfolio.html", DEFAULT_PORTFOLIO_TEMPLATE)?;
         tera.add_raw_template("landing.html", DEFAULT_LANDING_TEMPLATE)?;
         tera.add_raw_template("changelog.html", DEFAULT_CHANGELOG_TEMPLATE)?;
+        tera.add_raw_template("book.html", DEFAULT_BOOK_TEMPLATE)?;
         tera.add_raw_template("tags.html", DEFAULT_TAGS_TEMPLATE)?;
         tera.add_raw_template("tag.html", DEFAULT_TAG_TEMPLATE)?;
         tera.add_raw_template("categories.html", DEFAULT_CATEGORIES_TEMPLATE)?;

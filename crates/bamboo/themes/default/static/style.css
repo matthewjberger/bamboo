@@ -126,8 +126,10 @@ blockquote {
 .top-16 { top: 4rem; }
 .top-24 { top: 6rem; }
 .right-0 { right: 0; }
+.right-6 { right: 1.5rem; }
 .right-2rem { right: 2rem; }
 .bottom-0 { bottom: 0; }
+.bottom-6 { bottom: 1.5rem; }
 .bottom-2rem { bottom: 2rem; }
 .left-0 { left: 0; }
 .left-1\/2 { left: 50%; }
@@ -217,6 +219,7 @@ blockquote {
 .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
 .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
 .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
 .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
 .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
 .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
@@ -427,6 +430,7 @@ blockquote {
 
 .bg-blue-50 { background-color: #eff6ff; }
 .bg-blue-500 { background-color: #3b82f6; }
+.bg-blue-600 { background-color: #2563eb; }
 
 .bg-purple-50 { background-color: #faf5ff; }
 .bg-purple-500 { background-color: #8b5cf6; }
@@ -455,6 +459,7 @@ blockquote {
 .dark .dark\:bg-white\/10 { background-color: rgba(255, 255, 255, 0.1); }
 
 .dark .dark\:bg-blue-400 { background-color: #60a5fa; }
+.dark .dark\:bg-blue-500 { background-color: #3b82f6; }
 .dark .dark\:bg-blue-500\/10 { background-color: rgba(59, 130, 246, 0.1); }
 .dark .dark\:bg-blue-500\/20 { background-color: rgba(59, 130, 246, 0.2); }
 
@@ -719,6 +724,9 @@ blockquote {
   .lg\:overflow-y-auto { overflow-y: auto; }
   .lg\:grid-cols-\[280px_1fr\] { grid-template-columns: 280px 1fr; }
   .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lg\:hidden { display: none; }
+  .lg\:px-16 { padding-left: 4rem; padding-right: 4rem; }
+  .lg\:py-12 { padding-top: 3rem; padding-bottom: 3rem; }
 }
 
 /* ==========================================================================
@@ -743,6 +751,7 @@ blockquote {
 .hover\:bg-blue-100:hover { background-color: #dbeafe; }
 .hover\:bg-blue-500:hover { background-color: #3b82f6; }
 .hover\:bg-blue-600:hover { background-color: #2563eb; }
+.hover\:bg-blue-700:hover { background-color: #1d4ed8; }
 
 .hover\:bg-purple-100:hover { background-color: #f3e8ff; }
 .hover\:bg-purple-600:hover { background-color: #7c3aed; }
@@ -773,6 +782,7 @@ blockquote {
 
 .dark .dark\:hover\:bg-blue-500\/10:hover { background-color: rgba(59, 130, 246, 0.1); }
 .dark .dark\:hover\:bg-blue-500\/20:hover { background-color: rgba(59, 130, 246, 0.2); }
+.dark .dark\:hover\:bg-blue-600:hover { background-color: #2563eb; }
 
 .dark .dark\:hover\:bg-purple-500\/20:hover { background-color: rgba(139, 92, 246, 0.2); }
 
@@ -1096,6 +1106,11 @@ blockquote {
 
 .prose-headings\:font-bold :where(h1, h2, h3, h4, h5, h6):not(:where([class~="not-prose"] *)) {
   font-weight: 700 !important;
+}
+
+.prose-h1\:text-3xl :where(h1):not(:where([class~="not-prose"] *)) {
+  font-size: 1.875rem !important;
+  line-height: 2.25rem !important;
 }
 
 .prose-h1\:text-4xl :where(h1):not(:where([class~="not-prose"] *)) {

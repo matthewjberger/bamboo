@@ -407,6 +407,7 @@ The repository includes example sites:
 | Example | Description | Command |
 |---------|-------------|---------|
 | `blog` | Standard blog with posts, pages, collections | `just example blog` |
+| `book` | Book with chapters, sidebar navigation, prev/next | `just example book` |
 | `changelog` | Software release notes and changelog | `just example changelog` |
 | `docs` | Documentation site with sidebar navigation | `just example docs` |
 | `landing` | Product landing page with pricing | `just example landing` |

@@ -29,6 +29,12 @@ url = "./examples/landing/"
 icon = "rocket"
 
 [[items]]
+title = "Book"
+description = "A book with chapters, sidebar navigation, and prev/next navigation."
+url = "./examples/book/"
+icon = "book-open"
+
+[[items]]
 title = "Slideshow"
 description = "Presentation slides with keyboard navigation and speaker notes."
 url = "./examples/slideshow/"

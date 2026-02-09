@@ -1,0 +1,7 @@
+title = "The Rust Cookbook"
+base_url = "http://localhost:3000"
+description = "A practical guide to common Rust programming tasks"
+language = "en"
+
+[extra]
+github = "https://github.com/rust-cookbook/rust-cookbook"

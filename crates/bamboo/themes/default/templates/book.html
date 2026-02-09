@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+  .book-sidebar::-webkit-scrollbar { width: 6px; }
+  .book-sidebar::-webkit-scrollbar-track { background: transparent; }
+  .book-sidebar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+  .dark .book-sidebar::-webkit-scrollbar-thumb { background: #6b7280; }
+
+  .book-chapter-link.active {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    font-weight: 600;
+    border-left: 3px solid #2563eb;
+  }
+  .dark .book-chapter-link.active {
+    background-color: rgba(96, 165, 250, 0.1);
+    color: #60a5fa;
+    border-left-color: #60a5fa;
+  }
+
+  .book-section-toggle { cursor: pointer; user-select: none; }
+  .book-section-toggle::before {
+    content: '\25B6';
+    display: inline-block;
+    font-size: 0.6em;
+    margin-right: 0.5rem;
+    transition: transform 150ms ease;
+    vertical-align: middle;
+  }
+  .book-section-toggle.open::before {
+    transform: rotate(90deg);
+  }
+
+  @media (max-width: 1023px) {
+    .book-layout { grid-template-columns: 1fr !important; }
+    .book-sidebar-container { display: none; }
+    .book-sidebar-container.mobile-open { display: block; position: fixed; top: 4rem; left: 0; right: 0; bottom: 0; z-index: 40; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="book-layout grid gap-0" style="grid-template-columns: 280px 1fr; min-height: calc(100vh - 4rem);">
+
+  <aside class="book-sidebar-container">
+    <div class="book-sidebar sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-6" style="margin-left: -1rem; padding-left: 1rem;">
+      {% if site.data.sidebar %}
+        {% for section in site.data.sidebar.sections %}
+        <div class="mb-4">
+          <div class="book-section-toggle open text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold py-2" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('hidden');">
+            {{ section.title }}
+          </div>
+          <ul class="space-y-0">
+            {% for chapter in section.items %}
+            <li>
+              <a href="{{ site.config.base_url }}{{ chapter.url }}"
+                 data-book-url="{{ chapter.url }}"
+                 class="book-chapter-link block py-1.5 px-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded">
+                {% if chapter.number %}<span class="text-gray-400 dark:text-gray-500 mr-1 tabular-nums text-xs">{{ chapter.number }}</span>{% endif %}{{ chapter.title }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="min-w-0 px-8 py-8 lg:px-16 lg:py-12 max-w-4xl">
+    <article class="prose prose-lg dark:prose-invert max-w-none
+      prose-headings:font-bold prose-headings:text-gray-900 dark:prose-headings:text-white
+      prose-h1:text-3xl prose-h1:mb-6 prose-h1:pb-4 prose-h1:border-b prose-h1:border-gray-200 dark:prose-h1:border-gray-700
+      prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
+      prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+      prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+      prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:marker:text-gray-400 dark:prose-li:marker:text-gray-500
+      prose-ol:text-gray-600 dark:prose-ol:text-gray-300
+      prose-ul:text-gray-600 dark:prose-ul:text-gray-300
+      prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+      prose-strong:text-gray-900 dark:prose-strong:text-white
+      prose-code:text-pink-600 dark:prose-code:text-pink-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-code:font-normal
+      prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 prose-pre:rounded-xl
+      prose-table:border-collapse prose-table:w-full
+      prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:p-3 prose-th:border prose-th:border-gray-200 dark:prose-th:border-gray-700 prose-th:text-left prose-th:text-gray-900 dark:prose-th:text-white prose-th:font-semibold
+      prose-td:p-3 prose-td:border prose-td:border-gray-200 dark:prose-td:border-gray-700 prose-td:text-gray-600 dark:prose-td:text-gray-300
+      prose-blockquote:border-blue-500 prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400
+      prose-hr:border-gray-200 dark:prose-hr:border-gray-700">
+      {% if item %}
+        {{ item.content | safe }}
+      {% elif home %}
+        {{ home.content | safe }}
+      {% endif %}
+    </article>
+
+    {% if site.data.sidebar %}
+    <nav class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center" id="book-prev-next">
+    </nav>
+    {% endif %}
+  </main>
+</div>
+
+<button
+  id="book-sidebar-toggle"
+  class="lg:hidden fixed bottom-6 right-6 z-50 bg-blue-600 dark:bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+  aria-label="Toggle sidebar"
+>
+  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+  </svg>
+</button>
+
+<script>
+(function() {
+  var toggle = document.getElementById('book-sidebar-toggle');
+  var sidebar = document.querySelector('.book-sidebar-container');
+  if (toggle && sidebar) {
+    toggle.addEventListener('click', function() {
+      sidebar.classList.toggle('mobile-open');
+    });
+  }
+
+  var currentPath = window.location.pathname.replace(/\/+$/, '/');
+  var links = document.querySelectorAll('.book-chapter-link');
+  var chapters = [];
+  var currentIndex = -1;
+
+  for (var index = 0; index < links.length; index++) {
+    var link = links[index];
+    var url = link.getAttribute('data-book-url');
+    chapters.push({ title: link.textContent.trim(), url: url, href: link.getAttribute('href') });
+    var linkPath = new URL(link.href).pathname.replace(/\/+$/, '/');
+    if (linkPath === currentPath) {
+      link.classList.add('active');
+      currentIndex = index;
+    }
+  }
+
+  var nav = document.getElementById('book-prev-next');
+  if (nav && chapters.length > 0) {
+    var prevHtml = '<div>';
+    if (currentIndex > 0) {
+      var prev = chapters[currentIndex - 1];
+      prevHtml = '<div><a href="' + prev.href + '" class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">' +
+        '<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>' +
+        prev.title + '</a>';
+    }
+    prevHtml += '</div>';
+
+    var nextHtml = '<div>';
+    if (currentIndex >= 0 && currentIndex < chapters.length - 1) {
+      var next = chapters[currentIndex + 1];
+      nextHtml = '<div><a href="' + next.href + '" class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">' +
+        next.title +
+        '<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>' +
+        '</a>';
+    }
+    nextHtml += '</div>';
+
+    nav.innerHTML = prevHtml + nextHtml;
+  }
+})();
+</script>
+{% endblock %}

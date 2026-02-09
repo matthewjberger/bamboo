@@ -1,0 +1,31 @@
+[[sections]]
+title = "Getting Started"
+items = [
+    { title = "Introduction", url = "/", number = "" },
+    { title = "Error Handling", url = "/chapters/error-handling/", number = "1." },
+    { title = "Data Structures", url = "/chapters/data-structures/", number = "2." },
+    { title = "Type System Patterns", url = "/chapters/type-system/", number = "3." },
+]
+
+[[sections]]
+title = "Working with Data"
+items = [
+    { title = "Serialization", url = "/chapters/serialization/", number = "4." },
+    { title = "File I/O", url = "/chapters/file-io/", number = "5." },
+    { title = "Parsing Text", url = "/chapters/parsing/", number = "6." },
+]
+
+[[sections]]
+title = "Networking & Async"
+items = [
+    { title = "HTTP Clients", url = "/chapters/http-clients/", number = "7." },
+    { title = "Building Servers", url = "/chapters/servers/", number = "8." },
+    { title = "Async Patterns", url = "/chapters/async-patterns/", number = "9." },
+]
+
+[[sections]]
+title = "Systems Programming"
+items = [
+    { title = "Concurrency", url = "/chapters/concurrency/", number = "10." },
+    { title = "Command-Line Tools", url = "/chapters/cli-tools/", number = "11." },
+]
