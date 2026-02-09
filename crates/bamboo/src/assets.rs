@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use rayon::prelude::*;
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
@@ -11,9 +12,12 @@ pub struct AssetConfig {
     pub minify: bool,
     pub fingerprint: bool,
     pub base_url: String,
+    pub sass_load_paths: Vec<std::path::PathBuf>,
 }
 
 pub fn process_assets(output_dir: &Path, config: &AssetConfig) -> Result<HashMap<String, String>> {
+    compile_sass_files(output_dir, &config.sass_load_paths)?;
+
     if config.minify {
         minify_css_files(output_dir)?;
         minify_js_files(output_dir)?;
@@ -163,29 +167,31 @@ fn update_html_references(
 fn minify_css_files(output_dir: &Path) -> Result<()> {
     use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet};
     let css_files = collect_files_with_extension(output_dir, "css")?;
-    for file_path in css_files {
-        let source = fs::read_to_string(&file_path)?;
-        let mut stylesheet = StyleSheet::parse(&source, ParserOptions::default())
-            .map_err(|error| std::io::Error::other(error.to_string()))?;
-        stylesheet
-            .minify(MinifyOptions::default())
-            .map_err(|error| std::io::Error::other(error.to_string()))?;
-        let result = stylesheet
-            .to_css(PrinterOptions {
-                minify: true,
-                ..Default::default()
-            })
-            .map_err(|error| std::io::Error::other(error.to_string()))?;
-        fs::write(&file_path, result.code)?;
-    }
-    Ok(())
+    css_files
+        .par_iter()
+        .try_for_each(|file_path| -> Result<()> {
+            let source = fs::read_to_string(file_path)?;
+            let mut stylesheet = StyleSheet::parse(&source, ParserOptions::default())
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            stylesheet
+                .minify(MinifyOptions::default())
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            let result = stylesheet
+                .to_css(PrinterOptions {
+                    minify: true,
+                    ..Default::default()
+                })
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            fs::write(file_path, result.code)?;
+            Ok(())
+        })
 }
 
 fn minify_js_files(output_dir: &Path) -> Result<()> {
     let js_files = collect_files_with_extension(output_dir, "js")?;
-    let session = minify_js::Session::new();
-    for file_path in js_files {
-        let source = fs::read(&file_path)?;
+    js_files.par_iter().try_for_each(|file_path| -> Result<()> {
+        let session = minify_js::Session::new();
+        let source = fs::read(file_path)?;
         let mut output = Vec::new();
         match minify_js::minify(
             &session,
@@ -194,7 +200,7 @@ fn minify_js_files(output_dir: &Path) -> Result<()> {
             &mut output,
         ) {
             Ok(()) => {
-                fs::write(&file_path, output)?;
+                fs::write(file_path, output)?;
             }
             Err(error) => {
                 eprintln!(
@@ -204,7 +210,63 @@ fn minify_js_files(output_dir: &Path) -> Result<()> {
                 );
             }
         }
+        Ok(())
+    })
+}
+
+fn compile_sass_files(output_dir: &Path, load_paths: &[std::path::PathBuf]) -> Result<()> {
+    let scss_files = collect_files_with_extension(output_dir, "scss")?;
+    let sass_files = collect_files_with_extension(output_dir, "sass")?;
+
+    let all_sass_files: Vec<std::path::PathBuf> =
+        scss_files.into_iter().chain(sass_files).collect();
+
+    if all_sass_files.is_empty() {
+        return Ok(());
     }
+
+    for file_path in &all_sass_files {
+        let filename = file_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        if filename.starts_with('_') {
+            continue;
+        }
+
+        let mut options = grass::Options::default();
+        for load_path in load_paths {
+            options = options.load_path(load_path);
+        }
+        if let Some(parent) = file_path.parent() {
+            options = options.load_path(parent);
+        }
+
+        let is_indented = file_path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            == Some("sass");
+        if is_indented {
+            options = options.input_syntax(grass::InputSyntax::Sass);
+        }
+
+        let compiled = grass::from_path(file_path, &options).map_err(|error| {
+            crate::error::BambooError::SassCompile {
+                path: file_path.clone(),
+                message: error.to_string(),
+            }
+        })?;
+
+        let css_path = file_path.with_extension("css");
+        fs::write(&css_path, compiled)?;
+    }
+
+    for file_path in &all_sass_files {
+        if file_path.exists() {
+            fs::remove_file(file_path)?;
+        }
+    }
+
     Ok(())
 }
 
@@ -216,13 +278,14 @@ fn minify_html_files(output_dir: &Path) -> Result<()> {
     cfg.minify_js = true;
     cfg.keep_closing_tags = true;
 
-    for file_path in html_files {
-        let content = fs::read(&file_path)?;
-        let minified = minify_html::minify(&content, &cfg);
-        fs::write(&file_path, minified)?;
-    }
-
-    Ok(())
+    html_files
+        .par_iter()
+        .try_for_each(|file_path| -> Result<()> {
+            let content = fs::read(file_path)?;
+            let minified = minify_html::minify(&content, &cfg);
+            fs::write(file_path, minified)?;
+            Ok(())
+        })
 }
 
 #[cfg(test)]

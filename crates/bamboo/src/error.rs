@@ -55,6 +55,12 @@ pub enum BambooError {
     #[error("Image processing error: {message}")]
     ImageProcessing { message: String },
 
+    #[error("Sass compilation error in {path}: {message}")]
+    SassCompile { path: PathBuf, message: String },
+
+    #[error("Broken reference '{{{{< ref \"{reference}\" >}}}}': no page found matching that path")]
+    BrokenReference { reference: String },
+
     #[error("Duplicate page slug '{slug}' in {path} conflicts with {existing_path}")]
     DuplicatePage {
         slug: String,

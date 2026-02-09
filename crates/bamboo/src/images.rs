@@ -8,6 +8,7 @@ use walkdir::WalkDir;
 use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
 use image::{ImageEncoder, ImageReader};
+use rayon::prelude::*;
 
 use crate::error::Result;
 
@@ -81,117 +82,137 @@ fn is_generated_variant(path: &Path, configured_widths: &[u32]) -> bool {
 }
 
 pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageManifest> {
-    let mut variants: HashMap<String, Vec<ImageVariant>> = HashMap::new();
-
-    for entry in WalkDir::new(output_dir)
+    let image_paths: Vec<_> = WalkDir::new(output_dir)
         .into_iter()
         .filter_map(|entry| entry.ok())
-    {
-        let path = entry.path();
-        if !path.is_file() || !is_image_file(path) || is_generated_variant(path, &config.widths) {
-            continue;
-        }
+        .filter(|entry| {
+            let path = entry.path();
+            path.is_file() && is_image_file(path) && !is_generated_variant(path, &config.widths)
+        })
+        .map(|entry| entry.path().to_path_buf())
+        .collect();
 
-        let source_image = match ImageReader::open(path) {
-            Ok(reader) => match reader.decode() {
-                Ok(image) => image,
+    let results: Vec<Option<(String, Vec<ImageVariant>)>> = image_paths
+        .par_iter()
+        .map(|path| -> Option<(String, Vec<ImageVariant>)> {
+            let source_image = match ImageReader::open(path) {
+                Ok(reader) => match reader.decode() {
+                    Ok(image) => image,
+                    Err(error) => {
+                        eprintln!(
+                            "Warning: failed to decode image {}: {}",
+                            path.display(),
+                            error
+                        );
+                        return None;
+                    }
+                },
                 Err(error) => {
                     eprintln!(
-                        "Warning: failed to decode image {}: {}",
+                        "Warning: failed to open image {}: {}",
                         path.display(),
                         error
                     );
+                    return None;
+                }
+            };
+
+            let original_width = source_image.width();
+            let original_height = source_image.height();
+            let stem = path
+                .file_stem()
+                .and_then(|stem| stem.to_str())
+                .unwrap_or("image");
+            let parent_directory = path.parent().unwrap_or(output_dir);
+
+            let relative_original = path
+                .strip_prefix(output_dir)
+                .unwrap_or(path)
+                .to_string_lossy()
+                .replace('\\', "/");
+
+            let mut image_variants = Vec::new();
+
+            for &target_width in &config.widths {
+                if target_width >= original_width {
                     continue;
                 }
-            },
-            Err(error) => {
-                eprintln!(
-                    "Warning: failed to open image {}: {}",
-                    path.display(),
-                    error
-                );
-                continue;
-            }
-        };
 
-        let original_width = source_image.width();
-        let original_height = source_image.height();
-        let stem = path
-            .file_stem()
-            .and_then(|stem| stem.to_str())
-            .unwrap_or("image");
-        let parent_directory = path.parent().unwrap_or(output_dir);
+                let scale_factor = target_width as f64 / original_width as f64;
+                let target_height = (original_height as f64 * scale_factor).round() as u32;
+                let resized =
+                    source_image.resize_exact(target_width, target_height, FilterType::Lanczos3);
 
-        let relative_original = path
-            .strip_prefix(output_dir)
-            .unwrap_or(path)
-            .to_string_lossy()
-            .replace('\\', "/");
+                for format in &config.formats {
+                    let variant_filename = format!("{}-{}w.{}", stem, target_width, format);
+                    let variant_path = parent_directory.join(&variant_filename);
 
-        let mut image_variants = Vec::new();
-
-        for &target_width in &config.widths {
-            if target_width >= original_width {
-                continue;
-            }
-
-            let scale_factor = target_width as f64 / original_width as f64;
-            let target_height = (original_height as f64 * scale_factor).round() as u32;
-            let resized =
-                source_image.resize_exact(target_width, target_height, FilterType::Lanczos3);
-
-            for format in &config.formats {
-                let variant_filename = format!("{}-{}w.{}", stem, target_width, format);
-                let variant_path = parent_directory.join(&variant_filename);
-
-                match format.as_str() {
-                    "webp" => {
-                        let rgba_image = resized.to_rgba8();
-                        let encoder = webp::Encoder::from_rgba(
-                            rgba_image.as_raw(),
-                            resized.width(),
-                            resized.height(),
-                        );
-                        let encoded = encoder.encode(config.quality as f32);
-                        fs::write(&variant_path, &*encoded)?;
-                    }
-                    "jpg" | "jpeg" => {
-                        let file = File::create(&variant_path)?;
-                        let encoder = JpegEncoder::new_with_quality(&file, config.quality);
-                        let rgb_image = resized.to_rgb8();
-                        encoder
-                            .write_image(
-                                rgb_image.as_raw(),
+                    let write_result: std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> = match format.as_str() {
+                        "webp" => {
+                            let rgba_image = resized.to_rgba8();
+                            let encoder = webp::Encoder::from_rgba(
+                                rgba_image.as_raw(),
                                 resized.width(),
                                 resized.height(),
-                                image::ExtendedColorType::Rgb8,
-                            )
-                            .map_err(|error| std::io::Error::other(error.to_string()))?;
+                            );
+                            let encoded = encoder.encode(config.quality as f32);
+                            fs::write(&variant_path, &*encoded).map_err(|error| error.into())
+                        }
+                        "jpg" | "jpeg" => {
+                            (|| -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+                                let file = File::create(&variant_path)?;
+                                let encoder = JpegEncoder::new_with_quality(&file, config.quality);
+                                let rgb_image = resized.to_rgb8();
+                                encoder.write_image(
+                                    rgb_image.as_raw(),
+                                    resized.width(),
+                                    resized.height(),
+                                    image::ExtendedColorType::Rgb8,
+                                )?;
+                                Ok(())
+                            })()
+                        }
+                        _ => {
+                            resized
+                                .save(&variant_path)
+                                .map_err(|error| error.into())
+                        }
+                    };
+
+                    if let Err(error) = write_result {
+                        eprintln!(
+                            "Warning: failed to write image variant {}: {}",
+                            variant_path.display(),
+                            error
+                        );
+                        continue;
                     }
-                    _ => {
-                        resized
-                            .save(&variant_path)
-                            .map_err(|error| std::io::Error::other(error.to_string()))?;
-                    }
+
+                    let relative_variant = variant_path
+                        .strip_prefix(output_dir)
+                        .unwrap_or(&variant_path)
+                        .to_string_lossy()
+                        .replace('\\', "/");
+
+                    image_variants.push(ImageVariant {
+                        path: relative_variant,
+                        width: target_width,
+                        format: format.clone(),
+                    });
                 }
-
-                let relative_variant = variant_path
-                    .strip_prefix(output_dir)
-                    .unwrap_or(&variant_path)
-                    .to_string_lossy()
-                    .replace('\\', "/");
-
-                image_variants.push(ImageVariant {
-                    path: relative_variant,
-                    width: target_width,
-                    format: format.clone(),
-                });
             }
-        }
 
-        if !image_variants.is_empty() {
-            variants.insert(relative_original, image_variants);
-        }
+            if !image_variants.is_empty() {
+                Some((relative_original, image_variants))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let mut variants: HashMap<String, Vec<ImageVariant>> = HashMap::new();
+    for result in results.into_iter().flatten() {
+        variants.insert(result.0, result.1);
     }
 
     Ok(ImageManifest { variants })

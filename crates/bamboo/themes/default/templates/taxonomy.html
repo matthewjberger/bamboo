@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}{{ taxonomy_name | title }} | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">{{ taxonomy_name | title }}</h1>
+    <div class="flex flex-wrap gap-3">
+        {% for item in taxonomy_items %}
+        <a href="{{ site.config.base_url }}/{{ taxonomy_name }}/{{ item.slug }}/"
+           class="px-4 py-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full font-medium border border-blue-100 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors">
+            {{ item.name }} <span class="text-blue-400 dark:text-blue-500">({{ item.count }})</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

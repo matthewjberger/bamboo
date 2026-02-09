@@ -1,11 +1,13 @@
 use crate::error::{BambooError, IoContext, Result};
 use crate::parsing::{
-    extract_excerpt, extract_frontmatter, parse_date_from_filename, parse_markdown, reading_time,
-    word_count,
+    MarkdownRenderer, extract_excerpt, extract_frontmatter, parse_date_from_filename,
+    parse_markdown, preprocess_math, reading_time, word_count,
 };
 use crate::search::strip_html_tags;
 use crate::shortcodes::ShortcodeProcessor;
-use crate::types::{Asset, Collection, CollectionItem, Content, Page, Post, Site, SiteConfig};
+use crate::types::{
+    Asset, Collection, CollectionItem, Content, Page, Post, Site, SiteConfig, TaxonomyDefinition,
+};
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -30,6 +32,8 @@ pub struct SiteBuilder {
     include_drafts: bool,
     base_url_override: Option<String>,
     shortcode_processor: Option<ShortcodeProcessor>,
+    renderer: Option<MarkdownRenderer>,
+    math_enabled: bool,
 }
 
 impl SiteBuilder {
@@ -39,6 +43,8 @@ impl SiteBuilder {
             include_drafts: false,
             base_url_override: None,
             shortcode_processor: None,
+            renderer: None,
+            math_enabled: false,
         }
     }
 
@@ -64,6 +70,9 @@ impl SiteBuilder {
             config.base_url = url.trim_end_matches('/').to_string();
         }
 
+        self.renderer = Some(MarkdownRenderer::with_theme(&config.syntax_theme));
+        self.math_enabled = config.math;
+
         if self.shortcode_processor.is_none() {
             let mut dirs = Vec::new();
             let site_shortcodes = self.input_dir.join("templates").join("shortcodes");
@@ -73,8 +82,13 @@ impl SiteBuilder {
             self.shortcode_processor = Some(ShortcodeProcessor::new(&dirs)?);
         }
 
+        let ref_registry = self.build_ref_registry()?;
+        if let Some(ref mut processor) = self.shortcode_processor {
+            processor.set_ref_registry(ref_registry);
+        }
+
         let (home, mut pages) = self.load_pages()?;
-        let posts = self.load_posts()?;
+        let posts = self.load_posts(&config.taxonomies)?;
         let mut collections = self.load_collections()?;
         let data = self.load_data()?;
         let assets = self.collect_assets()?;
@@ -233,10 +247,157 @@ impl SiteBuilder {
 
     fn process_shortcodes(&self, content: &str) -> Result<String> {
         if let Some(ref processor) = self.shortcode_processor {
-            processor.process(content)
+            processor.process(content, self.renderer.as_ref())
         } else {
             Ok(content.to_string())
         }
+    }
+
+    fn should_enable_math(&self, frontmatter: &crate::types::Frontmatter) -> bool {
+        self.math_enabled || frontmatter.get_bool("math").unwrap_or(false)
+    }
+
+    fn render_markdown(&self, content: &str) -> crate::parsing::RenderedMarkdown {
+        if let Some(ref renderer) = self.renderer {
+            renderer.render(content)
+        } else {
+            parse_markdown(content)
+        }
+    }
+
+    fn build_ref_registry(&self) -> Result<HashMap<String, String>> {
+        let content_dir = self.input_dir.join("content");
+        let mut registry = HashMap::new();
+
+        if !content_dir.exists() {
+            return Ok(registry);
+        }
+
+        let reserved_dirs = self.find_reserved_dirs(&content_dir)?;
+
+        for entry in WalkDir::new(&content_dir).min_depth(1).into_iter() {
+            let entry = entry.map_err(|error| BambooError::WalkDir {
+                path: content_dir.clone(),
+                message: error.to_string(),
+            })?;
+
+            let path = entry.path();
+
+            if !path.is_file() {
+                continue;
+            }
+
+            if path
+                .extension()
+                .map(|extension| extension != "md")
+                .unwrap_or(true)
+            {
+                continue;
+            }
+
+            let filename = path.file_name().unwrap().to_string_lossy();
+            if filename.starts_with('_') && filename != "_index.md" {
+                continue;
+            }
+
+            let relative =
+                path.strip_prefix(&content_dir)
+                    .map_err(|_| BambooError::InvalidPath {
+                        path: path.to_path_buf(),
+                    })?;
+
+            let relative_str = relative.to_string_lossy().replace('\\', "/");
+
+            let parent_dir = path.parent().unwrap_or(path);
+            let is_in_posts = parent_dir
+                .strip_prefix(&content_dir)
+                .map(|relative_parent| {
+                    relative_parent
+                        .components()
+                        .next()
+                        .map(|component| component.as_os_str() == "posts")
+                        .unwrap_or(false)
+                })
+                .unwrap_or(false);
+
+            let is_in_collection = reserved_dirs
+                .iter()
+                .any(|reserved| parent_dir.starts_with(reserved) && !is_in_posts);
+
+            let url = if filename == "_index.md"
+                && relative
+                    .parent()
+                    .map(|parent| parent == Path::new(""))
+                    .unwrap_or(true)
+            {
+                "/".to_string()
+            } else if is_in_posts {
+                let (_, slug) =
+                    if let Some(parsed) = crate::parsing::parse_date_from_filename(&filename) {
+                        parsed
+                    } else {
+                        (
+                            String::new(),
+                            filename
+                                .strip_suffix(".md")
+                                .unwrap_or(&filename)
+                                .to_string(),
+                        )
+                    };
+                format!("/posts/{}/", slug)
+            } else if is_in_collection {
+                let collection_name = parent_dir
+                    .strip_prefix(&content_dir)
+                    .unwrap()
+                    .components()
+                    .next()
+                    .unwrap()
+                    .as_os_str()
+                    .to_string_lossy();
+                let slug = filename
+                    .strip_suffix(".md")
+                    .unwrap_or(&filename)
+                    .to_string();
+                format!("/{}/{}/", collection_name, slug)
+            } else {
+                let relative_dir = relative.parent().unwrap_or(Path::new(""));
+                let file_slug = if filename == "_index.md" {
+                    "index".to_string()
+                } else {
+                    filename
+                        .strip_suffix(".md")
+                        .unwrap_or(&filename)
+                        .to_string()
+                };
+
+                let slug = if relative_dir == Path::new("") {
+                    file_slug.clone()
+                } else {
+                    let dir_part = relative_dir.to_string_lossy().replace('\\', "/");
+                    if file_slug == "index" {
+                        dir_part.to_string()
+                    } else {
+                        format!("{}/{}", dir_part, file_slug)
+                    }
+                };
+
+                if slug == "index" {
+                    "/".to_string()
+                } else {
+                    format!("/{}/", slug)
+                }
+            };
+
+            registry.insert(relative_str.clone(), url.clone());
+            registry.insert(filename.to_string(), url.clone());
+
+            let without_extension = relative_str.strip_suffix(".md").unwrap_or(&relative_str);
+            if without_extension != relative_str {
+                registry.insert(without_extension.to_string(), url.clone());
+            }
+        }
+
+        Ok(registry)
     }
 
     fn build_content(&self, input: ContentInput) -> Content {
@@ -264,7 +425,12 @@ impl SiteBuilder {
         let file_content = fs::read_to_string(path).io_context("reading page", path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
-        let rendered = parse_markdown(&processed_content);
+        let math_processed = if self.should_enable_math(&frontmatter) {
+            preprocess_math(&processed_content)
+        } else {
+            processed_content
+        };
+        let rendered = self.render_markdown(&math_processed);
 
         let filename = path.file_name().unwrap().to_string_lossy();
 
@@ -326,7 +492,10 @@ impl SiteBuilder {
         })
     }
 
-    fn load_posts(&self) -> Result<Vec<Post>> {
+    fn load_posts(
+        &self,
+        taxonomy_definitions: &HashMap<String, TaxonomyDefinition>,
+    ) -> Result<Vec<Post>> {
         let posts_dir = self.input_dir.join("content").join("posts");
         let mut posts = Vec::new();
 
@@ -364,7 +533,7 @@ impl SiteBuilder {
                 continue;
             }
 
-            let post = self.parse_post(path)?;
+            let post = self.parse_post(path, taxonomy_definitions)?;
 
             if post.draft && !self.include_drafts {
                 continue;
@@ -378,11 +547,20 @@ impl SiteBuilder {
         Ok(posts)
     }
 
-    fn parse_post(&self, path: &Path) -> Result<Post> {
+    fn parse_post(
+        &self,
+        path: &Path,
+        taxonomy_definitions: &HashMap<String, TaxonomyDefinition>,
+    ) -> Result<Post> {
         let file_content = fs::read_to_string(path).io_context("reading post", path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
-        let rendered = parse_markdown(&processed_content);
+        let math_processed = if self.should_enable_math(&frontmatter) {
+            preprocess_math(&processed_content)
+        } else {
+            processed_content
+        };
+        let rendered = self.render_markdown(&math_processed);
 
         let filename = path.file_name().unwrap().to_string_lossy();
 
@@ -414,9 +592,20 @@ impl SiteBuilder {
             .get_string("title")
             .unwrap_or_else(|| slug.clone());
         let draft = frontmatter.get_bool("draft").unwrap_or(false);
-        let tags = frontmatter.get_array("tags").unwrap_or_default();
-        let categories = frontmatter.get_array("categories").unwrap_or_default();
         let redirect_from = frontmatter.get_array("redirect_from").unwrap_or_default();
+
+        let mut taxonomies_map: HashMap<String, Vec<String>> = HashMap::new();
+        for taxonomy_name in taxonomy_definitions.keys() {
+            if let Some(terms) = frontmatter.get_array(taxonomy_name) {
+                taxonomies_map.insert(taxonomy_name.clone(), terms);
+            }
+        }
+
+        let tags = taxonomies_map.get("tags").cloned().unwrap_or_default();
+        let categories = taxonomies_map
+            .get("categories")
+            .cloned()
+            .unwrap_or_default();
 
         let excerpt = frontmatter
             .get_string("excerpt")
@@ -442,6 +631,7 @@ impl SiteBuilder {
             draft,
             tags,
             categories,
+            taxonomies_map,
             redirect_from,
         })
     }
@@ -531,7 +721,12 @@ impl SiteBuilder {
         let file_content = fs::read_to_string(path).io_context("reading collection item", path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
-        let rendered = parse_markdown(&processed_content);
+        let math_processed = if self.should_enable_math(&frontmatter) {
+            preprocess_math(&processed_content)
+        } else {
+            processed_content
+        };
+        let rendered = self.render_markdown(&math_processed);
 
         let filename = path.file_name().unwrap().to_string_lossy();
         let slug = filename

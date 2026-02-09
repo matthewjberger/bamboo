@@ -7,6 +7,37 @@ use std::path::PathBuf;
 use crate::images::ImageConfig;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaxonomyDefinition {
+    #[serde(default)]
+    pub singular: Option<String>,
+    #[serde(default)]
+    pub index_template: Option<String>,
+    #[serde(default)]
+    pub term_template: Option<String>,
+}
+
+pub fn default_taxonomies() -> HashMap<String, TaxonomyDefinition> {
+    let mut taxonomies = HashMap::new();
+    taxonomies.insert(
+        "tags".to_string(),
+        TaxonomyDefinition {
+            singular: Some("tag".to_string()),
+            index_template: None,
+            term_template: None,
+        },
+    );
+    taxonomies.insert(
+        "categories".to_string(),
+        TaxonomyDefinition {
+            singular: Some("category".to_string()),
+            index_template: None,
+            term_template: None,
+        },
+    );
+    taxonomies
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Site {
     pub config: SiteConfig,
     pub home: Option<Page>,
@@ -33,14 +64,24 @@ pub struct SiteConfig {
     pub minify: bool,
     #[serde(default)]
     pub fingerprint: bool,
+    #[serde(default = "default_syntax_theme")]
+    pub syntax_theme: String,
     #[serde(default)]
     pub images: Option<ImageConfig>,
+    #[serde(default = "default_taxonomies")]
+    pub taxonomies: HashMap<String, TaxonomyDefinition>,
+    #[serde(default)]
+    pub math: bool,
     #[serde(default)]
     pub extra: HashMap<String, Value>,
 }
 
 pub fn default_posts_per_page() -> usize {
     10
+}
+
+pub fn default_syntax_theme() -> String {
+    "base16-ocean.dark".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,6 +137,8 @@ pub struct Post {
     pub tags: Vec<String>,
     #[serde(default)]
     pub categories: Vec<String>,
+    #[serde(default)]
+    pub taxonomies_map: HashMap<String, Vec<String>>,
     #[serde(default)]
     pub redirect_from: Vec<String>,
 }

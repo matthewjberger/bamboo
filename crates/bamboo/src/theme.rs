@@ -7,6 +7,7 @@ use crate::redirects;
 use crate::search;
 use crate::sitemap;
 use crate::types::{Asset, Site};
+use rayon::prelude::*;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -33,6 +34,9 @@ const DEFAULT_TAG_TEMPLATE: &str = include_str!("../themes/default/templates/tag
 const DEFAULT_CATEGORIES_TEMPLATE: &str =
     include_str!("../themes/default/templates/categories.html");
 const DEFAULT_CATEGORY_TEMPLATE: &str = include_str!("../themes/default/templates/category.html");
+const DEFAULT_TAXONOMY_TEMPLATE: &str = include_str!("../themes/default/templates/taxonomy.html");
+const DEFAULT_TAXONOMY_TERM_TEMPLATE: &str =
+    include_str!("../themes/default/templates/taxonomy_term.html");
 const DEFAULT_PAGINATION_TEMPLATE: &str =
     include_str!("../themes/default/templates/pagination.html");
 const DEFAULT_404_TEMPLATE: &str = include_str!("../themes/default/templates/404.html");
@@ -57,6 +61,30 @@ struct TaxonomyConfig<'a> {
     item_template: &'a str,
     name_context_key: &'a str,
     slug_context_key: &'a str,
+}
+
+impl<'a> TaxonomyConfig<'a> {
+    fn index_template_or_fallback(&self, tera: &Tera) -> &'a str {
+        if tera
+            .get_template_names()
+            .any(|name| name == self.index_template)
+        {
+            self.index_template
+        } else {
+            "taxonomy.html"
+        }
+    }
+
+    fn item_template_or_fallback(&self, tera: &Tera) -> &'a str {
+        if tera
+            .get_template_names()
+            .any(|name| name == self.item_template)
+        {
+            self.item_template
+        } else {
+            "taxonomy_term.html"
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -154,6 +182,8 @@ impl ThemeEngine {
         tera.add_raw_template("tag.html", DEFAULT_TAG_TEMPLATE)?;
         tera.add_raw_template("categories.html", DEFAULT_CATEGORIES_TEMPLATE)?;
         tera.add_raw_template("category.html", DEFAULT_CATEGORY_TEMPLATE)?;
+        tera.add_raw_template("taxonomy.html", DEFAULT_TAXONOMY_TEMPLATE)?;
+        tera.add_raw_template("taxonomy_term.html", DEFAULT_TAXONOMY_TERM_TEMPLATE)?;
         tera.add_raw_template("pagination.html", DEFAULT_PAGINATION_TEMPLATE)?;
         tera.add_raw_template("404.html", DEFAULT_404_TEMPLATE)?;
         tera.add_raw_template("partials/header.html", DEFAULT_HEADER_PARTIAL)?;
@@ -206,67 +236,167 @@ impl ThemeEngine {
     }
 
     pub fn render_site(&self, site: &Site, output_dir: &Path) -> Result<()> {
+        self.render_site_with_targets(site, output_dir, None)
+    }
+
+    pub fn render_site_with_targets(
+        &self,
+        site: &Site,
+        output_dir: &Path,
+        targets: Option<&std::collections::HashSet<crate::cache::RenderTarget>>,
+    ) -> Result<()> {
+        use crate::cache::{
+            RenderTarget, should_render, should_render_any_collection, should_render_any_page,
+            should_render_any_post,
+        };
+
+        let render_all =
+            targets.is_none() || targets.is_some_and(|t| t.contains(&RenderTarget::All));
+
         fs::create_dir_all(output_dir)?;
 
         if self.is_builtin_default {
             fs::write(output_dir.join("style.css"), DEFAULT_STYLESHEET)?;
         }
 
-        self.render_index(site, output_dir)?;
-
-        for page in &site.pages {
-            if page.content.slug == "404" {
-                continue;
-            }
-            self.render_page(site, page, output_dir)?;
+        if render_all
+            || targets.is_some_and(|t| should_render(t, &RenderTarget::Page("index".to_string())))
+        {
+            self.render_index(site, output_dir)?;
         }
 
-        for (index, post) in site.posts.iter().enumerate() {
-            let prev_post = if index + 1 < site.posts.len() {
-                Some(&site.posts[index + 1])
-            } else {
-                None
-            };
-            let next_post = if index > 0 {
-                Some(&site.posts[index - 1])
-            } else {
-                None
-            };
-            self.render_post(site, post, prev_post, next_post, output_dir)?;
+        if render_all {
+            site.pages
+                .par_iter()
+                .filter(|page| page.content.slug != "404")
+                .try_for_each(|page| self.render_page(site, page, output_dir))?;
+        } else if let Some(target_set) = targets
+            && should_render_any_page(target_set)
+        {
+            site.pages
+                .par_iter()
+                .filter(|page| {
+                    page.content.slug != "404"
+                        && should_render(target_set, &RenderTarget::Page(page.content.slug.clone()))
+                })
+                .try_for_each(|page| self.render_page(site, page, output_dir))?;
         }
 
-        for (name, collection) in &site.collections {
-            self.render_collection(site, name, collection, output_dir)?;
+        let post_tuples: Vec<_> = site
+            .posts
+            .iter()
+            .enumerate()
+            .map(|(index, post)| {
+                let prev_post = if index + 1 < site.posts.len() {
+                    Some(&site.posts[index + 1])
+                } else {
+                    None
+                };
+                let next_post = if index > 0 {
+                    Some(&site.posts[index - 1])
+                } else {
+                    None
+                };
+                (post, prev_post, next_post)
+            })
+            .collect();
+
+        if render_all {
+            post_tuples
+                .par_iter()
+                .try_for_each(|(post, prev_post, next_post)| {
+                    self.render_post(site, post, *prev_post, *next_post, output_dir)
+                })?;
+        } else if let Some(target_set) = targets
+            && should_render_any_post(target_set)
+        {
+            post_tuples
+                .par_iter()
+                .filter(|(post, _, _)| {
+                    should_render(target_set, &RenderTarget::Post(post.content.slug.clone()))
+                })
+                .try_for_each(|(post, prev_post, next_post)| {
+                    self.render_post(site, post, *prev_post, *next_post, output_dir)
+                })?;
         }
 
-        self.render_pagination(site, output_dir)?;
-        self.render_tag_pages(site, output_dir)?;
-        self.render_category_pages(site, output_dir)?;
-        self.render_404(site, output_dir)?;
-        self.render_search(site, output_dir)?;
+        if render_all {
+            site.collections
+                .par_iter()
+                .try_for_each(|(name, collection)| {
+                    self.render_collection(site, name, collection, output_dir)
+                })?;
+        } else if let Some(target_set) = targets
+            && should_render_any_collection(target_set)
+        {
+            site.collections
+                .par_iter()
+                .filter(|(name, _)| {
+                    should_render(target_set, &RenderTarget::Collection(name.to_string()))
+                })
+                .try_for_each(|(name, collection)| {
+                    self.render_collection(site, name, collection, output_dir)
+                })?;
+        }
+
+        if render_all || targets.is_some_and(|t| should_render(t, &RenderTarget::Pagination)) {
+            self.render_pagination(site, output_dir)?;
+        }
+
+        if render_all || targets.is_some_and(|t| t.contains(&RenderTarget::AllTaxonomies)) {
+            self.render_all_taxonomies(site, output_dir)?;
+        }
+
+        if render_all {
+            self.render_404(site, output_dir)?;
+        }
+
+        if render_all || targets.is_some_and(|t| should_render(t, &RenderTarget::SearchIndex)) {
+            self.render_search(site, output_dir)?;
+        }
 
         self.copy_theme_static(output_dir)?;
         self.copy_assets(&site.assets, output_dir)?;
 
-        feeds::generate_rss(site, output_dir)?;
-        feeds::generate_atom(site, output_dir)?;
-        sitemap::generate_sitemap(site, output_dir)?;
-        redirects::generate_redirects(site, output_dir)?;
-        search::generate_search_index(site, output_dir)?;
+        if render_all || targets.is_some_and(|t| should_render(t, &RenderTarget::Feeds)) {
+            feeds::generate_rss(site, output_dir)?;
+            feeds::generate_atom(site, output_dir)?;
+        }
 
-        if let Some(ref image_config) = site.config.images {
+        if render_all || targets.is_some_and(|t| should_render(t, &RenderTarget::Sitemap)) {
+            sitemap::generate_sitemap(site, output_dir)?;
+        }
+
+        if render_all {
+            redirects::generate_redirects(site, output_dir)?;
+        }
+
+        if render_all || targets.is_some_and(|t| should_render(t, &RenderTarget::SearchIndex)) {
+            search::generate_search_index(site, output_dir)?;
+        }
+
+        if let Some(ref image_config) = site.config.images
+            && render_all
+        {
             let manifest = images::process_images(output_dir, image_config)?;
             images::apply_srcset_to_html(output_dir, &manifest)?;
+        }
+
+        let mut sass_load_paths = Vec::new();
+        if let Some(ref static_dir) = self.theme_static_dir {
+            sass_load_paths.push(static_dir.clone());
+        }
+        if let Some(ref override_dir) = self.override_static_dir {
+            sass_load_paths.push(override_dir.clone());
         }
 
         let asset_config = AssetConfig {
             minify: site.config.minify,
             fingerprint: site.config.fingerprint,
             base_url: site.config.base_url.clone(),
+            sass_load_paths,
         };
-        if asset_config.minify || asset_config.fingerprint {
-            crate::assets::process_assets(output_dir, &asset_config)?;
-        }
+        crate::assets::process_assets(output_dir, &asset_config)?;
 
         Ok(())
     }
@@ -315,6 +445,8 @@ impl ThemeEngine {
         let metadata = self.site_metadata(site);
         context.insert("site", &metadata);
         context.insert("page", page);
+        let math = site.config.math || page.content.frontmatter.get_bool("math").unwrap_or(false);
+        context.insert("math", &math);
 
         let template_name = page.content.template.as_deref().unwrap_or("page.html");
         let rendered = self.tera.render(template_name, &context)?;
@@ -341,6 +473,8 @@ impl ThemeEngine {
         let metadata = self.site_metadata(site);
         context.insert("site", &metadata);
         context.insert("post", post);
+        let math = site.config.math || post.content.frontmatter.get_bool("math").unwrap_or(false);
+        context.insert("math", &math);
 
         if let Some(prev) = prev_post {
             context.insert("prev_post", prev);
@@ -404,34 +538,84 @@ impl ThemeEngine {
         Ok(())
     }
 
-    fn render_tag_pages(&self, site: &Site, output_dir: &Path) -> Result<()> {
-        self.render_taxonomy_pages(
-            site,
-            output_dir,
-            TaxonomyConfig {
-                taxonomy_name: "tags",
-                index_template: "tags.html",
-                item_template: "tag.html",
-                name_context_key: "tag_name",
-                slug_context_key: "tag_slug",
-            },
-            |post| post.tags.iter(),
-        )
-    }
+    fn render_all_taxonomies(&self, site: &Site, output_dir: &Path) -> Result<()> {
+        for (taxonomy_name, taxonomy_definition) in &site.config.taxonomies {
+            let singular = taxonomy_definition
+                .singular
+                .clone()
+                .unwrap_or_else(|| taxonomy_name.trim_end_matches('s').to_string());
 
-    fn render_category_pages(&self, site: &Site, output_dir: &Path) -> Result<()> {
-        self.render_taxonomy_pages(
-            site,
-            output_dir,
-            TaxonomyConfig {
-                taxonomy_name: "categories",
-                index_template: "categories.html",
-                item_template: "category.html",
-                name_context_key: "category_name",
-                slug_context_key: "category_slug",
-            },
-            |post| post.categories.iter(),
-        )
+            let (index_template, item_template, name_context_key, slug_context_key) =
+                match taxonomy_name.as_str() {
+                    "tags" => {
+                        let index_tpl = taxonomy_definition
+                            .index_template
+                            .as_deref()
+                            .unwrap_or("tags.html");
+                        let item_tpl = taxonomy_definition
+                            .term_template
+                            .as_deref()
+                            .unwrap_or("tag.html");
+                        (
+                            index_tpl.to_string(),
+                            item_tpl.to_string(),
+                            "tag_name".to_string(),
+                            "tag_slug".to_string(),
+                        )
+                    }
+                    "categories" => {
+                        let index_tpl = taxonomy_definition
+                            .index_template
+                            .as_deref()
+                            .unwrap_or("categories.html");
+                        let item_tpl = taxonomy_definition
+                            .term_template
+                            .as_deref()
+                            .unwrap_or("category.html");
+                        (
+                            index_tpl.to_string(),
+                            item_tpl.to_string(),
+                            "category_name".to_string(),
+                            "category_slug".to_string(),
+                        )
+                    }
+                    _ => {
+                        let index_tpl = taxonomy_definition
+                            .index_template
+                            .as_deref()
+                            .unwrap_or("taxonomy.html")
+                            .to_string();
+                        let item_tpl = taxonomy_definition
+                            .term_template
+                            .as_deref()
+                            .unwrap_or("taxonomy_term.html")
+                            .to_string();
+                        (
+                            index_tpl,
+                            item_tpl,
+                            format!("{}_name", singular),
+                            format!("{}_slug", singular),
+                        )
+                    }
+                };
+
+            let config = TaxonomyConfig {
+                taxonomy_name,
+                index_template: &index_template,
+                item_template: &item_template,
+                name_context_key: &name_context_key,
+                slug_context_key: &slug_context_key,
+            };
+
+            let taxonomy_name_owned = taxonomy_name.clone();
+            self.render_taxonomy_pages(site, output_dir, config, |post| {
+                post.taxonomies_map
+                    .get(&taxonomy_name_owned)
+                    .into_iter()
+                    .flat_map(|terms| terms.iter())
+            })?;
+        }
+        Ok(())
     }
 
     fn render_taxonomy_pages<'a, F, I>(
@@ -480,77 +664,90 @@ impl ThemeEngine {
         let mut context = Context::new();
         context.insert("site", &metadata);
         context.insert(taxonomy_config.taxonomy_name, &taxonomy_items);
+        context.insert("taxonomy_items", &taxonomy_items);
+        context.insert("taxonomy_name", taxonomy_config.taxonomy_name);
 
         let taxonomy_dir = output_dir.join(taxonomy_config.taxonomy_name);
         let taxonomy_index = taxonomy_dir.join("index.html");
-        let rendered = self.tera.render(taxonomy_config.index_template, &context)?;
+        let index_template = taxonomy_config.index_template_or_fallback(&self.tera);
+        let rendered = self.tera.render(index_template, &context)?;
         fs::create_dir_all(&taxonomy_dir)?;
         fs::write(taxonomy_index, rendered)?;
 
         let posts_per_page = site.config.posts_per_page;
 
-        for (slug, posts) in &slug_posts {
-            let display_name = slug_display_name.get(slug.as_str()).unwrap_or(slug);
-            let term_dir = taxonomy_dir.join(slug);
-            let effective_per_page = if posts_per_page == 0 {
-                posts.len().max(1)
-            } else {
-                posts_per_page
-            };
-            let total_pages = posts.len().div_ceil(effective_per_page);
-            let base_url = site.config.base_url.trim_end_matches('/');
+        let item_template = taxonomy_config.item_template_or_fallback(&self.tera);
 
-            for page_number in 1..=total_pages {
-                let start = (page_number - 1) * effective_per_page;
-                let end = (start + effective_per_page).min(posts.len());
-                let page_posts = &posts[start..end];
+        let slug_entries: Vec<_> = slug_posts.iter().collect();
+        slug_entries
+            .par_iter()
+            .try_for_each(|(slug, posts)| -> Result<()> {
+                let display_name = slug_display_name.get(slug.as_str()).unwrap_or(slug);
+                let term_dir = taxonomy_dir.join(slug);
+                let effective_per_page = if posts_per_page == 0 {
+                    posts.len().max(1)
+                } else {
+                    posts_per_page
+                };
+                let total_pages = posts.len().div_ceil(effective_per_page);
+                let base_url = site.config.base_url.trim_end_matches('/');
 
-                let mut context = Context::new();
-                context.insert("site", &metadata);
-                context.insert(taxonomy_config.name_context_key, display_name);
-                context.insert(taxonomy_config.slug_context_key, &slug);
-                context.insert("posts", page_posts);
-                context.insert("current_page", &page_number);
-                context.insert("total_pages", &total_pages);
+                for page_number in 1..=total_pages {
+                    let start = (page_number - 1) * effective_per_page;
+                    let end = (start + effective_per_page).min(posts.len());
+                    let page_posts = &posts[start..end];
 
-                if page_number > 1 {
-                    let prev_url = if page_number == 2 {
-                        format!("{}/{}/{}/", base_url, taxonomy_config.taxonomy_name, slug)
-                    } else {
-                        format!(
+                    let mut context = Context::new();
+                    context.insert("site", &metadata);
+                    context.insert(taxonomy_config.name_context_key, display_name);
+                    context.insert(taxonomy_config.slug_context_key, &slug);
+                    context.insert("term_name", display_name);
+                    context.insert("term_slug", &slug);
+                    context.insert("taxonomy_name", taxonomy_config.taxonomy_name);
+                    context.insert("posts", page_posts);
+                    context.insert("current_page", &page_number);
+                    context.insert("total_pages", &total_pages);
+
+                    if page_number > 1 {
+                        let prev_url = if page_number == 2 {
+                            format!("{}/{}/{}/", base_url, taxonomy_config.taxonomy_name, slug)
+                        } else {
+                            format!(
+                                "{}/{}/{}/page/{}/",
+                                base_url,
+                                taxonomy_config.taxonomy_name,
+                                slug,
+                                page_number - 1
+                            )
+                        };
+                        context.insert("prev_page_url", &prev_url);
+                    }
+
+                    if page_number < total_pages {
+                        let next_url = format!(
                             "{}/{}/{}/page/{}/",
                             base_url,
                             taxonomy_config.taxonomy_name,
                             slug,
-                            page_number - 1
-                        )
-                    };
-                    context.insert("prev_page_url", &prev_url);
+                            page_number + 1
+                        );
+                        context.insert("next_page_url", &next_url);
+                    }
+
+                    if page_number == 1 {
+                        let rendered = self.tera.render(item_template, &context)?;
+                        fs::create_dir_all(&term_dir)?;
+                        fs::write(term_dir.join("index.html"), rendered)?;
+                    } else {
+                        let rendered = self.tera.render(item_template, &context)?;
+                        let page_dir = term_dir.join("page").join(page_number.to_string());
+                        fs::create_dir_all(&page_dir)?;
+                        fs::write(page_dir.join("index.html"), rendered)?;
+                    }
                 }
 
-                if page_number < total_pages {
-                    let next_url = format!(
-                        "{}/{}/{}/page/{}/",
-                        base_url,
-                        taxonomy_config.taxonomy_name,
-                        slug,
-                        page_number + 1
-                    );
-                    context.insert("next_page_url", &next_url);
-                }
-
-                if page_number == 1 {
-                    let rendered = self.tera.render(taxonomy_config.item_template, &context)?;
-                    fs::create_dir_all(&term_dir)?;
-                    fs::write(term_dir.join("index.html"), rendered)?;
-                } else {
-                    let rendered = self.tera.render(taxonomy_config.item_template, &context)?;
-                    let page_dir = term_dir.join("page").join(page_number.to_string());
-                    fs::create_dir_all(&page_dir)?;
-                    fs::write(page_dir.join("index.html"), rendered)?;
-                }
-            }
-        }
+                Ok(())
+            })?;
 
         Ok(())
     }
@@ -627,6 +824,8 @@ impl ThemeEngine {
         context.insert("item", item);
         context.insert("collection", collection);
         context.insert("collection_name", collection_name);
+        let math = site.config.math || item.content.frontmatter.get_bool("math").unwrap_or(false);
+        context.insert("math", &math);
 
         let template_name = item
             .content
@@ -957,6 +1156,9 @@ mod tests {
                 minify: false,
                 fingerprint: false,
                 images: None,
+                syntax_theme: crate::types::default_syntax_theme(),
+                taxonomies: crate::types::default_taxonomies(),
+                math: false,
                 extra: HashMap::new(),
             },
             home: None,
@@ -1003,6 +1205,9 @@ mod tests {
                 minify: false,
                 fingerprint: false,
                 images: None,
+                syntax_theme: crate::types::default_syntax_theme(),
+                taxonomies: crate::types::default_taxonomies(),
+                math: false,
                 extra: HashMap::new(),
             },
             home: None,
@@ -1044,6 +1249,10 @@ mod tests {
                 draft: false,
                 tags: vec!["test".to_string()],
                 categories: vec!["general".to_string()],
+                taxonomies_map: HashMap::from([
+                    ("tags".to_string(), vec!["test".to_string()]),
+                    ("categories".to_string(), vec!["general".to_string()]),
+                ]),
                 redirect_from: vec![],
             }],
             collections: HashMap::new(),
@@ -1103,6 +1312,7 @@ mod tests {
                 draft: false,
                 tags: vec![],
                 categories: vec![],
+                taxonomies_map: HashMap::new(),
                 redirect_from: vec![],
             });
         }
@@ -1118,6 +1328,9 @@ mod tests {
                 minify: false,
                 fingerprint: false,
                 images: None,
+                syntax_theme: crate::types::default_syntax_theme(),
+                taxonomies: crate::types::default_taxonomies(),
+                math: false,
                 extra: HashMap::new(),
             },
             home: None,

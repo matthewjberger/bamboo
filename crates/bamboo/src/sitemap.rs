@@ -68,70 +68,46 @@ pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
         }
     }
 
-    use std::collections::HashMap;
-    let mut tag_counts: HashMap<String, usize> = HashMap::new();
-    for post in &site.posts {
-        for tag in &post.tags {
-            let slug = slugify(tag);
-            *tag_counts.entry(slug).or_default() += 1;
-        }
-    }
-    if !tag_counts.is_empty() {
-        urls.push_str(&format!(
-            "  <url>\n    <loc>{}/tags/</loc>\n  </url>\n",
-            escaped_base_url
-        ));
-        let mut sorted_tags: Vec<(&String, &usize)> = tag_counts.iter().collect();
-        sorted_tags.sort_by_key(|(slug, _)| slug.as_str());
-        for (slug, count) in sorted_tags {
-            urls.push_str(&format!(
-                "  <url>\n    <loc>{}/tags/{}/</loc>\n  </url>\n",
-                escaped_base_url,
-                escape(slug)
-            ));
-            if posts_per_page > 0 {
-                let total_pages = count.div_ceil(posts_per_page);
-                for page_number in 2..=total_pages {
-                    urls.push_str(&format!(
-                        "  <url>\n    <loc>{}/tags/{}/page/{}/</loc>\n  </url>\n",
-                        escaped_base_url,
-                        escape(slug),
-                        page_number
-                    ));
+    let mut sorted_taxonomy_names: Vec<&String> = site.config.taxonomies.keys().collect();
+    sorted_taxonomy_names.sort();
+
+    for taxonomy_name in sorted_taxonomy_names {
+        use std::collections::HashMap as TaxonomyCountMap;
+        let mut term_counts: TaxonomyCountMap<String, usize> = TaxonomyCountMap::new();
+        for post in &site.posts {
+            if let Some(terms) = post.taxonomies_map.get(taxonomy_name) {
+                for term in terms {
+                    let slug = slugify(term);
+                    *term_counts.entry(slug).or_default() += 1;
                 }
             }
         }
-    }
-
-    let mut category_counts: HashMap<String, usize> = HashMap::new();
-    for post in &site.posts {
-        for category in &post.categories {
-            let slug = slugify(category);
-            *category_counts.entry(slug).or_default() += 1;
-        }
-    }
-    if !category_counts.is_empty() {
-        urls.push_str(&format!(
-            "  <url>\n    <loc>{}/categories/</loc>\n  </url>\n",
-            escaped_base_url
-        ));
-        let mut sorted_categories: Vec<(&String, &usize)> = category_counts.iter().collect();
-        sorted_categories.sort_by_key(|(slug, _)| slug.as_str());
-        for (slug, count) in sorted_categories {
+        if !term_counts.is_empty() {
             urls.push_str(&format!(
-                "  <url>\n    <loc>{}/categories/{}/</loc>\n  </url>\n",
+                "  <url>\n    <loc>{}/{}/</loc>\n  </url>\n",
                 escaped_base_url,
-                escape(slug)
+                escape(taxonomy_name)
             ));
-            if posts_per_page > 0 {
-                let total_pages = count.div_ceil(posts_per_page);
-                for page_number in 2..=total_pages {
-                    urls.push_str(&format!(
-                        "  <url>\n    <loc>{}/categories/{}/page/{}/</loc>\n  </url>\n",
-                        escaped_base_url,
-                        escape(slug),
-                        page_number
-                    ));
+            let mut sorted_terms: Vec<(&String, &usize)> = term_counts.iter().collect();
+            sorted_terms.sort_by_key(|(slug, _)| slug.as_str());
+            for (slug, count) in sorted_terms {
+                urls.push_str(&format!(
+                    "  <url>\n    <loc>{}/{}/{}/</loc>\n  </url>\n",
+                    escaped_base_url,
+                    escape(taxonomy_name),
+                    escape(slug)
+                ));
+                if posts_per_page > 0 {
+                    let total_pages = count.div_ceil(posts_per_page);
+                    for page_number in 2..=total_pages {
+                        urls.push_str(&format!(
+                            "  <url>\n    <loc>{}/{}/{}/page/{}/</loc>\n  </url>\n",
+                            escaped_base_url,
+                            escape(taxonomy_name),
+                            escape(slug),
+                            page_number
+                        ));
+                    }
                 }
             }
         }
@@ -171,6 +147,9 @@ mod tests {
                 minify: false,
                 fingerprint: false,
                 images: None,
+                syntax_theme: crate::types::default_syntax_theme(),
+                taxonomies: crate::types::default_taxonomies(),
+                math: false,
                 extra: HashMap::new(),
             },
             home: None,
@@ -206,8 +185,26 @@ mod tests {
             date,
             excerpt: None,
             draft: false,
-            tags: tags.into_iter().map(String::from).collect(),
-            categories: categories.into_iter().map(String::from).collect(),
+            tags: tags.iter().map(|tag| String::from(*tag)).collect(),
+            categories: categories
+                .iter()
+                .map(|category| String::from(*category))
+                .collect(),
+            taxonomies_map: {
+                let mut map = std::collections::HashMap::new();
+                let tag_vec: Vec<String> = tags.iter().map(|tag| String::from(*tag)).collect();
+                let cat_vec: Vec<String> = categories
+                    .iter()
+                    .map(|category| String::from(*category))
+                    .collect();
+                if !tag_vec.is_empty() {
+                    map.insert("tags".to_string(), tag_vec);
+                }
+                if !cat_vec.is_empty() {
+                    map.insert("categories".to_string(), cat_vec);
+                }
+                map
+            },
             redirect_from: vec![],
         }
     }

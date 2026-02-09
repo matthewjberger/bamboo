@@ -15,6 +15,7 @@ static MARKDOWN_RENDERER: LazyLock<MarkdownRenderer> = LazyLock::new(MarkdownRen
 pub struct MarkdownRenderer {
     syntax_set: SyntaxSet,
     theme_set: ThemeSet,
+    theme_name: String,
 }
 
 impl Default for MarkdownRenderer {
@@ -33,6 +34,25 @@ impl MarkdownRenderer {
         Self {
             syntax_set: SyntaxSet::load_defaults_newlines(),
             theme_set: ThemeSet::load_defaults(),
+            theme_name: "base16-ocean.dark".to_string(),
+        }
+    }
+
+    pub fn with_theme(theme_name: &str) -> Self {
+        let theme_set = ThemeSet::load_defaults();
+        let validated_theme_name = if theme_set.themes.contains_key(theme_name) {
+            theme_name.to_string()
+        } else {
+            eprintln!(
+                "Warning: syntax theme '{}' not found, falling back to 'base16-ocean.dark'",
+                theme_name
+            );
+            "base16-ocean.dark".to_string()
+        };
+        Self {
+            syntax_set: SyntaxSet::load_defaults_newlines(),
+            theme_set,
+            theme_name: validated_theme_name,
         }
     }
 
@@ -56,7 +76,7 @@ impl MarkdownRenderer {
         let mut heading_events: Vec<Event<'_>> = Vec::new();
         let mut used_heading_ids: HashSet<String> = HashSet::new();
 
-        let theme = &self.theme_set.themes["base16-ocean.dark"];
+        let theme = &self.theme_set.themes[&self.theme_name];
 
         for event in parser {
             match event {
@@ -256,6 +276,172 @@ pub fn extract_excerpt(content: &str, max_chars: usize) -> Option<String> {
         let last_space = truncated.rfind(' ').unwrap_or(truncated.len());
         Some(format!("{}...", &truncated[..last_space]))
     }
+}
+
+pub fn preprocess_math(content: &str) -> String {
+    let mut output = String::with_capacity(content.len());
+    let chars: Vec<char> = content.chars().collect();
+    let length = chars.len();
+    let mut position = 0;
+    let mut in_code_fence = false;
+    let mut fence_marker: Option<char> = None;
+    let mut in_inline_code = false;
+
+    while position < length {
+        if !in_code_fence && !in_inline_code && chars[position] == '`' {
+            if position + 2 < length && chars[position + 1] == '`' && chars[position + 2] == '`' {
+                in_code_fence = true;
+                fence_marker = Some('`');
+                output.push(chars[position]);
+                output.push(chars[position + 1]);
+                output.push(chars[position + 2]);
+                position += 3;
+                while position < length && chars[position] != '\n' {
+                    output.push(chars[position]);
+                    position += 1;
+                }
+                continue;
+            } else if position + 2 < length
+                && chars[position + 1] == '~'
+                && chars[position + 2] == '~'
+            {
+                continue;
+            } else {
+                in_inline_code = true;
+                output.push(chars[position]);
+                position += 1;
+                continue;
+            }
+        }
+
+        if !in_code_fence
+            && position + 2 < length
+            && chars[position] == '~'
+            && chars[position + 1] == '~'
+            && chars[position + 2] == '~'
+        {
+            in_code_fence = true;
+            fence_marker = Some('~');
+            output.push(chars[position]);
+            output.push(chars[position + 1]);
+            output.push(chars[position + 2]);
+            position += 3;
+            while position < length && chars[position] != '\n' {
+                output.push(chars[position]);
+                position += 1;
+            }
+            continue;
+        }
+
+        if in_code_fence {
+            if chars[position] == '\n' {
+                output.push(chars[position]);
+                position += 1;
+                if let Some(marker) = fence_marker
+                    && position + 2 < length
+                    && chars[position] == marker
+                    && chars[position + 1] == marker
+                    && chars[position + 2] == marker
+                {
+                    output.push(chars[position]);
+                    output.push(chars[position + 1]);
+                    output.push(chars[position + 2]);
+                    position += 3;
+                    in_code_fence = false;
+                    fence_marker = None;
+                }
+                continue;
+            }
+            output.push(chars[position]);
+            position += 1;
+            continue;
+        }
+
+        if in_inline_code {
+            output.push(chars[position]);
+            if chars[position] == '`' {
+                in_inline_code = false;
+            }
+            position += 1;
+            continue;
+        }
+
+        if chars[position] == '$' && position + 1 < length && chars[position + 1] == '$' {
+            position += 2;
+            let start = position;
+            while position + 1 < length && !(chars[position] == '$' && chars[position + 1] == '$') {
+                position += 1;
+            }
+            if position + 1 < length {
+                let math_content: String = chars[start..position].iter().collect();
+                output.push_str("<div class=\"math-display\">$$");
+                output.push_str(&math_content);
+                output.push_str("$$</div>");
+                position += 2;
+            } else {
+                output.push('$');
+                output.push('$');
+                let rest: String = chars[start..].iter().collect();
+                output.push_str(&rest);
+                position = length;
+            }
+            continue;
+        }
+
+        if chars[position] == '$' {
+            let prev_char = if position > 0 {
+                Some(chars[position - 1])
+            } else {
+                None
+            };
+            let next_char = if position + 1 < length {
+                Some(chars[position + 1])
+            } else {
+                None
+            };
+
+            if next_char.is_some_and(|character| !character.is_whitespace() && character != '$') {
+                let is_after_alphanumeric =
+                    prev_char.is_some_and(|character| character.is_alphanumeric());
+                if is_after_alphanumeric {
+                    output.push(chars[position]);
+                    position += 1;
+                    continue;
+                }
+
+                position += 1;
+                let start = position;
+                while position < length && chars[position] != '$' && chars[position] != '\n' {
+                    position += 1;
+                }
+                if position < length && chars[position] == '$' {
+                    let math_content: String = chars[start..position].iter().collect();
+                    if !math_content.is_empty() && !math_content.ends_with(char::is_whitespace) {
+                        output.push_str("<span class=\"math-inline\">$");
+                        output.push_str(&math_content);
+                        output.push_str("$</span>");
+                        position += 1;
+                    } else {
+                        output.push('$');
+                        let content_str: String = chars[start..position].iter().collect();
+                        output.push_str(&content_str);
+                        output.push('$');
+                        position += 1;
+                    }
+                } else {
+                    output.push('$');
+                    let rest: String = chars[start..position].iter().collect();
+                    output.push_str(&rest);
+                }
+                continue;
+            }
+        }
+
+        output.push(chars[position]);
+        position += 1;
+    }
+
+    output
 }
 
 fn strip_markdown_syntax(text: &str) -> String {
@@ -582,5 +768,62 @@ mod tests {
         let (fm, body) = extract_frontmatter(content, &path).unwrap();
         assert_eq!(fm.get_string("title"), Some("Test".to_string()));
         assert_eq!(body, "Body content");
+    }
+
+    #[test]
+    fn test_preprocess_math_inline() {
+        let input = "The formula $E = mc^2$ is famous.";
+        let output = preprocess_math(input);
+        assert_eq!(
+            output,
+            "The formula <span class=\"math-inline\">$E = mc^2$</span> is famous."
+        );
+    }
+
+    #[test]
+    fn test_preprocess_math_display() {
+        let input = "Here is a formula:\n\n$$\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\n$$\n\nThat was it.";
+        let output = preprocess_math(input);
+        assert!(output.contains("<div class=\"math-display\">$$"));
+        assert!(output.contains("$$</div>"));
+        assert!(output.contains("That was it."));
+    }
+
+    #[test]
+    fn test_preprocess_math_inline_display_on_one_line() {
+        let input = "Display: $$x^2 + y^2 = z^2$$";
+        let output = preprocess_math(input);
+        assert!(output.contains("<div class=\"math-display\">$$x^2 + y^2 = z^2$$</div>"));
+    }
+
+    #[test]
+    fn test_preprocess_math_skips_code_fence() {
+        let input = "```\n$x^2$\n```\n\nOutside $y^2$ here.";
+        let output = preprocess_math(input);
+        assert!(output.contains("$x^2$"));
+        assert!(!output.contains("<span class=\"math-inline\">$x^2$</span>"));
+        assert!(output.contains("<span class=\"math-inline\">$y^2$</span>"));
+    }
+
+    #[test]
+    fn test_preprocess_math_skips_inline_code() {
+        let input = "Use `$variable` in shell. Also $a + b$ math.";
+        let output = preprocess_math(input);
+        assert!(output.contains("`$variable`"));
+        assert!(output.contains("<span class=\"math-inline\">$a + b$</span>"));
+    }
+
+    #[test]
+    fn test_preprocess_math_no_math() {
+        let input = "No math here, just text.";
+        let output = preprocess_math(input);
+        assert_eq!(output, input);
+    }
+
+    #[test]
+    fn test_preprocess_math_dollar_after_alphanumeric() {
+        let input = "This costs 5$ and 10$ total.";
+        let output = preprocess_math(input);
+        assert_eq!(output, input);
     }
 }

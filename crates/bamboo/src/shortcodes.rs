@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use tera::Tera;
 
 use crate::error::{BambooError, Result};
-use crate::parsing::parse_markdown;
+use crate::parsing::{MarkdownRenderer, parse_markdown};
 
 const BUILTIN_YOUTUBE: &str = include_str!("../themes/default/templates/shortcodes/youtube.html");
 const BUILTIN_FIGURE: &str = include_str!("../themes/default/templates/shortcodes/figure.html");
@@ -13,6 +13,7 @@ const BUILTIN_GIST: &str = include_str!("../themes/default/templates/shortcodes/
 
 pub struct ShortcodeProcessor {
     tera: Tera,
+    ref_registry: HashMap<String, String>,
 }
 
 impl ShortcodeProcessor {
@@ -48,10 +49,17 @@ impl ShortcodeProcessor {
             }
         }
 
-        Ok(Self { tera })
+        Ok(Self {
+            tera,
+            ref_registry: HashMap::new(),
+        })
     }
 
-    pub fn process(&self, content: &str) -> Result<String> {
+    pub fn set_ref_registry(&mut self, registry: HashMap<String, String>) {
+        self.ref_registry = registry;
+    }
+
+    pub fn process(&self, content: &str, renderer: Option<&MarkdownRenderer>) -> Result<String> {
         let mut output = String::with_capacity(content.len());
         let mut remaining = content;
 
@@ -106,7 +114,8 @@ impl ShortcodeProcessor {
                     if block_start < inline_start {
                         output.push_str(&remaining[..block_start]);
                         remaining = &remaining[block_start..];
-                        remaining = self.process_block_shortcode(remaining, &mut output)?;
+                        remaining =
+                            self.process_block_shortcode(remaining, &mut output, renderer)?;
                     } else {
                         output.push_str(&remaining[..inline_start]);
                         remaining = &remaining[inline_start..];
@@ -120,7 +129,7 @@ impl ShortcodeProcessor {
             } else if let Some(block_start) = next_block {
                 output.push_str(&remaining[..block_start]);
                 remaining = &remaining[block_start..];
-                remaining = self.process_block_shortcode(remaining, &mut output)?;
+                remaining = self.process_block_shortcode(remaining, &mut output, renderer)?;
             } else {
                 output.push_str(remaining);
                 break;
@@ -142,6 +151,24 @@ impl ShortcodeProcessor {
         let inner = after_open[..close_position].trim();
         let (name, arguments) = parse_shortcode_args(inner)?;
 
+        if name == "ref" {
+            let reference = arguments
+                .get("_positional")
+                .or_else(|| arguments.get("path"))
+                .ok_or_else(|| BambooError::ShortcodeParse {
+                    message: "ref shortcode requires a path argument".to_string(),
+                })?;
+
+            let url = self.ref_registry.get(reference.as_str()).ok_or_else(|| {
+                BambooError::BrokenReference {
+                    reference: reference.clone(),
+                }
+            })?;
+
+            output.push_str(url);
+            return Ok(&after_open[close_position + 3..]);
+        }
+
         let template_name = format!("shortcodes/{}.html", name);
         let mut context = tera::Context::new();
         for (key, value) in &arguments {
@@ -161,7 +188,12 @@ impl ShortcodeProcessor {
         Ok(&after_open[close_position + 3..])
     }
 
-    fn process_block_shortcode<'a>(&self, input: &'a str, output: &mut String) -> Result<&'a str> {
+    fn process_block_shortcode<'a>(
+        &self,
+        input: &'a str,
+        output: &mut String,
+        renderer: Option<&MarkdownRenderer>,
+    ) -> Result<&'a str> {
         let after_open = &input[3..];
 
         let close_position = after_open
@@ -189,8 +221,12 @@ impl ShortcodeProcessor {
         })?;
 
         let body_raw = &after_opening_tag[..closing_position];
-        let body_processed = self.process(body_raw.trim())?;
-        let body_rendered = parse_markdown(&body_processed);
+        let body_processed = self.process(body_raw.trim(), renderer)?;
+        let body_rendered = if let Some(renderer) = renderer {
+            renderer.render(&body_processed)
+        } else {
+            parse_markdown(&body_processed)
+        };
 
         let template_name = format!("shortcodes/{}.html", name);
         let mut context = tera::Context::new();
@@ -240,6 +276,34 @@ fn parse_shortcode_args(input: &str) -> Result<(String, HashMap<String, String>)
 
         if chars.peek().is_none() {
             break;
+        }
+
+        if chars.peek() == Some(&'"') {
+            chars.next();
+            let mut value = String::new();
+            let mut found_closing_quote = false;
+            while let Some(&character) = chars.peek() {
+                chars.next();
+                if character == '\\'
+                    && let Some(&escaped) = chars.peek()
+                {
+                    chars.next();
+                    value.push(escaped);
+                    continue;
+                }
+                if character == '"' {
+                    found_closing_quote = true;
+                    break;
+                }
+                value.push(character);
+            }
+            if !found_closing_quote {
+                return Err(BambooError::ShortcodeParse {
+                    message: format!("unclosed positional string value in shortcode '{}'", name),
+                });
+            }
+            arguments.insert("_positional".to_string(), value);
+            continue;
         }
 
         let mut key = String::new();
@@ -461,7 +525,7 @@ mod tests {
     fn test_inline_shortcode() {
         let processor = processor();
         let input = "before {{< youtube id=\"abc\" >}} after";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("before"));
         assert!(result.contains("after"));
         assert!(result.contains("abc"));
@@ -471,7 +535,7 @@ mod tests {
     fn test_block_shortcode_with_body() {
         let processor = processor();
         let input = "before {{% note type=\"info\" %}}This is a note{{% /note %}} after";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("before"));
         assert!(result.contains("after"));
         assert!(result.contains("note"));
@@ -481,7 +545,7 @@ mod tests {
     fn test_code_fence_skipping() {
         let processor = processor();
         let input = "```\n{{< youtube id=\"skip\" >}}\n```\n\noutside";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("{{< youtube id=\"skip\" >}}"));
         assert!(result.contains("outside"));
     }
@@ -490,7 +554,7 @@ mod tests {
     fn test_no_shortcodes() {
         let processor = processor();
         let input = "just plain text";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert_eq!(result, "just plain text");
     }
 
@@ -498,7 +562,7 @@ mod tests {
     fn test_multiple_inline_shortcodes() {
         let processor = processor();
         let input = "{{< youtube id=\"abc\" >}} and {{< youtube id=\"def\" >}}";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("abc"));
         assert!(result.contains("def"));
     }
@@ -507,7 +571,7 @@ mod tests {
     fn test_nested_block_shortcodes() {
         let processor = processor();
         let input = "{{% note type=\"info\" %}}Outer {{% details summary=\"Click\" %}}Inner{{% /details %}}{{% /note %}}";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("Outer"));
         assert!(result.contains("Inner"));
     }
@@ -516,7 +580,7 @@ mod tests {
     fn test_unclosed_inline_shortcode_error() {
         let processor = processor();
         let input = "{{< youtube id=\"abc\"";
-        let result = processor.process(input);
+        let result = processor.process(input, None);
         assert!(result.is_err());
     }
 
@@ -524,7 +588,7 @@ mod tests {
     fn test_missing_closing_tag_error() {
         let processor = processor();
         let input = "{{% note type=\"info\" %}}content without closing";
-        let result = processor.process(input);
+        let result = processor.process(input, None);
         assert!(result.is_err());
     }
 
@@ -550,7 +614,7 @@ mod tests {
     fn test_mixed_inline_and_block() {
         let processor = processor();
         let input = "{{< youtube id=\"vid\" >}} then {{% note type=\"warning\" %}}Warning text{{% /note %}}";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("vid"));
         assert!(result.contains("Warning"));
     }
@@ -559,8 +623,49 @@ mod tests {
     fn test_tilde_code_fence_skipping() {
         let processor = processor();
         let input = "~~~\n{{< youtube id=\"skip\" >}}\n~~~\n\noutside";
-        let result = processor.process(input).unwrap();
+        let result = processor.process(input, None).unwrap();
         assert!(result.contains("{{< youtube id=\"skip\" >}}"));
         assert!(result.contains("outside"));
+    }
+
+    #[test]
+    fn test_ref_shortcode_positional() {
+        let mut processor = processor();
+        let mut registry = HashMap::new();
+        registry.insert("about.md".to_string(), "/about/".to_string());
+        processor.set_ref_registry(registry);
+
+        let input = r#"[About]({{< ref "about.md" >}})"#;
+        let result = processor.process(input, None).unwrap();
+        assert_eq!(result, "[About](/about/)");
+    }
+
+    #[test]
+    fn test_ref_shortcode_with_path_key() {
+        let mut processor = processor();
+        let mut registry = HashMap::new();
+        registry.insert("posts/hello.md".to_string(), "/posts/hello/".to_string());
+        processor.set_ref_registry(registry);
+
+        let input = r#"{{< ref path="posts/hello.md" >}}"#;
+        let result = processor.process(input, None).unwrap();
+        assert_eq!(result, "/posts/hello/");
+    }
+
+    #[test]
+    fn test_ref_shortcode_broken_reference() {
+        let processor = processor();
+        let input = r#"{{< ref "nonexistent.md" >}}"#;
+        let result = processor.process(input, None);
+        assert!(result.is_err());
+        let error = result.unwrap_err().to_string();
+        assert!(error.contains("nonexistent.md"));
+    }
+
+    #[test]
+    fn test_positional_arg_parsing() {
+        let (name, args) = parse_shortcode_args(r#"ref "about.md""#).unwrap();
+        assert_eq!(name, "ref");
+        assert_eq!(args.get("_positional").unwrap(), "about.md");
     }
 }

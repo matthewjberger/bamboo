@@ -121,6 +121,9 @@ mod tests {
                 minify: false,
                 fingerprint: false,
                 images: None,
+                syntax_theme: crate::types::default_syntax_theme(),
+                taxonomies: crate::types::default_taxonomies(),
+                math: false,
                 extra: HashMap::new(),
             },
             home: None,
@@ -163,6 +166,7 @@ mod tests {
             draft: false,
             tags: vec![],
             categories: vec![],
+            taxonomies_map: std::collections::HashMap::new(),
             redirect_from: vec!["/old-post/".to_string()],
         });
 
@@ -243,6 +247,7 @@ mod tests {
             draft: false,
             tags: vec![],
             categories: vec![],
+            taxonomies_map: std::collections::HashMap::new(),
             redirect_from: vec!["/existing/".to_string()],
         });
 
