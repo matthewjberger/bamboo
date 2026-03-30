@@ -1,3 +1,12 @@
+## [0.2.4] - 2026-03-30
+
+### 🚀 Features
+
+- Add link validation, collection feeds, collection pagination, and extract taxonomy module
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.2.4
 ## [0.2.3] - 2026-03-30
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.2.3
+- Update changelog for v0.2.3
 ## [0.2.2] - 2026-03-30
 
 ### 🐛 Bug Fixes
