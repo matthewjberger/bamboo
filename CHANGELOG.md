@@ -1,3 +1,12 @@
+## [0.2.3] - 2026-03-30
+
+### 🐛 Bug Fixes
+
+- Bump recipes now update Cargo.lock
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.2.3
 ## [0.2.2] - 2026-03-30
 
 ### 🐛 Bug Fixes
@@ -11,6 +20,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.2.2
+- Update changelog for v0.2.2
 ## [0.2.1] - 2026-03-30
 
 ### 🚀 Features
