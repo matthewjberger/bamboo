@@ -103,6 +103,8 @@ fn main() {
         post_content,
     )?;
 
+    fs::write(site_dir.join(".gitignore"), "dist/\n.bamboo-cache/\n")?;
+
     println!("Created new site: {name}");
     println!("  cd {name}");
     println!("  bamboo serve");
@@ -135,6 +137,10 @@ language = "en"
 "#
     );
     fs::write(current_dir.join("bamboo.toml"), config)?;
+
+    if !current_dir.join(".gitignore").exists() {
+        fs::write(current_dir.join(".gitignore"), "dist/\n.bamboo-cache/\n")?;
+    }
 
     println!("Initialized Bamboo site in current directory");
 
