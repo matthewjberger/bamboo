@@ -1,4 +1,4 @@
-## [0.1.2] - 2026-02-09
+## [0.2.0] - 2026-03-30
 
 ### 🚀 Features
 
@@ -10,6 +10,7 @@
 
 - *(theme)* Resolve duplicate theme-toggle ID in portfolio template
 - Use base_url for stylesheet path to support subpath deployments
+- Address bugs, improve architecture, and add features
 
 ### 🚜 Refactor
 
@@ -18,6 +19,9 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.1.2
+- Update changelog for v0.1.2
+- Bump lockfile
+- Bump version to v0.2.0
 ## [0.1.1] - 2026-02-04
 
 ### 🚀 Features
