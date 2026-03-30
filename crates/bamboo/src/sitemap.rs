@@ -58,6 +58,18 @@ pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
             escape(name)
         ));
 
+        if posts_per_page > 0 && !collection.items.is_empty() {
+            let total_collection_pages = collection.items.len().div_ceil(posts_per_page);
+            for page_number in 2..=total_collection_pages {
+                urls.push_str(&format!(
+                    "  <url>\n    <loc>{}/{}/page/{}/</loc>\n  </url>\n",
+                    escaped_base_url,
+                    escape(name),
+                    page_number
+                ));
+            }
+        }
+
         for item in &collection.items {
             urls.push_str(&format!(
                 "  <url>\n    <loc>{}/{}/{}/</loc>\n  </url>\n",
@@ -330,5 +342,47 @@ mod tests {
         let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
         assert!(content.contains("/docs/"));
         assert!(content.contains("/docs/intro/"));
+    }
+
+    #[test]
+    fn test_sitemap_collection_pagination() {
+        let mut site = minimal_site();
+        site.config.posts_per_page = 1;
+
+        let items: Vec<CollectionItem> = (0..3)
+            .map(|index| CollectionItem {
+                content: Content {
+                    slug: format!("item-{}", index),
+                    title: format!("Item {}", index),
+                    html: String::new(),
+                    raw_content: String::new(),
+                    frontmatter: Frontmatter::default(),
+                    path: PathBuf::from(format!("docs/item-{}/index.html", index)),
+                    template: None,
+                    weight: 0,
+                    word_count: 0,
+                    reading_time: 0,
+                    toc: vec![],
+                    url: format!("/docs/item-{}/", index),
+                },
+            })
+            .collect();
+
+        site.collections.insert(
+            "docs".to_string(),
+            Collection {
+                name: "docs".to_string(),
+                items,
+            },
+        );
+
+        let output_dir = tempfile::TempDir::new().unwrap();
+        generate_sitemap(&site, output_dir.path()).unwrap();
+
+        let content = std::fs::read_to_string(output_dir.path().join("sitemap.xml")).unwrap();
+        assert!(content.contains("/docs/"));
+        assert!(content.contains("/docs/page/2/"));
+        assert!(content.contains("/docs/page/3/"));
+        assert!(content.contains("/docs/item-0/"));
     }
 }

@@ -5,9 +5,9 @@
 {% block content %}
 <h1>{{ collection.name | title }}</h1>
 
-{% if collection.items | length > 0 %}
+{% if items | length > 0 %}
 <section>
-    {% for item in collection.items %}
+    {% for item in items %}
     <article>
         <h2><a href="{{ site.config.base_url }}/{{ collection_name }}/{{ item.slug }}/">{{ item.title }}</a></h2>
     </article>
@@ -15,5 +15,17 @@
 </section>
 {% else %}
 <p>No items in this collection.</p>
+{% endif %}
+
+{% if total_pages > 1 %}
+<nav>
+    {% if prev_page_url %}
+    <a href="{{ prev_page_url }}">&larr; Previous</a>
+    {% endif %}
+    <span>Page {{ current_page }} of {{ total_pages }}</span>
+    {% if next_page_url %}
+    <a href="{{ next_page_url }}">Next &rarr;</a>
+    {% endif %}
+</nav>
 {% endif %}
 {% endblock %}

@@ -4,7 +4,7 @@ use axum::http::{Request, Response, StatusCode};
 use axum::middleware::{self, Next};
 use bamboo_ssg::{
     BuildState, SiteBuilder, ThemeEngine, classify_changes, clean_output_dir,
-    compute_content_hashes, expand_targets, load_cache, save_cache,
+    compute_content_hashes, expand_targets, load_cache, save_cache, validate_internal_links,
 };
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use std::fs;
@@ -196,6 +196,14 @@ pub fn build_site(
         output.display(),
         elapsed
     );
+
+    let warnings = validate_internal_links(output, &site.config.base_url);
+    for warning in &warnings {
+        eprintln!("warning: {}", warning);
+    }
+    if !warnings.is_empty() {
+        eprintln!("{} broken link(s) found", warnings.len());
+    }
 
     Ok(())
 }
