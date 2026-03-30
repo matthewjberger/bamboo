@@ -178,7 +178,7 @@ strip-release tag:
 # Bumps the patch version, updates changelog, and creates a git tag (Windows)
 [windows]
 bump-patch-version:
-    $currentVersion = (Select-String -Path 'crates/bamboo/Cargo.toml' -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value; $parts = $currentVersion.Split('.'); $newPatch = [int]$parts[2] + 1; $newVersion = "$($parts[0]).$($parts[1]).$newPatch"; Write-Host "Bumping version from $currentVersion to $newVersion"; (Get-Content 'crates/bamboo/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'crates/bamboo/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml; git commit -m "chore: bump version to v$newVersion"; git cliff --tag "v$newVersion" -o CHANGELOG.md; git add CHANGELOG.md; git commit -m "chore: update changelog for v$newVersion"; git tag "v$newVersion"; Write-Host ""; Write-Host "Version bumped and tagged! To push, run:" -ForegroundColor Green; Write-Host "  just push-version" -ForegroundColor Green
+    $currentVersion = (Select-String -Path 'crates/bamboo/Cargo.toml' -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value; $parts = $currentVersion.Split('.'); $newPatch = [int]$parts[2] + 1; $newVersion = "$($parts[0]).$($parts[1]).$newPatch"; Write-Host "Bumping version from $currentVersion to $newVersion"; (Get-Content 'crates/bamboo/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'crates/bamboo/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "bamboo-ssg = \{ version = `".*?`"", "bamboo-ssg = { version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml; git commit -m "chore: bump version to v$newVersion"; git cliff --tag "v$newVersion" -o CHANGELOG.md; git add CHANGELOG.md; git commit -m "chore: update changelog for v$newVersion"; git tag "v$newVersion"; Write-Host ""; Write-Host "Version bumped and tagged! To push, run:" -ForegroundColor Green; Write-Host "  just push-version" -ForegroundColor Green
 
 # Bumps the patch version, updates changelog, and creates a git tag (Unix)
 [unix]
@@ -192,6 +192,7 @@ bump-patch-version:
     echo "Bumping version from $CURRENT_VERSION to $NEW_VERSION"
     sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" crates/bamboo/Cargo.toml
     sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" apps/cli/Cargo.toml
+    sed -i "s/bamboo-ssg = { version = \"$CURRENT_VERSION\"/bamboo-ssg = { version = \"$NEW_VERSION\"/" apps/cli/Cargo.toml
     git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml
     git commit -m "chore: bump version to v$NEW_VERSION"
     git cliff --tag "v$NEW_VERSION" -o CHANGELOG.md
@@ -205,7 +206,7 @@ bump-patch-version:
 # Bumps the minor version, updates changelog, and creates a git tag (Windows)
 [windows]
 bump-minor-version:
-    $currentVersion = (Select-String -Path 'crates/bamboo/Cargo.toml' -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value; $parts = $currentVersion.Split('.'); $newMinor = [int]$parts[1] + 1; $newVersion = "$($parts[0]).$newMinor.0"; Write-Host "Bumping version from $currentVersion to $newVersion"; (Get-Content 'crates/bamboo/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'crates/bamboo/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml; git commit -m "chore: bump version to v$newVersion"; git cliff --tag "v$newVersion" -o CHANGELOG.md; git add CHANGELOG.md; git commit -m "chore: update changelog for v$newVersion"; git tag "v$newVersion"; Write-Host ""; Write-Host "Version bumped and tagged! To push, run:" -ForegroundColor Green; Write-Host "  just push-version" -ForegroundColor Green
+    $currentVersion = (Select-String -Path 'crates/bamboo/Cargo.toml' -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value; $parts = $currentVersion.Split('.'); $newMinor = [int]$parts[1] + 1; $newVersion = "$($parts[0]).$newMinor.0"; Write-Host "Bumping version from $currentVersion to $newVersion"; (Get-Content 'crates/bamboo/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'crates/bamboo/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "bamboo-ssg = \{ version = `".*?`"", "bamboo-ssg = { version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml; git commit -m "chore: bump version to v$newVersion"; git cliff --tag "v$newVersion" -o CHANGELOG.md; git add CHANGELOG.md; git commit -m "chore: update changelog for v$newVersion"; git tag "v$newVersion"; Write-Host ""; Write-Host "Version bumped and tagged! To push, run:" -ForegroundColor Green; Write-Host "  just push-version" -ForegroundColor Green
 
 # Bumps the minor version, updates changelog, and creates a git tag (Unix)
 [unix]
@@ -219,6 +220,7 @@ bump-minor-version:
     echo "Bumping version from $CURRENT_VERSION to $NEW_VERSION"
     sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" crates/bamboo/Cargo.toml
     sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" apps/cli/Cargo.toml
+    sed -i "s/bamboo-ssg = { version = \"$CURRENT_VERSION\"/bamboo-ssg = { version = \"$NEW_VERSION\"/" apps/cli/Cargo.toml
     git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml
     git commit -m "chore: bump version to v$NEW_VERSION"
     git cliff --tag "v$NEW_VERSION" -o CHANGELOG.md
@@ -232,7 +234,7 @@ bump-minor-version:
 # Bumps the major version, updates changelog, and creates a git tag (Windows)
 [windows]
 bump-major-version:
-    $currentVersion = (Select-String -Path 'crates/bamboo/Cargo.toml' -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value; $parts = $currentVersion.Split('.'); $newMajor = [int]$parts[0] + 1; $newVersion = "$newMajor.0.0"; Write-Host "Bumping version from $currentVersion to $newVersion"; (Get-Content 'crates/bamboo/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'crates/bamboo/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml; git commit -m "chore: bump version to v$newVersion"; git cliff --tag "v$newVersion" -o CHANGELOG.md; git add CHANGELOG.md; git commit -m "chore: update changelog for v$newVersion"; git tag "v$newVersion"; Write-Host ""; Write-Host "Version bumped and tagged! To push, run:" -ForegroundColor Green; Write-Host "  just push-version" -ForegroundColor Green
+    $currentVersion = (Select-String -Path 'crates/bamboo/Cargo.toml' -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value; $parts = $currentVersion.Split('.'); $newMajor = [int]$parts[0] + 1; $newVersion = "$newMajor.0.0"; Write-Host "Bumping version from $currentVersion to $newVersion"; (Get-Content 'crates/bamboo/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'crates/bamboo/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "^version = `"$currentVersion`"", "version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; (Get-Content 'apps/cli/Cargo.toml') -replace "bamboo-ssg = \{ version = `".*?`"", "bamboo-ssg = { version = `"$newVersion`"" | Set-Content 'apps/cli/Cargo.toml'; git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml; git commit -m "chore: bump version to v$newVersion"; git cliff --tag "v$newVersion" -o CHANGELOG.md; git add CHANGELOG.md; git commit -m "chore: update changelog for v$newVersion"; git tag "v$newVersion"; Write-Host ""; Write-Host "Version bumped and tagged! To push, run:" -ForegroundColor Green; Write-Host "  just push-version" -ForegroundColor Green
 
 # Bumps the major version, updates changelog, and creates a git tag (Unix)
 [unix]
@@ -246,6 +248,7 @@ bump-major-version:
     echo "Bumping version from $CURRENT_VERSION to $NEW_VERSION"
     sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" crates/bamboo/Cargo.toml
     sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" apps/cli/Cargo.toml
+    sed -i "s/bamboo-ssg = { version = \"$CURRENT_VERSION\"/bamboo-ssg = { version = \"$NEW_VERSION\"/" apps/cli/Cargo.toml
     git add crates/bamboo/Cargo.toml apps/cli/Cargo.toml
     git commit -m "chore: bump version to v$NEW_VERSION"
     git cliff --tag "v$NEW_VERSION" -o CHANGELOG.md
