@@ -1,3 +1,12 @@
+## [0.2.5] - 2026-03-30
+
+### 🐛 Bug Fixes
+
+- Generate .gitignore in new and init commands
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.2.5
 ## [0.2.4] - 2026-03-30
 
 ### 🚀 Features
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.2.4
+- Update changelog for v0.2.4
 ## [0.2.3] - 2026-03-30
 
 ### 🐛 Bug Fixes
