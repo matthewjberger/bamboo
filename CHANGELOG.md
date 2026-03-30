@@ -1,4 +1,4 @@
-## [0.2.0] - 2026-03-30
+## [0.2.1] - 2026-03-30
 
 ### 🚀 Features
 
@@ -12,6 +12,7 @@
 - Use base_url for stylesheet path to support subpath deployments
 - Address bugs, improve architecture, and add features
 - Bump recipes now update bamboo-ssg dependency version
+- Add dark mode inline code styling to index template
 
 ### 🚜 Refactor
 
@@ -23,6 +24,10 @@
 - Update changelog for v0.1.2
 - Bump lockfile
 - Bump version to v0.2.0
+- Update changelog for v0.2.0
+- Remove unused root themes directory
+- Update lockfile for v0.2.0
+- Bump version to v0.2.1
 ## [0.1.1] - 2026-02-04
 
 ### 🚀 Features
