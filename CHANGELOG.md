@@ -1,3 +1,16 @@
+## [0.2.2] - 2026-03-30
+
+### 🐛 Bug Fixes
+
+- Bump recipes now update README library version
+
+### 📚 Documentation
+
+- Update README for v0.2.1 features
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.2.2
 ## [0.2.1] - 2026-03-30
 
 ### 🚀 Features
@@ -28,6 +41,7 @@
 - Remove unused root themes directory
 - Update lockfile for v0.2.0
 - Bump version to v0.2.1
+- Update changelog for v0.2.1
 ## [0.1.1] - 2026-02-04
 
 ### 🚀 Features
