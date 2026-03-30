@@ -20,10 +20,10 @@ Bamboo transforms markdown content with frontmatter into static HTML sites. It f
 |---------|-------------|
 | **Markdown** | Full CommonMark support with tables, footnotes, strikethrough, task lists |
 | **Frontmatter** | TOML (`+++`) or YAML (`---`) metadata in content files |
-| **Syntax Highlighting** | Built-in highlighting via syntect with base16-ocean.dark theme |
+| **Syntax Highlighting** | Built-in highlighting via syntect with configurable themes |
 | **Templating** | Tera templates with inheritance, includes, filters, and macros |
 | **Shortcodes** | Inline (`{{</* name */>}}`) and block (`{{%/* name */%}}`) shortcodes with Tera templates |
-| **Collections** | Organize content beyond posts — projects, recipes, portfolios |
+| **Collections** | Organize content beyond posts — projects, recipes, portfolios (supports nesting) |
 | **Data Files** | Load TOML/YAML/JSON from `data/` directory into templates |
 | **Pagination** | Automatic pagination for post listings, tag pages, and category pages |
 | **Tags & Categories** | Auto-generated tag and category index/listing pages |
@@ -36,6 +36,12 @@ Bamboo transforms markdown content with frontmatter into static HTML sites. It f
 | **Asset Pipeline** | CSS/JS/HTML minification and content-hash fingerprinting |
 | **Responsive Images** | Automatic resizing and `<picture>` srcset generation |
 | **Live Reload** | Development server with automatic rebuild on file changes |
+| **Sass/SCSS** | Automatic Sass/SCSS compilation to CSS |
+| **Math** | LaTeX math rendering with KaTeX support (`$...$` inline, `$$...$$` display) |
+| **Custom Taxonomies** | Define custom taxonomies beyond tags and categories |
+| **Custom Permalinks** | Override output URL via `permalink` frontmatter field |
+| **Cross-References** | Link between content with `{{</* ref "page.md" */>}}` shortcodes |
+| **Incremental Builds** | Only rebuild changed content during development |
 | **Themes** | Built-in default theme with light/dark mode, or use custom themes with overrides |
 
 ## Quick Start
@@ -83,7 +89,9 @@ my-site/
 │   │   └── 2024-01-15-hello.md
 │   └── projects/            # Collection (needs _collection.toml)
 │       ├── _collection.toml
-│       └── my-project.md
+│       ├── my-project.md
+│       └── archived/        # Nested subdirectories supported
+│           └── old-project.md
 ├── data/                    # Data files accessible in templates
 │   └── nav.toml             # → {{ site.data.nav }}
 ├── static/                  # Copied as-is to output
@@ -103,8 +111,16 @@ description = "A site built with Bamboo"
 author = "Your Name"
 language = "en"
 posts_per_page = 10    # Posts per page (0 = all on one page)
+syntax_theme = "base16-ocean.dark"  # Syntax highlighting theme
+math = false           # Enable LaTeX math rendering
 minify = false         # Minify CSS, JS, and HTML output
 fingerprint = false    # Content-hash asset filenames for cache busting
+
+[taxonomies.tags]      # Built-in (auto-configured)
+singular = "tag"
+
+[taxonomies.categories]  # Built-in (auto-configured)
+singular = "category"
 
 [images]               # Responsive image generation (optional)
 widths = [320, 640, 1024, 1920]
@@ -165,7 +181,9 @@ Your content here...
 | `weight` | number | pages, items | Sort order (lower = first) |
 | `template` | string | all | Override default template |
 | `excerpt` | string | posts | Custom excerpt (auto-generated from first paragraph if omitted) |
+| `permalink` | string | all | Override the output URL (e.g. `/custom-path/`) |
 | `redirect_from` | array | posts, pages | Old URLs that redirect to this content |
+| `math` | bool | all | Enable LaTeX math for this page (when not globally enabled) |
 
 ### Date from Filename
 
@@ -438,7 +456,9 @@ dist/
 │   └── index.html            # Search page
 ├── projects/
 │   ├── index.html            # Collection index
-│   └── my-project/index.html # Collection items
+│   ├── my-project/index.html # Collection items
+│   └── archived/
+│       └── old-project/index.html  # Nested collection items
 ├── rss.xml                   # RSS feed
 ├── atom.xml                  # Atom feed
 ├── sitemap.xml               # Sitemap
@@ -451,7 +471,7 @@ Use `bamboo-ssg` as a library in your own tools:
 
 ```toml
 [dependencies]
-bamboo-ssg = "0.1"
+bamboo-ssg = "0.2.1"
 ```
 
 ```rust
