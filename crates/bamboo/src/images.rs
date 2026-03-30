@@ -92,30 +92,21 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
         .map(|entry| entry.path().to_path_buf())
         .collect();
 
-    let results: Vec<Option<(String, Vec<ImageVariant>)>> = image_paths
+    type ImageResult = Result<Option<(String, Vec<ImageVariant>)>>;
+    let results: Vec<ImageResult> = image_paths
         .par_iter()
-        .map(|path| -> Option<(String, Vec<ImageVariant>)> {
-            let source_image = match ImageReader::open(path) {
-                Ok(reader) => match reader.decode() {
-                    Ok(image) => image,
-                    Err(error) => {
-                        eprintln!(
-                            "Warning: failed to decode image {}: {}",
-                            path.display(),
-                            error
-                        );
-                        return None;
-                    }
-                },
-                Err(error) => {
-                    eprintln!(
-                        "Warning: failed to open image {}: {}",
-                        path.display(),
-                        error
-                    );
-                    return None;
+        .map(|path| -> Result<Option<(String, Vec<ImageVariant>)>> {
+            let reader = ImageReader::open(path).map_err(|error| {
+                crate::error::BambooError::ImageProcessing {
+                    message: format!("failed to open {}: {}", path.display(), error),
                 }
-            };
+            })?;
+            let source_image =
+                reader
+                    .decode()
+                    .map_err(|error| crate::error::BambooError::ImageProcessing {
+                        message: format!("failed to decode {}: {}", path.display(), error),
+                    })?;
 
             let original_width = source_image.width();
             let original_height = source_image.height();
@@ -179,14 +170,13 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
                         }
                     };
 
-                    if let Err(error) = write_result {
-                        eprintln!(
-                            "Warning: failed to write image variant {}: {}",
+                    write_result.map_err(|error| crate::error::BambooError::ImageProcessing {
+                        message: format!(
+                            "failed to write variant {}: {}",
                             variant_path.display(),
                             error
-                        );
-                        continue;
-                    }
+                        ),
+                    })?;
 
                     let relative_variant = variant_path
                         .strip_prefix(output_dir)
@@ -203,16 +193,18 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
             }
 
             if !image_variants.is_empty() {
-                Some((relative_original, image_variants))
+                Ok(Some((relative_original, image_variants)))
             } else {
-                None
+                Ok(None)
             }
         })
         .collect();
 
     let mut variants: HashMap<String, Vec<ImageVariant>> = HashMap::new();
-    for result in results.into_iter().flatten() {
-        variants.insert(result.0, result.1);
+    for result in results {
+        if let Some((key, value)) = result? {
+            variants.insert(key, value);
+        }
     }
 
     Ok(ImageManifest { variants })

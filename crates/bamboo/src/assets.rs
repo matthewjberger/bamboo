@@ -193,23 +193,14 @@ fn minify_js_files(output_dir: &Path) -> Result<()> {
         let session = minify_js::Session::new();
         let source = fs::read(file_path)?;
         let mut output = Vec::new();
-        match minify_js::minify(
+        minify_js::minify(
             &session,
             minify_js::TopLevelMode::Global,
             &source,
             &mut output,
-        ) {
-            Ok(()) => {
-                fs::write(file_path, output)?;
-            }
-            Err(error) => {
-                eprintln!(
-                    "Warning: failed to minify {}: {}",
-                    file_path.display(),
-                    error
-                );
-            }
-        }
+        )
+        .map_err(|error| std::io::Error::other(format!("{}: {}", file_path.display(), error)))?;
+        fs::write(file_path, output)?;
         Ok(())
     })
 }
@@ -224,6 +215,8 @@ fn compile_sass_files(output_dir: &Path, load_paths: &[std::path::PathBuf]) -> R
     if all_sass_files.is_empty() {
         return Ok(());
     }
+
+    let mut compiled_results: Vec<(std::path::PathBuf, std::path::PathBuf, String)> = Vec::new();
 
     for file_path in &all_sass_files {
         let filename = file_path
@@ -258,11 +251,25 @@ fn compile_sass_files(output_dir: &Path, load_paths: &[std::path::PathBuf]) -> R
         })?;
 
         let css_path = file_path.with_extension("css");
-        fs::write(&css_path, compiled)?;
+        compiled_results.push((file_path.clone(), css_path, compiled));
+    }
+
+    for (_sass_path, css_path, compiled_css) in &compiled_results {
+        fs::write(css_path, compiled_css)?;
+    }
+
+    for (sass_path, _css_path, _compiled_css) in &compiled_results {
+        if sass_path.exists() {
+            fs::remove_file(sass_path)?;
+        }
     }
 
     for file_path in &all_sass_files {
-        if file_path.exists() {
+        let filename = file_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        if filename.starts_with('_') && file_path.exists() {
             fs::remove_file(file_path)?;
         }
     }

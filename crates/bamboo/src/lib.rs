@@ -20,7 +20,7 @@ pub use cache::{
 pub use error::{BambooError, IoContext, Result};
 pub use parsing::{
     MarkdownRenderer, RenderedMarkdown, extract_excerpt, extract_frontmatter,
-    parse_date_from_filename, parse_markdown, reading_time, slugify, word_count,
+    parse_date_from_filename, reading_time, slugify, word_count,
 };
 pub use site::SiteBuilder;
 pub use theme::{ThemeEngine, clean_output_dir};

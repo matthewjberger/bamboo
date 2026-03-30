@@ -255,7 +255,7 @@ impl ThemeEngine {
 
         fs::create_dir_all(output_dir)?;
 
-        if self.is_builtin_default {
+        if render_all && self.is_builtin_default {
             fs::write(output_dir.join("style.css"), DEFAULT_STYLESHEET)?;
         }
 
@@ -355,8 +355,10 @@ impl ThemeEngine {
             self.render_search(site, output_dir)?;
         }
 
-        self.copy_theme_static(output_dir)?;
-        self.copy_assets(&site.assets, output_dir)?;
+        if render_all {
+            self.copy_theme_static(output_dir)?;
+            self.copy_assets(&site.assets, output_dir)?;
+        }
 
         if render_all || targets.is_some_and(|t| should_render(t, &RenderTarget::Feeds)) {
             feeds::generate_rss(site, output_dir)?;
@@ -382,21 +384,23 @@ impl ThemeEngine {
             images::apply_srcset_to_html(output_dir, &manifest)?;
         }
 
-        let mut sass_load_paths = Vec::new();
-        if let Some(ref static_dir) = self.theme_static_dir {
-            sass_load_paths.push(static_dir.clone());
-        }
-        if let Some(ref override_dir) = self.override_static_dir {
-            sass_load_paths.push(override_dir.clone());
-        }
+        if render_all {
+            let mut sass_load_paths = Vec::new();
+            if let Some(ref static_dir) = self.theme_static_dir {
+                sass_load_paths.push(static_dir.clone());
+            }
+            if let Some(ref override_dir) = self.override_static_dir {
+                sass_load_paths.push(override_dir.clone());
+            }
 
-        let asset_config = AssetConfig {
-            minify: site.config.minify,
-            fingerprint: site.config.fingerprint,
-            base_url: site.config.base_url.clone(),
-            sass_load_paths,
-        };
-        crate::assets::process_assets(output_dir, &asset_config)?;
+            let asset_config = AssetConfig {
+                minify: site.config.minify,
+                fingerprint: site.config.fingerprint,
+                base_url: site.config.base_url.clone(),
+                sass_load_paths,
+            };
+            crate::assets::process_assets(output_dir, &asset_config)?;
+        }
 
         Ok(())
     }

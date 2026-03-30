@@ -5,12 +5,9 @@ use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, T
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use std::sync::LazyLock;
 use syntect::highlighting::ThemeSet;
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
-
-static MARKDOWN_RENDERER: LazyLock<MarkdownRenderer> = LazyLock::new(MarkdownRenderer::new);
 
 pub struct MarkdownRenderer {
     syntax_set: SyntaxSet,
@@ -38,22 +35,18 @@ impl MarkdownRenderer {
         }
     }
 
-    pub fn with_theme(theme_name: &str) -> Self {
+    pub fn with_theme(theme_name: &str) -> Result<Self> {
         let theme_set = ThemeSet::load_defaults();
-        let validated_theme_name = if theme_set.themes.contains_key(theme_name) {
-            theme_name.to_string()
-        } else {
-            eprintln!(
-                "Warning: syntax theme '{}' not found, falling back to 'base16-ocean.dark'",
-                theme_name
-            );
-            "base16-ocean.dark".to_string()
-        };
-        Self {
+        if !theme_set.themes.contains_key(theme_name) {
+            return Err(BambooError::ThemeNotFound {
+                name: format!("syntax theme '{}' not found", theme_name),
+            });
+        }
+        Ok(Self {
             syntax_set: SyntaxSet::load_defaults_newlines(),
             theme_set,
-            theme_name: validated_theme_name,
-        }
+            theme_name: theme_name.to_string(),
+        })
     }
 
     pub fn render(&self, content: &str) -> RenderedMarkdown {
@@ -238,10 +231,6 @@ fn escape_html(input: &str) -> String {
     crate::xml::escape(input)
 }
 
-pub fn parse_markdown(content: &str) -> RenderedMarkdown {
-    MARKDOWN_RENDERER.render(content)
-}
-
 pub fn word_count(text: &str) -> usize {
     text.split_whitespace().count()
 }
@@ -300,11 +289,6 @@ pub fn preprocess_math(content: &str) -> String {
                     output.push(chars[position]);
                     position += 1;
                 }
-                continue;
-            } else if position + 2 < length
-                && chars[position + 1] == '~'
-                && chars[position + 2] == '~'
-            {
                 continue;
             } else {
                 in_inline_code = true;
@@ -561,32 +545,20 @@ pub fn extract_frontmatter(content: &str, path: &Path) -> Result<(Frontmatter, S
 fn parse_toml_frontmatter(content: &str, path: &Path) -> Result<(Frontmatter, String)> {
     let rest = &content[3..];
 
-    let mut search_offset = 0;
-    loop {
-        let end_index = find_closing_delimiter(&rest[search_offset..], "+++")
-            .map(|position| search_offset + position)
-            .ok_or_else(|| BambooError::InvalidFrontmatter {
-                path: path.to_path_buf(),
-            })?;
+    let end_index =
+        find_closing_delimiter(rest, "+++").ok_or_else(|| BambooError::InvalidFrontmatter {
+            path: path.to_path_buf(),
+        })?;
 
-        let frontmatter_str = &rest[..end_index];
-        match toml::from_str::<HashMap<String, Value>>(frontmatter_str) {
-            Ok(raw) => {
-                let body = &rest[end_index + 3..];
-                return Ok((Frontmatter { raw }, body.trim().to_string()));
-            }
-            Err(error) => {
-                let next_start = end_index + 3;
-                if next_start >= rest.len() {
-                    return Err(BambooError::TomlParse {
-                        path: path.to_path_buf(),
-                        message: error.to_string(),
-                    });
-                }
-                search_offset = next_start;
-            }
-        }
-    }
+    let frontmatter_str = &rest[..end_index];
+    let raw: HashMap<String, Value> =
+        toml::from_str(frontmatter_str).map_err(|error| BambooError::TomlParse {
+            path: path.to_path_buf(),
+            message: error.to_string(),
+        })?;
+
+    let body = &rest[end_index + 3..];
+    Ok((Frontmatter { raw }, body.trim().to_string()))
 }
 
 fn parse_yaml_frontmatter(content: &str, path: &Path) -> Result<(Frontmatter, String)> {
@@ -661,10 +633,14 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    fn render(input: &str) -> RenderedMarkdown {
+        MarkdownRenderer::new().render(input)
+    }
+
     #[test]
     fn test_parse_markdown() {
         let input = "# Hello\n\nThis is **bold**.";
-        let output = parse_markdown(input);
+        let output = render(input);
         assert!(output.html.contains("<h1"));
         assert!(output.html.contains("Hello"));
         assert!(output.html.contains("<strong>bold</strong>"));
@@ -673,7 +649,7 @@ mod tests {
     #[test]
     fn test_parse_markdown_with_code() {
         let input = "```rust\nfn main() {}\n```";
-        let output = parse_markdown(input);
+        let output = render(input);
         assert!(output.html.contains("fn"));
         assert!(output.html.contains("main"));
     }
@@ -681,7 +657,7 @@ mod tests {
     #[test]
     fn test_heading_anchors() {
         let input = "## My Heading";
-        let output = parse_markdown(input);
+        let output = render(input);
         assert!(output.html.contains("id=\"my-heading\""));
         assert!(output.html.contains("href=\"#my-heading\""));
     }
@@ -689,7 +665,7 @@ mod tests {
     #[test]
     fn test_toc_generation() {
         let input = "# Title\n## Section One\n### Subsection\n## Section Two";
-        let output = parse_markdown(input);
+        let output = render(input);
         assert_eq!(output.toc.len(), 4);
         assert_eq!(output.toc[0].level, 1);
         assert_eq!(output.toc[0].title, "Title");
@@ -825,5 +801,20 @@ mod tests {
         let input = "This costs 5$ and 10$ total.";
         let output = preprocess_math(input);
         assert_eq!(output, input);
+    }
+
+    #[test]
+    fn test_preprocess_math_backtick_followed_by_tildes() {
+        let input = "`~~something~~`";
+        let output = preprocess_math(input);
+        assert_eq!(output, input);
+    }
+
+    #[test]
+    fn test_toml_frontmatter_malformed_returns_error() {
+        let content = "+++\ntitle = \n+++\n\nBody content";
+        let path = PathBuf::from("test.md");
+        let result = extract_frontmatter(content, &path);
+        assert!(result.is_err());
     }
 }

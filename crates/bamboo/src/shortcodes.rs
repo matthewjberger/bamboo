@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use tera::Tera;
 
 use crate::error::{BambooError, Result};
-use crate::parsing::{MarkdownRenderer, parse_markdown};
+use crate::parsing::MarkdownRenderer;
 
 const BUILTIN_YOUTUBE: &str = include_str!("../themes/default/templates/shortcodes/youtube.html");
 const BUILTIN_FIGURE: &str = include_str!("../themes/default/templates/shortcodes/figure.html");
@@ -59,7 +59,69 @@ impl ShortcodeProcessor {
         self.ref_registry = registry;
     }
 
-    pub fn process(&self, content: &str, renderer: Option<&MarkdownRenderer>) -> Result<String> {
+    pub fn register_builtin_default_partials(&mut self) -> Result<()> {
+        const BUILTIN_HEADER: &str =
+            include_str!("../themes/default/templates/partials/header.html");
+        const BUILTIN_FOOTER: &str =
+            include_str!("../themes/default/templates/partials/footer.html");
+        const BUILTIN_NAV: &str = include_str!("../themes/default/templates/partials/nav.html");
+
+        let builtins = [
+            ("partials/header.html", BUILTIN_HEADER),
+            ("partials/footer.html", BUILTIN_FOOTER),
+            ("partials/nav.html", BUILTIN_NAV),
+        ];
+
+        for (name, content) in &builtins {
+            if !self
+                .tera
+                .get_template_names()
+                .any(|existing| existing == *name)
+            {
+                self.tera
+                    .add_raw_template(name, content)
+                    .map_err(BambooError::Template)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn register_partials_from_directory(
+        &mut self,
+        templates_dir: &std::path::Path,
+    ) -> Result<()> {
+        let partials_dir = templates_dir.join("partials");
+        if !partials_dir.is_dir() {
+            return Ok(());
+        }
+        for entry in walkdir::WalkDir::new(&partials_dir)
+            .min_depth(1)
+            .into_iter()
+            .filter_map(|entry| entry.ok())
+        {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            if path.extension().and_then(|extension| extension.to_str()) != Some("html") {
+                continue;
+            }
+            let relative =
+                path.strip_prefix(templates_dir)
+                    .map_err(|_| BambooError::InvalidPath {
+                        path: path.to_path_buf(),
+                    })?;
+            let template_name = relative.to_string_lossy().replace('\\', "/");
+            let content = std::fs::read_to_string(path)?;
+            self.tera
+                .add_raw_template(&template_name, &content)
+                .map_err(BambooError::Template)?;
+        }
+        Ok(())
+    }
+
+    pub fn process(&self, content: &str, renderer: &MarkdownRenderer) -> Result<String> {
         let mut output = String::with_capacity(content.len());
         let mut remaining = content;
 
@@ -192,7 +254,7 @@ impl ShortcodeProcessor {
         &self,
         input: &'a str,
         output: &mut String,
-        renderer: Option<&MarkdownRenderer>,
+        renderer: &MarkdownRenderer,
     ) -> Result<&'a str> {
         let after_open = &input[3..];
 
@@ -222,11 +284,7 @@ impl ShortcodeProcessor {
 
         let body_raw = &after_opening_tag[..closing_position];
         let body_processed = self.process(body_raw.trim(), renderer)?;
-        let body_rendered = if let Some(renderer) = renderer {
-            renderer.render(&body_processed)
-        } else {
-            parse_markdown(&body_processed)
-        };
+        let body_rendered = renderer.render(&body_processed);
 
         let template_name = format!("shortcodes/{}.html", name);
         let mut context = tera::Context::new();
@@ -495,6 +553,10 @@ mod tests {
         ShortcodeProcessor::new(&[]).unwrap()
     }
 
+    fn renderer() -> MarkdownRenderer {
+        MarkdownRenderer::new()
+    }
+
     #[test]
     fn test_parse_shortcode_args_simple() {
         let (name, args) = parse_shortcode_args("youtube id=\"abc123\"").unwrap();
@@ -525,7 +587,7 @@ mod tests {
     fn test_inline_shortcode() {
         let processor = processor();
         let input = "before {{< youtube id=\"abc\" >}} after";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("before"));
         assert!(result.contains("after"));
         assert!(result.contains("abc"));
@@ -535,7 +597,7 @@ mod tests {
     fn test_block_shortcode_with_body() {
         let processor = processor();
         let input = "before {{% note type=\"info\" %}}This is a note{{% /note %}} after";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("before"));
         assert!(result.contains("after"));
         assert!(result.contains("note"));
@@ -545,7 +607,7 @@ mod tests {
     fn test_code_fence_skipping() {
         let processor = processor();
         let input = "```\n{{< youtube id=\"skip\" >}}\n```\n\noutside";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("{{< youtube id=\"skip\" >}}"));
         assert!(result.contains("outside"));
     }
@@ -554,7 +616,7 @@ mod tests {
     fn test_no_shortcodes() {
         let processor = processor();
         let input = "just plain text";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert_eq!(result, "just plain text");
     }
 
@@ -562,7 +624,7 @@ mod tests {
     fn test_multiple_inline_shortcodes() {
         let processor = processor();
         let input = "{{< youtube id=\"abc\" >}} and {{< youtube id=\"def\" >}}";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("abc"));
         assert!(result.contains("def"));
     }
@@ -571,7 +633,7 @@ mod tests {
     fn test_nested_block_shortcodes() {
         let processor = processor();
         let input = "{{% note type=\"info\" %}}Outer {{% details summary=\"Click\" %}}Inner{{% /details %}}{{% /note %}}";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("Outer"));
         assert!(result.contains("Inner"));
     }
@@ -580,7 +642,7 @@ mod tests {
     fn test_unclosed_inline_shortcode_error() {
         let processor = processor();
         let input = "{{< youtube id=\"abc\"";
-        let result = processor.process(input, None);
+        let result = processor.process(input, &renderer());
         assert!(result.is_err());
     }
 
@@ -588,7 +650,7 @@ mod tests {
     fn test_missing_closing_tag_error() {
         let processor = processor();
         let input = "{{% note type=\"info\" %}}content without closing";
-        let result = processor.process(input, None);
+        let result = processor.process(input, &renderer());
         assert!(result.is_err());
     }
 
@@ -614,7 +676,7 @@ mod tests {
     fn test_mixed_inline_and_block() {
         let processor = processor();
         let input = "{{< youtube id=\"vid\" >}} then {{% note type=\"warning\" %}}Warning text{{% /note %}}";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("vid"));
         assert!(result.contains("Warning"));
     }
@@ -623,7 +685,7 @@ mod tests {
     fn test_tilde_code_fence_skipping() {
         let processor = processor();
         let input = "~~~\n{{< youtube id=\"skip\" >}}\n~~~\n\noutside";
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert!(result.contains("{{< youtube id=\"skip\" >}}"));
         assert!(result.contains("outside"));
     }
@@ -636,7 +698,7 @@ mod tests {
         processor.set_ref_registry(registry);
 
         let input = r#"[About]({{< ref "about.md" >}})"#;
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert_eq!(result, "[About](/about/)");
     }
 
@@ -648,7 +710,7 @@ mod tests {
         processor.set_ref_registry(registry);
 
         let input = r#"{{< ref path="posts/hello.md" >}}"#;
-        let result = processor.process(input, None).unwrap();
+        let result = processor.process(input, &renderer()).unwrap();
         assert_eq!(result, "/posts/hello/");
     }
 
@@ -656,7 +718,7 @@ mod tests {
     fn test_ref_shortcode_broken_reference() {
         let processor = processor();
         let input = r#"{{< ref "nonexistent.md" >}}"#;
-        let result = processor.process(input, None);
+        let result = processor.process(input, &renderer());
         assert!(result.is_err());
         let error = result.unwrap_err().to_string();
         assert!(error.contains("nonexistent.md"));
@@ -667,5 +729,48 @@ mod tests {
         let (name, args) = parse_shortcode_args(r#"ref "about.md""#).unwrap();
         assert_eq!(name, "ref");
         assert_eq!(args.get("_positional").unwrap(), "about.md");
+    }
+
+    #[test]
+    fn test_builtin_default_partials_registered() {
+        let mut processor = processor();
+        processor.register_builtin_default_partials().unwrap();
+        assert!(
+            processor
+                .tera
+                .get_template_names()
+                .any(|name| name == "partials/header.html")
+        );
+        assert!(
+            processor
+                .tera
+                .get_template_names()
+                .any(|name| name == "partials/footer.html")
+        );
+        assert!(
+            processor
+                .tera
+                .get_template_names()
+                .any(|name| name == "partials/nav.html")
+        );
+    }
+
+    #[test]
+    fn test_register_partials_from_directory() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let partials_dir = dir.path().join("partials");
+        std::fs::create_dir_all(&partials_dir).unwrap();
+        std::fs::write(partials_dir.join("sidebar.html"), "<aside>Sidebar</aside>").unwrap();
+
+        let mut processor = processor();
+        processor
+            .register_partials_from_directory(dir.path())
+            .unwrap();
+        assert!(
+            processor
+                .tera
+                .get_template_names()
+                .any(|name| name == "partials/sidebar.html")
+        );
     }
 }

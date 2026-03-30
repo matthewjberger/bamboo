@@ -177,6 +177,10 @@ pub fn build_site(
     if !shortcode_dirs.is_empty() {
         builder = builder.shortcode_dirs(&shortcode_dirs)?;
     }
+    let theme_templates = theme_path.join("templates");
+    if theme_templates.is_dir() {
+        builder = builder.theme_templates_dir(&theme_templates);
+    }
 
     let site = builder.build()?;
 
@@ -254,6 +258,10 @@ fn build_site_incremental(
     }
     if !shortcode_dirs.is_empty() {
         builder = builder.shortcode_dirs(&shortcode_dirs)?;
+    }
+    let theme_templates = theme_path.join("templates");
+    if theme_templates.is_dir() {
+        builder = builder.theme_templates_dir(&theme_templates);
     }
 
     let site = builder.build()?;

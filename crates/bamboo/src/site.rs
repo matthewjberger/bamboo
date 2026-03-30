@@ -1,7 +1,7 @@
 use crate::error::{BambooError, IoContext, Result};
 use crate::parsing::{
     MarkdownRenderer, extract_excerpt, extract_frontmatter, parse_date_from_filename,
-    parse_markdown, preprocess_math, reading_time, word_count,
+    preprocess_math, reading_time, word_count,
 };
 use crate::search::strip_html_tags;
 use crate::shortcodes::ShortcodeProcessor;
@@ -9,6 +9,7 @@ use crate::types::{
     Asset, Collection, CollectionItem, Content, Page, Post, Site, SiteConfig, TaxonomyDefinition,
 };
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
+use rayon::prelude::*;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
@@ -34,6 +35,7 @@ pub struct SiteBuilder {
     shortcode_processor: Option<ShortcodeProcessor>,
     renderer: Option<MarkdownRenderer>,
     math_enabled: bool,
+    theme_templates_dir: Option<PathBuf>,
 }
 
 impl SiteBuilder {
@@ -45,6 +47,7 @@ impl SiteBuilder {
             shortcode_processor: None,
             renderer: None,
             math_enabled: false,
+            theme_templates_dir: None,
         }
     }
 
@@ -63,6 +66,13 @@ impl SiteBuilder {
         Ok(self)
     }
 
+    pub fn theme_templates_dir(self, dir: impl AsRef<Path>) -> Self {
+        Self {
+            theme_templates_dir: Some(dir.as_ref().to_path_buf()),
+            ..self
+        }
+    }
+
     pub fn build(&mut self) -> Result<Site> {
         let mut config = self.load_config()?;
 
@@ -70,7 +80,7 @@ impl SiteBuilder {
             config.base_url = url.trim_end_matches('/').to_string();
         }
 
-        self.renderer = Some(MarkdownRenderer::with_theme(&config.syntax_theme));
+        self.renderer = Some(MarkdownRenderer::with_theme(&config.syntax_theme)?);
         self.math_enabled = config.math;
 
         if self.shortcode_processor.is_none() {
@@ -84,6 +94,14 @@ impl SiteBuilder {
 
         let ref_registry = self.build_ref_registry()?;
         if let Some(ref mut processor) = self.shortcode_processor {
+            processor.register_builtin_default_partials()?;
+            if let Some(ref theme_templates) = self.theme_templates_dir {
+                processor.register_partials_from_directory(theme_templates)?;
+            }
+            let site_templates = self.input_dir.join("templates");
+            if site_templates.is_dir() {
+                processor.register_partials_from_directory(&site_templates)?;
+            }
             processor.set_ref_registry(ref_registry);
         }
 
@@ -142,17 +160,15 @@ impl SiteBuilder {
 
     fn load_pages(&self) -> Result<(Option<Page>, Vec<Page>)> {
         let content_dir = self.input_dir.join("content");
-        let mut pages = Vec::new();
         let mut home = None;
-        let mut seen_slugs: HashMap<String, PathBuf> = HashMap::new();
 
         if !content_dir.exists() {
-            return Ok((home, pages));
+            return Ok((home, Vec::new()));
         }
 
         let skip_dirs = self.find_reserved_dirs(&content_dir)?;
 
-        for entry in WalkDir::new(&content_dir)
+        let mut file_entries: Vec<(PathBuf, PathBuf)> = WalkDir::new(&content_dir)
             .min_depth(1)
             .into_iter()
             .filter_entry(|entry| {
@@ -163,40 +179,41 @@ impl SiteBuilder {
                     true
                 }
             })
-        {
-            let entry = entry.map_err(|error| BambooError::WalkDir {
-                path: content_dir.clone(),
-                message: error.to_string(),
-            })?;
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path().to_path_buf();
+                if !path.is_file() {
+                    return None;
+                }
+                if path
+                    .extension()
+                    .map(|extension| extension != "md")
+                    .unwrap_or(true)
+                {
+                    return None;
+                }
+                let filename = path.file_name().unwrap().to_string_lossy();
+                if filename.starts_with('_') && filename != "_index.md" {
+                    return None;
+                }
+                let relative = path.strip_prefix(&content_dir).ok()?.to_path_buf();
+                Some((path, relative))
+            })
+            .collect();
+        file_entries.sort_by(|a, b| a.0.cmp(&b.0));
 
-            let path = entry.path();
+        let parsed_pages: Vec<(Page, PathBuf, PathBuf)> = file_entries
+            .par_iter()
+            .map(|(path, relative)| {
+                let page = self.parse_page(path, relative)?;
+                Ok((page, path.clone(), relative.clone()))
+            })
+            .collect::<Result<Vec<_>>>()?;
 
-            if !path.is_file() {
-                continue;
-            }
+        let mut pages = Vec::new();
+        let mut seen_slugs: HashMap<String, PathBuf> = HashMap::new();
 
-            if path
-                .extension()
-                .map(|extension| extension != "md")
-                .unwrap_or(true)
-            {
-                continue;
-            }
-
-            let filename = path.file_name().unwrap().to_string_lossy();
-
-            if filename.starts_with('_') && filename != "_index.md" {
-                continue;
-            }
-
-            let relative =
-                path.strip_prefix(&content_dir)
-                    .map_err(|_| BambooError::InvalidPath {
-                        path: path.to_path_buf(),
-                    })?;
-
-            let page = self.parse_page(path, relative)?;
-
+        for (page, path, relative) in parsed_pages {
             if page.draft && !self.include_drafts {
                 continue;
             }
@@ -212,11 +229,11 @@ impl SiteBuilder {
                 if let Some(existing_path) = seen_slugs.get(&page.content.slug) {
                     return Err(BambooError::DuplicatePage {
                         slug: page.content.slug.clone(),
-                        path: path.to_path_buf(),
+                        path,
                         existing_path: existing_path.clone(),
                     });
                 }
-                seen_slugs.insert(page.content.slug.clone(), path.to_path_buf());
+                seen_slugs.insert(page.content.slug.clone(), path);
                 pages.push(page);
             }
         }
@@ -246,8 +263,10 @@ impl SiteBuilder {
     }
 
     fn process_shortcodes(&self, content: &str) -> Result<String> {
-        if let Some(ref processor) = self.shortcode_processor {
-            processor.process(content, self.renderer.as_ref())
+        if let Some(ref processor) = self.shortcode_processor
+            && let Some(ref renderer) = self.renderer
+        {
+            processor.process(content, renderer)
         } else {
             Ok(content.to_string())
         }
@@ -258,11 +277,10 @@ impl SiteBuilder {
     }
 
     fn render_markdown(&self, content: &str) -> crate::parsing::RenderedMarkdown {
-        if let Some(ref renderer) = self.renderer {
-            renderer.render(content)
-        } else {
-            parse_markdown(content)
-        }
+        self.renderer
+            .as_ref()
+            .expect("renderer must be initialized before rendering markdown")
+            .render(content)
     }
 
     fn build_ref_registry(&self) -> Result<HashMap<String, String>> {
@@ -346,18 +364,26 @@ impl SiteBuilder {
                     };
                 format!("/posts/{}/", slug)
             } else if is_in_collection {
-                let collection_name = parent_dir
+                let relative_to_content = path
                     .strip_prefix(&content_dir)
                     .unwrap()
-                    .components()
-                    .next()
-                    .unwrap()
-                    .as_os_str()
-                    .to_string_lossy();
-                let slug = filename
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                let collection_name = relative_to_content.split('/').next().unwrap_or("");
+                let within_collection = path
+                    .strip_prefix(content_dir.join(collection_name))
+                    .unwrap_or(path);
+                let file_slug = filename
                     .strip_suffix(".md")
                     .unwrap_or(&filename)
                     .to_string();
+                let nested_dir = within_collection.parent().unwrap_or(Path::new(""));
+                let slug = if nested_dir == Path::new("") {
+                    file_slug
+                } else {
+                    let dir_part = nested_dir.to_string_lossy().replace('\\', "/");
+                    format!("{}/{}", dir_part, file_slug)
+                };
                 format!("/{}/{}/", collection_name, slug)
             } else {
                 let relative_dir = relative.parent().unwrap_or(Path::new(""));
@@ -388,6 +414,20 @@ impl SiteBuilder {
                 }
             };
 
+            let url = if let Ok(file_content) = fs::read_to_string(path)
+                && let Ok((frontmatter, _)) = extract_frontmatter(&file_content, path)
+                && let Some(permalink) = frontmatter.get_string("permalink")
+            {
+                let clean = permalink.trim_matches('/');
+                if clean.is_empty() {
+                    "/".to_string()
+                } else {
+                    format!("/{}/", clean)
+                }
+            } else {
+                url
+            };
+
             registry.insert(relative_str.clone(), url.clone());
             registry.insert(filename.to_string(), url.clone());
 
@@ -398,6 +438,23 @@ impl SiteBuilder {
         }
 
         Ok(registry)
+    }
+
+    fn apply_permalink(
+        frontmatter: &crate::types::Frontmatter,
+        url: &mut String,
+        output_path: &mut PathBuf,
+    ) {
+        if let Some(permalink) = frontmatter.get_string("permalink") {
+            let clean = permalink.trim_matches('/');
+            if clean.is_empty() {
+                *url = "/".to_string();
+                *output_path = PathBuf::from("index.html");
+            } else {
+                *url = format!("/{}/", clean);
+                *output_path = PathBuf::from(clean).join("index.html");
+            }
+        }
     }
 
     fn build_content(&self, input: ContentInput) -> Content {
@@ -463,17 +520,19 @@ impl SiteBuilder {
         let draft = frontmatter.get_bool("draft").unwrap_or(false);
         let redirect_from = frontmatter.get_array("redirect_from").unwrap_or_default();
 
-        let output_path = if slug == "index" {
+        let mut output_path = if slug == "index" {
             PathBuf::from("index.html")
         } else {
             PathBuf::from(&slug).join("index.html")
         };
 
-        let url = if slug == "index" {
+        let mut url = if slug == "index" {
             "/".to_string()
         } else {
             format!("/{}/", slug)
         };
+
+        Self::apply_permalink(&frontmatter, &mut url, &mut output_path);
 
         let content = self.build_content(ContentInput {
             slug,
@@ -497,50 +556,43 @@ impl SiteBuilder {
         taxonomy_definitions: &HashMap<String, TaxonomyDefinition>,
     ) -> Result<Vec<Post>> {
         let posts_dir = self.input_dir.join("content").join("posts");
-        let mut posts = Vec::new();
 
         if !posts_dir.exists() {
-            return Ok(posts);
+            return Ok(Vec::new());
         }
 
-        for entry in WalkDir::new(&posts_dir)
+        let file_paths: Vec<PathBuf> = WalkDir::new(&posts_dir)
             .min_depth(1)
             .max_depth(1)
             .into_iter()
-        {
-            let entry = entry.map_err(|error| BambooError::WalkDir {
-                path: posts_dir.clone(),
-                message: error.to_string(),
-            })?;
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path().to_path_buf();
+                if !path.is_file() {
+                    return None;
+                }
+                if path
+                    .extension()
+                    .map(|extension| extension != "md")
+                    .unwrap_or(true)
+                {
+                    return None;
+                }
+                let filename = path.file_name().unwrap().to_string_lossy();
+                if filename.starts_with('_') {
+                    return None;
+                }
+                Some(path)
+            })
+            .collect();
 
-            let path = entry.path();
-
-            if !path.is_file() {
-                continue;
-            }
-
-            if path
-                .extension()
-                .map(|extension| extension != "md")
-                .unwrap_or(true)
-            {
-                continue;
-            }
-
-            let filename = path.file_name().unwrap().to_string_lossy();
-
-            if filename.starts_with('_') {
-                continue;
-            }
-
-            let post = self.parse_post(path, taxonomy_definitions)?;
-
-            if post.draft && !self.include_drafts {
-                continue;
-            }
-
-            posts.push(post);
-        }
+        let mut posts: Vec<Post> = file_paths
+            .par_iter()
+            .map(|path| self.parse_post(path, taxonomy_definitions))
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .filter(|post| !post.draft || self.include_drafts)
+            .collect();
 
         posts.sort_by(|a, b| b.date.cmp(&a.date));
 
@@ -611,8 +663,10 @@ impl SiteBuilder {
             .get_string("excerpt")
             .or_else(|| extract_excerpt(&raw_content, 200));
 
-        let output_path = PathBuf::from("posts").join(&slug).join("index.html");
-        let url = format!("/posts/{}/", slug);
+        let mut output_path = PathBuf::from("posts").join(&slug).join("index.html");
+        let mut url = format!("/posts/{}/", slug);
+
+        Self::apply_permalink(&frontmatter, &mut url, &mut output_path);
 
         let content = self.build_content(ContentInput {
             slug,
@@ -679,37 +733,35 @@ impl SiteBuilder {
     }
 
     fn load_collection(&self, dir: &Path, name: &str) -> Result<Collection> {
-        let mut items = Vec::new();
+        let file_entries: Vec<(PathBuf, PathBuf)> = WalkDir::new(dir)
+            .min_depth(1)
+            .into_iter()
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path().to_path_buf();
+                if !path.is_file() {
+                    return None;
+                }
+                if path
+                    .extension()
+                    .map(|extension| extension != "md")
+                    .unwrap_or(true)
+                {
+                    return None;
+                }
+                let filename = path.file_name().unwrap().to_string_lossy();
+                if filename.starts_with('_') {
+                    return None;
+                }
+                let relative = path.strip_prefix(dir).ok()?.to_path_buf();
+                Some((path, relative))
+            })
+            .collect();
 
-        for entry in WalkDir::new(dir).min_depth(1).max_depth(1).into_iter() {
-            let entry = entry.map_err(|error| BambooError::WalkDir {
-                path: dir.to_path_buf(),
-                message: error.to_string(),
-            })?;
-
-            let path = entry.path();
-
-            if !path.is_file() {
-                continue;
-            }
-
-            if path
-                .extension()
-                .map(|extension| extension != "md")
-                .unwrap_or(true)
-            {
-                continue;
-            }
-
-            let filename = path.file_name().unwrap().to_string_lossy();
-
-            if filename.starts_with('_') {
-                continue;
-            }
-
-            let item = self.parse_collection_item(path, name)?;
-            items.push(item);
-        }
+        let items: Vec<CollectionItem> = file_entries
+            .par_iter()
+            .map(|(path, relative)| self.parse_collection_item(path, name, relative))
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(Collection {
             name: name.to_string(),
@@ -717,7 +769,12 @@ impl SiteBuilder {
         })
     }
 
-    fn parse_collection_item(&self, path: &Path, collection_name: &str) -> Result<CollectionItem> {
+    fn parse_collection_item(
+        &self,
+        path: &Path,
+        collection_name: &str,
+        relative: &Path,
+    ) -> Result<CollectionItem> {
         let file_content = fs::read_to_string(path).io_context("reading collection item", path)?;
         let (frontmatter, raw_content) = extract_frontmatter(&file_content, path)?;
         let processed_content = self.process_shortcodes(&raw_content)?;
@@ -729,20 +786,30 @@ impl SiteBuilder {
         let rendered = self.render_markdown(&math_processed);
 
         let filename = path.file_name().unwrap().to_string_lossy();
-        let slug = filename
+        let file_slug = filename
             .strip_suffix(".md")
             .unwrap_or(&filename)
             .to_string();
 
+        let relative_dir = relative.parent().unwrap_or(Path::new(""));
+        let slug = if relative_dir == Path::new("") {
+            file_slug.clone()
+        } else {
+            let dir_part = relative_dir.to_string_lossy().replace('\\', "/");
+            format!("{}/{}", dir_part, file_slug)
+        };
+
         let title = frontmatter
             .get_string("title")
-            .unwrap_or_else(|| slug.clone());
+            .unwrap_or_else(|| file_slug.clone());
 
-        let output_path = PathBuf::from(collection_name)
+        let mut output_path = PathBuf::from(collection_name)
             .join(&slug)
             .join("index.html");
 
-        let url = format!("/{}/{}/", collection_name, slug);
+        let mut url = format!("/{}/{}/", collection_name, slug);
+
+        Self::apply_permalink(&frontmatter, &mut url, &mut output_path);
 
         let content = self.build_content(ContentInput {
             slug,
@@ -1284,5 +1351,115 @@ url = "/"
         let site = builder.build().unwrap();
 
         assert_eq!(site.assets.len(), 2);
+    }
+
+    #[test]
+    fn test_nested_collections() {
+        let dir = create_test_site();
+        fs::create_dir_all(dir.path().join("content/docs/getting-started")).unwrap();
+        fs::write(
+            dir.path().join("content/docs/_collection.toml"),
+            "name = \"docs\"",
+        )
+        .unwrap();
+        fs::write(
+            dir.path().join("content/docs/intro.md"),
+            "+++\ntitle = \"Introduction\"\n+++\n\nIntro",
+        )
+        .unwrap();
+        fs::write(
+            dir.path().join("content/docs/getting-started/install.md"),
+            "+++\ntitle = \"Installation\"\n+++\n\nInstall guide",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        let docs = &site.collections["docs"];
+        assert_eq!(docs.items.len(), 2);
+
+        let nested_item = docs
+            .items
+            .iter()
+            .find(|item| item.content.slug == "getting-started/install")
+            .expect("nested collection item should exist");
+        assert_eq!(nested_item.content.url, "/docs/getting-started/install/");
+        assert_eq!(nested_item.content.title, "Installation");
+    }
+
+    #[test]
+    fn test_custom_permalink_page() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/about.md"),
+            "+++\ntitle = \"About\"\npermalink = \"/about-me/\"\n+++\n\nAbout page",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        let about = site
+            .pages
+            .iter()
+            .find(|page| page.content.slug == "about")
+            .unwrap();
+        assert_eq!(about.content.url, "/about-me/");
+        assert_eq!(
+            about.content.path,
+            PathBuf::from("about-me").join("index.html")
+        );
+    }
+
+    #[test]
+    fn test_custom_permalink_post() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/posts/2024-01-15-hello.md"),
+            "+++\ntitle = \"Hello\"\npermalink = \"/blog/hello-world/\"\n+++\n\nHello!",
+        )
+        .unwrap();
+
+        let mut builder = SiteBuilder::new(dir.path());
+        let site = builder.build().unwrap();
+
+        let post = &site.posts[0];
+        assert_eq!(post.content.url, "/blog/hello-world/");
+        assert_eq!(
+            post.content.path,
+            PathBuf::from("blog/hello-world").join("index.html")
+        );
+    }
+
+    #[test]
+    fn test_ref_registry_resolves_permalinks() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/about.md"),
+            "+++\ntitle = \"About\"\npermalink = \"/about-me/\"\n+++\n\nAbout page",
+        )
+        .unwrap();
+
+        let builder = SiteBuilder::new(dir.path());
+        let registry = builder.build_ref_registry().unwrap();
+
+        assert_eq!(registry.get("about.md").unwrap(), "/about-me/");
+        assert_eq!(registry.get("about").unwrap(), "/about-me/");
+    }
+
+    #[test]
+    fn test_ref_registry_resolves_post_permalinks() {
+        let dir = create_test_site();
+        fs::write(
+            dir.path().join("content/posts/2024-01-15-hello.md"),
+            "+++\ntitle = \"Hello\"\npermalink = \"/blog/hello/\"\n+++\n\nHello!",
+        )
+        .unwrap();
+
+        let builder = SiteBuilder::new(dir.path());
+        let registry = builder.build_ref_registry().unwrap();
+
+        assert_eq!(registry.get("2024-01-15-hello.md").unwrap(), "/blog/hello/");
     }
 }

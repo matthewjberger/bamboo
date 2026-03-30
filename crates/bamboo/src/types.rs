@@ -97,6 +97,7 @@ pub struct Content {
     pub title: String,
     #[serde(rename = "content")]
     pub html: String,
+    #[serde(skip_serializing)]
     pub raw_content: String,
     pub frontmatter: Frontmatter,
     pub path: PathBuf,
@@ -175,63 +176,27 @@ impl Frontmatter {
     }
 
     pub fn get_string(&self, key: &str) -> Option<String> {
-        self.raw.get(key).and_then(|value| {
-            if let Some(string) = value.as_str() {
-                Some(string.to_string())
-            } else {
-                eprintln!(
-                    "Warning: frontmatter key '{}' expected string, got {}",
-                    key, value
-                );
-                None
-            }
-        })
+        self.raw
+            .get(key)
+            .and_then(|value| value.as_str().map(String::from))
     }
 
     pub fn get_bool(&self, key: &str) -> Option<bool> {
-        self.raw.get(key).and_then(|value| {
-            if let Some(boolean) = value.as_bool() {
-                Some(boolean)
-            } else {
-                eprintln!(
-                    "Warning: frontmatter key '{}' expected bool, got {}",
-                    key, value
-                );
-                None
-            }
-        })
+        self.raw.get(key).and_then(|value| value.as_bool())
     }
 
     pub fn get_i64(&self, key: &str) -> Option<i64> {
-        self.raw.get(key).and_then(|value| {
-            if let Some(integer) = value.as_i64() {
-                Some(integer)
-            } else {
-                eprintln!(
-                    "Warning: frontmatter key '{}' expected integer, got {}",
-                    key, value
-                );
-                None
-            }
-        })
+        self.raw.get(key).and_then(|value| value.as_i64())
     }
 
     pub fn get_array(&self, key: &str) -> Option<Vec<String>> {
         self.raw.get(key).and_then(|value| {
-            if let Some(array) = value.as_array() {
-                Some(
-                    array
-                        .iter()
-                        .filter_map(|item| item.as_str().map(String::from))
-                        .collect(),
-                )
-            } else {
-                eprintln!(
-                    "Warning: frontmatter key '{}' expected array, got {}",
-                    key, value
-                );
-                None
-            }
+            value.as_array().map(|array| {
+                array
+                    .iter()
+                    .filter_map(|item| item.as_str().map(String::from))
+                    .collect()
+            })
         })
     }
 }
