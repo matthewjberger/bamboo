@@ -280,7 +280,7 @@ dependencies = [
 
 [[package]]
 name = "bamboo-cli"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "axum",
  "bamboo-ssg",
@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "bamboo-ssg"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "chrono",
  "grass",
