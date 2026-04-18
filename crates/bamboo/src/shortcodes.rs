@@ -10,10 +10,12 @@ const BUILTIN_FIGURE: &str = include_str!("../themes/default/templates/shortcode
 const BUILTIN_NOTE: &str = include_str!("../themes/default/templates/shortcodes/note.html");
 const BUILTIN_DETAILS: &str = include_str!("../themes/default/templates/shortcodes/details.html");
 const BUILTIN_GIST: &str = include_str!("../themes/default/templates/shortcodes/gist.html");
+const BUILTIN_PDF: &str = include_str!("../themes/default/templates/shortcodes/pdf.html");
 
 pub struct ShortcodeProcessor {
     tera: Tera,
     ref_registry: HashMap<String, String>,
+    base_url: String,
 }
 
 impl ShortcodeProcessor {
@@ -29,6 +31,8 @@ impl ShortcodeProcessor {
         tera.add_raw_template("shortcodes/details.html", BUILTIN_DETAILS)
             .map_err(BambooError::Template)?;
         tera.add_raw_template("shortcodes/gist.html", BUILTIN_GIST)
+            .map_err(BambooError::Template)?;
+        tera.add_raw_template("shortcodes/pdf.html", BUILTIN_PDF)
             .map_err(BambooError::Template)?;
 
         for directory in shortcode_dirs {
@@ -52,11 +56,16 @@ impl ShortcodeProcessor {
         Ok(Self {
             tera,
             ref_registry: HashMap::new(),
+            base_url: String::new(),
         })
     }
 
     pub fn set_ref_registry(&mut self, registry: HashMap<String, String>) {
         self.ref_registry = registry;
+    }
+
+    pub fn set_base_url(&mut self, base_url: impl Into<String>) {
+        self.base_url = base_url.into().trim_end_matches('/').to_string();
     }
 
     pub fn register_builtin_default_partials(&mut self) -> Result<()> {
@@ -236,6 +245,7 @@ impl ShortcodeProcessor {
         for (key, value) in &arguments {
             context.insert(key.as_str(), value);
         }
+        context.insert("base_url", &self.base_url);
 
         let rendered = self
             .tera
@@ -292,6 +302,7 @@ impl ShortcodeProcessor {
             context.insert(key.as_str(), value);
         }
         context.insert("body", &body_rendered.html);
+        context.insert("base_url", &self.base_url);
 
         let rendered = self
             .tera
@@ -729,6 +740,63 @@ mod tests {
         let (name, args) = parse_shortcode_args(r#"ref "about.md""#).unwrap();
         assert_eq!(name, "ref");
         assert_eq!(args.get("_positional").unwrap(), "about.md");
+    }
+
+    #[test]
+    fn test_pdf_shortcode_link_mode() {
+        let processor = processor();
+        let input = r#"{{< pdf src="/Resume.pdf" title="Resume" >}}"#;
+        let result = processor.process(input, &renderer()).unwrap();
+        assert!(result.contains("/Resume.pdf"));
+        assert!(result.contains("Resume"));
+        assert!(result.contains("download"));
+        assert!(!result.contains("<iframe"));
+    }
+
+    #[test]
+    fn test_pdf_shortcode_embed_mode() {
+        let processor = processor();
+        let input = r#"{{< pdf src="/doc.pdf" embed="true" height="800" >}}"#;
+        let result = processor.process(input, &renderer()).unwrap();
+        assert!(result.contains("<iframe"));
+        assert!(result.contains("/doc.pdf#toolbar=1"));
+        assert!(result.contains("800px"));
+    }
+
+    #[test]
+    fn test_pdf_shortcode_embed_default_height() {
+        let processor = processor();
+        let input = r#"{{< pdf src="/doc.pdf" embed="true" >}}"#;
+        let result = processor.process(input, &renderer()).unwrap();
+        assert!(result.contains("600px"));
+    }
+
+    #[test]
+    fn test_pdf_shortcode_suppresses_download() {
+        let processor = processor();
+        let input = r#"{{< pdf src="/doc.pdf" embed="true" download="false" >}}"#;
+        let result = processor.process(input, &renderer()).unwrap();
+        assert!(result.contains("<iframe"));
+        assert!(!result.contains("Download"));
+    }
+
+    #[test]
+    fn test_pdf_shortcode_prepends_base_url_for_local_paths() {
+        let mut processor = processor();
+        processor.set_base_url("https://example.com/subpath");
+        let input = r#"{{< pdf src="/doc.pdf" embed="true" >}}"#;
+        let result = processor.process(input, &renderer()).unwrap();
+        assert!(result.contains("https://example.com/subpath/doc.pdf"));
+    }
+
+    #[test]
+    fn test_pdf_shortcode_preserves_external_urls() {
+        let mut processor = processor();
+        processor.set_base_url("https://example.com/subpath");
+        let input = r#"{{< pdf src="https://cdn.example.com/doc.pdf" embed="true" >}}"#;
+        let result = processor.process(input, &renderer()).unwrap();
+        assert!(result.contains("https://cdn.example.com/doc.pdf"));
+        assert!(!result.contains("subpath/https"));
     }
 
     #[test]

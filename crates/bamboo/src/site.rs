@@ -103,6 +103,7 @@ impl SiteBuilder {
                 processor.register_partials_from_directory(&site_templates)?;
             }
             processor.set_ref_registry(ref_registry);
+            processor.set_base_url(&config.base_url);
         }
 
         let (home, mut pages) = self.load_pages()?;
@@ -594,7 +595,7 @@ impl SiteBuilder {
             .filter(|post| !post.draft || self.include_drafts)
             .collect();
 
-        posts.sort_by(|a, b| b.date.cmp(&a.date));
+        posts.sort_by_key(|post| std::cmp::Reverse(post.date));
 
         Ok(posts)
     }

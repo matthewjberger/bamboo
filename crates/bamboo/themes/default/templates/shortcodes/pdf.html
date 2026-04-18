@@ -1,0 +1,44 @@
+{% set is_embed = embed | default(value="false") %}
+{% set should_download = download | default(value="true") %}
+{% set prefix = base_url | default(value="") %}
+{% if src is starting_with("http") or src is starting_with("//") %}
+  {% set resolved_src = src %}
+{% else %}
+  {% set resolved_src = prefix ~ src %}
+{% endif %}
+{% if is_embed == "true" %}
+<div class="bamboo-pdf-embed" style="width: 100%;">
+  <iframe
+    src="{{ resolved_src | safe }}#toolbar=1&view=FitH"
+    style="width: 100%; height: {{ height | default(value='600') }}px; border: 1px solid #e5e7eb; border-radius: 0.5rem;"
+    {% if title %}title="{{ title }}"{% endif %}
+    loading="lazy"
+  ></iframe>
+  {% if should_download != "false" %}
+  <p style="margin-top: 0.75rem; text-align: center;">
+    <a
+      href="{{ resolved_src | safe }}"
+      download
+      style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: #10b981; color: #ffffff; border-radius: 0.5rem; text-decoration: none; font-weight: 500;"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+      </svg>
+      <span>Download{% if title %} {{ title }}{% endif %}</span>
+    </a>
+  </p>
+  {% endif %}
+</div>
+{% else %}
+<a
+  href="{{ resolved_src | safe }}"
+  {% if should_download != "false" %}download{% endif %}
+  class="bamboo-pdf-link"
+  style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: #10b981; color: #ffffff; border-radius: 0.5rem; text-decoration: none; font-weight: 500;"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+  </svg>
+  <span>{{ title | default(value="Download PDF") }}</span>
+</a>
+{% endif %}

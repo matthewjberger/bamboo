@@ -1,0 +1,25 @@
+title = "Published Packages"
+
+[[items]]
+title = "middle-out-rs"
+description = "The reference Rust implementation of the middle-out compression algorithm. Zero dependencies, no_std compatible, cross-platform."
+link = "https://github.com"
+technologies = ["Rust", "Compression", "no_std"]
+
+[[items]]
+title = "pipernet-sdk"
+description = "Client SDK for connecting applications to the PiperNet decentralized network. Async first, streaming aware."
+link = "https://github.com"
+technologies = ["Rust", "Async", "Networking"]
+
+[[items]]
+title = "smartfridge-driver"
+description = "USB protocol driver for SmartFridge appliances, enabling integration with home automation platforms."
+link = "https://github.com"
+technologies = ["Rust", "USB", "Embedded"]
+
+[[items]]
+title = "weissman-bench"
+description = "Benchmarking toolkit for lossless compression algorithms. Measures ratio, throughput, and the Weissman score."
+link = "https://github.com"
+technologies = ["Rust", "Benchmarking"]

@@ -206,6 +206,8 @@ Shortcodes embed reusable components in markdown content.
 {{</* youtube id="dQw4w9WgXcQ" */>}}
 {{</* figure src="/images/photo.jpg" caption="A photo" */>}}
 {{</* gist user="username" id="abc123" */>}}
+{{</* pdf src="/resume.pdf" title="Resume" */>}}
+{{</* pdf src="/resume.pdf" embed="true" height="800" */>}}
 ```
 
 ### Block Shortcodes
@@ -229,6 +231,7 @@ Hidden content here.
 | `youtube` | inline | `id` (required), `title` |
 | `figure` | inline | `src` (required), `alt`, `caption`, `width`, `height`, `class` |
 | `gist` | inline | `user` (required), `id` (required), `file` |
+| `pdf` | inline | `src` (required), `title`, `embed` (`"true"`/`"false"`, default `"false"`), `height` (px, default `600`), `download` (`"true"`/`"false"`, default `"true"`) |
 | `note` | block | `type` (info/warning/error), `title`, body content |
 | `details` | block | `summary`, `open`, body content |
 

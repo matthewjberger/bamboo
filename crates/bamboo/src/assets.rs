@@ -123,7 +123,7 @@ fn update_html_references(
     let escaped_base_url = html_escape_url(base_url);
 
     let mut sorted_mappings: Vec<(&String, &String)> = path_mapping.iter().collect();
-    sorted_mappings.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+    sorted_mappings.sort_by_key(|mapping| std::cmp::Reverse(mapping.0.len()));
 
     let html_files = collect_files_with_extension(output_dir, "html")?;
     let xml_files = collect_files_with_extension(output_dir, "xml")?;

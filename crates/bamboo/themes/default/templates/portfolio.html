@@ -12,6 +12,7 @@
 {% endblock %}
 
 {% block content %}
+{% set base = site.config.base_url | default(value="") %}
 <div class="w-screen relative left-1/2 -ml-[50vw] -mt-[calc(var(--header-height)+3rem)] -mb-12">
   <!-- Navigation -->
   <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md dark:shadow-none border-b border-gray-200 dark:border-gray-800 z-50 h-16">
@@ -24,8 +25,36 @@
           <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
           {% if site.data.highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
           {% if site.data.experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+          {% if site.data.crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
           {% if site.collections.projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
           {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
+          {% set articles_url = site.config.extra.articles_url | default(value="") %}
+          {% if articles_url %}
+          <a href="{{ articles_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+            <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
+              <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
+            </svg>
+            Articles
+          </a>
+          {% endif %}
+          {% set sponsor_url = site.config.extra.sponsor_url | default(value="") %}
+          {% if sponsor_url %}
+          <a href="{{ sponsor_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+            <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+            </svg>
+            Sponsor
+          </a>
+          {% endif %}
+          {% set source_url = site.config.extra.source_url | default(value="") %}
+          {% if source_url %}
+          <a href="{{ source_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2" aria-label="View source on GitHub" title="View source on GitHub">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+          </a>
+          {% endif %}
         </div>
         <button
           id="portfolio-theme-toggle"
@@ -50,8 +79,12 @@
         <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
         {% if site.data.highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
         {% if site.data.experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+        {% if site.data.crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
         {% if site.collections.projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
         {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
+        {% if articles_url %}<a href="{{ articles_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors">Articles</a>{% endif %}
+        {% if sponsor_url %}<a href="{{ sponsor_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-pink-500 dark:text-pink-400 hover:text-pink-600 transition-colors">Sponsor</a>{% endif %}
+        {% if source_url %}<a href="{{ source_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">View source on GitHub</a>{% endif %}
       </div>
     </div>
   </nav>
@@ -60,8 +93,10 @@
   <section id="hero" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16">
     <div class="text-center px-4">
       {% if site.config.extra.avatar %}
+      {% set avatar_src = site.config.extra.avatar %}
+      {% if not (avatar_src is starting_with("http")) and not (avatar_src is starting_with("//")) %}{% set avatar_src = base ~ avatar_src %}{% endif %}
       <img
-        src="{{ site.config.extra.avatar }}"
+        src="{{ avatar_src | safe }}"
         alt="{{ site.config.title }}"
         class="rounded-lg mx-auto mb-6 border-2 border-blue-500 dark:border-blue-400 object-cover"
         style="width: 180px; height: 180px;"
@@ -75,6 +110,15 @@
       {% endif %}
 
       <div class="flex gap-4 justify-center flex-wrap">
+        {% set resume_pdf = site.config.extra.resume_pdf | default(value="") %}
+        {% if resume_pdf %}
+        <button type="button" id="resume-open" class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+          </svg>
+          Resume
+        </button>
+        {% endif %}
         <a href="#experience" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
@@ -83,7 +127,7 @@
         </a>
         {% set linkedin_url = site.config.extra.linkedin | default(value="") %}
         {% if linkedin_url %}
-        <a href="{{ linkedin_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+        <a href="{{ linkedin_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
           </svg>
@@ -92,11 +136,20 @@
         {% endif %}
         {% set github_url = site.config.extra.github | default(value="") %}
         {% if github_url %}
-        <a href="{{ github_url }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+        <a href="{{ github_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
           GitHub
+        </a>
+        {% endif %}
+        {% set book_url = site.config.extra.book_url | default(value="") %}
+        {% if book_url %}
+        <a href="{{ book_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 2H6c-1.206 0-3 .799-3 3v14c0 2.201 1.794 3 3 3h15v-2H6.012C5.55 19.988 5 19.806 5 19c0-.101.009-.191.024-.273.112-.576.584-.717.988-.727H21V4c0-1.103-.897-2-2-2zm0 14H5V5c0-.806.55-.988 1-1h13v12z"/>
+          </svg>
+          Book
         </a>
         {% endif %}
         <a href="#projects" class="px-6 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
@@ -132,15 +185,26 @@
       </div>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.data.highlights.items %}
-        <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all hover:scale-105 cursor-pointer flex flex-col">
-          {% if item.image %}
-          <img src="{{ item.image }}" alt="{{ item.title }}" class="w-full h-48 object-cover" />
-          {% endif %}
-          <div class="p-6 flex-1">
-            <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
-            <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ item.description }}</p>
+        {% set highlight_image = item.image | default(value="") %}
+        {% if highlight_image and not (highlight_image is starting_with("http")) and not (highlight_image is starting_with("//")) %}{% set highlight_image = base ~ highlight_image %}{% endif %}
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all flex flex-col">
+          <a href="{{ item.link | safe }}" target="_blank" rel="noopener noreferrer" class="block flex-1 hover:scale-105 transition-all">
+            {% if highlight_image %}
+            <img src="{{ highlight_image | safe }}" alt="{{ item.title }}" class="w-full h-48 object-cover" />
+            {% endif %}
+            <div class="p-6">
+              <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
+              <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ item.description }}</p>
+            </div>
+          </a>
+          {% if item.demo_link %}
+          <div class="p-6 pt-0">
+            <a href="{{ item.demo_link | safe }}" target="_blank" rel="noopener noreferrer" class="block px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center font-medium">
+              {{ item.demo_label | default(value="View Live Demo") }}
+            </a>
           </div>
-        </a>
+          {% endif %}
+        </div>
         {% endfor %}
       </div>
     </div>
@@ -149,12 +213,20 @@
 
   <!-- Experience Section -->
   {% if site.data.experience %}
-  <section id="experience" class="py-20 bg-white dark:bg-gray-900">
+  <section id="experience" class="py-20 bg-white dark:bg-gray-900" data-timeline-section>
     <div class="max-w-4xl mx-auto px-4">
-      <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Experience</h2>
-      <div class="space-y-8">
+      <div class="flex justify-between items-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-900 dark:text-white">Experience</h2>
+        <button type="button" data-timeline-toggle class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Show Timeline</button>
+      </div>
+      <div class="flex justify-between items-center mb-8 hidden" data-timeline-controls>
+        <button type="button" data-timeline-older class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">&larr; Older</button>
+        <span class="text-gray-700 dark:text-gray-300" data-timeline-indicator>1 of {{ site.data.experience.jobs | length }}</span>
+        <button type="button" data-timeline-newer class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Newer &rarr;</button>
+      </div>
+      <div class="space-y-8" data-timeline-items>
         {% for job in site.data.experience.jobs %}
-        <div class="border-l-4 border-blue-500 pl-6">
+        <div class="border-l-4 border-blue-500 pl-6" data-job-index="{{ loop.index0 }}">
           <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ job.title }}</h3>
           <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">{{ job.company }}</p>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ job.period }}</p>
@@ -173,14 +245,52 @@
   </section>
   {% endif %}
 
+  <!-- Crates Section -->
+  {% if site.data.crates %}
+  <section id="crates" class="py-20 bg-gray-100 dark:bg-gray-800" data-sort-section="crates">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex justify-between items-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-900 dark:text-white">{{ site.data.crates.title | default(value="Published Crates") }}</h2>
+        <div class="flex gap-2">
+          <button type="button" data-sort-target="crates-grid" data-sort-direction="asc" class="px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors" data-sort-active>A-Z</button>
+          <button type="button" data-sort-target="crates-grid" data-sort-direction="desc" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Z-A</button>
+        </div>
+      </div>
+      <div id="crates-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for item in site.data.crates.items %}
+        <a href="{{ item.link | safe }}" target="_blank" rel="noopener noreferrer" data-sort-key="{{ item.title }}" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:scale-105 cursor-pointer">
+          <div class="p-6">
+            <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{{ item.description }}</p>
+            {% if item.technologies %}
+            <div class="flex flex-wrap gap-2">
+              {% for tech in item.technologies %}
+              <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded text-sm border border-gray-200 dark:border-gray-700">{{ tech }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
   <!-- Projects Section -->
   {% if site.collections.projects %}
-  <section id="projects" class="py-20 bg-gray-100 dark:bg-gray-800">
+  <section id="projects" class="py-20 bg-gray-100 dark:bg-gray-800" data-sort-section="projects">
     <div class="max-w-6xl mx-auto px-4">
-      <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Projects</h2>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="flex justify-between items-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-900 dark:text-white">Projects</h2>
+        <div class="flex gap-2">
+          <button type="button" data-sort-target="projects-grid" data-sort-direction="asc" class="px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors" data-sort-active>A-Z</button>
+          <button type="button" data-sort-target="projects-grid" data-sort-direction="desc" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Z-A</button>
+        </div>
+      </div>
+      <div id="projects-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.collections.projects.items %}
-        <a href="{{ item.frontmatter.extra.link | default(value='#') }}" target="_blank" rel="noopener noreferrer" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:scale-105 cursor-pointer">
+        <a href="{{ item.frontmatter.extra.link | default(value='#') | safe }}" target="_blank" rel="noopener noreferrer" data-sort-key="{{ item.title }}" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:scale-105 cursor-pointer">
           <div class="p-6">
             <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
             <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{{ item.content | striptags | truncate(length=120) }}</p>
@@ -227,12 +337,34 @@
       </p>
     </div>
   </footer>
+
+  {% if resume_pdf %}
+  {% set resume_url = resume_pdf %}
+  {% if not (resume_url is starting_with("http")) and not (resume_url is starting_with("//")) %}{% set resume_url = base ~ resume_url %}{% endif %}
+  <!-- Resume Modal -->
+  <div id="resume-modal" class="fixed inset-0 z-100 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.75);">
+    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl flex flex-col" style="height: 90vh;" data-resume-dialog>
+      <div class="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
+        <a href="{{ resume_url | safe }}" download class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+          Download
+        </a>
+        <button type="button" id="resume-close" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 text-2xl font-bold" aria-label="Close">&times;</button>
+      </div>
+      <div class="bg-gray-200 dark:bg-gray-700 p-4" style="flex: 1; width: 100%; overflow: auto;">
+        <iframe src="{{ resume_url | safe }}#toolbar=1&view=FitH" style="width: 100%; height: 100%; border: 0; background: #ffffff;" title="Resume"></iframe>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <style>
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
+  #resume-modal.is-open { display: flex; }
+  [data-sort-active] { background-color: #3b82f6 !important; color: #ffffff !important; }
 </style>
 
 <script>
@@ -246,5 +378,87 @@
       localStorage.setItem('theme', 'dark');
     }
   });
+
+  (function() {
+    var modal = document.getElementById('resume-modal');
+    if (!modal) return;
+    var openButton = document.getElementById('resume-open');
+    var closeButton = document.getElementById('resume-close');
+    if (openButton) openButton.addEventListener('click', function() { modal.classList.add('is-open'); });
+    if (closeButton) closeButton.addEventListener('click', function() { modal.classList.remove('is-open'); });
+    modal.addEventListener('click', function(event) {
+      if (event.target === modal) modal.classList.remove('is-open');
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') modal.classList.remove('is-open');
+    });
+  })();
+
+  (function() {
+    document.querySelectorAll('[data-sort-section]').forEach(function(section) {
+      var buttons = section.querySelectorAll('[data-sort-target]');
+      buttons.forEach(function(button) {
+        button.addEventListener('click', function() {
+          var target = document.getElementById(button.dataset.sortTarget);
+          if (!target) return;
+          var direction = button.dataset.sortDirection === 'desc' ? -1 : 1;
+          var items = Array.from(target.children);
+          items.sort(function(a, b) {
+            var keyA = (a.dataset.sortKey || '').toLowerCase();
+            var keyB = (b.dataset.sortKey || '').toLowerCase();
+            if (keyA < keyB) return -direction;
+            if (keyA > keyB) return direction;
+            return 0;
+          });
+          items.forEach(function(item) { target.appendChild(item); });
+          buttons.forEach(function(other) {
+            other.removeAttribute('data-sort-active');
+            other.classList.remove('bg-blue-500', 'text-white');
+            other.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-gray-300');
+          });
+          button.setAttribute('data-sort-active', '');
+          button.classList.add('bg-blue-500', 'text-white');
+          button.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-gray-300');
+        });
+      });
+    });
+  })();
+
+  (function() {
+    var section = document.querySelector('[data-timeline-section]');
+    if (!section) return;
+    var toggle = section.querySelector('[data-timeline-toggle]');
+    var controls = section.querySelector('[data-timeline-controls]');
+    var items = Array.from(section.querySelectorAll('[data-job-index]'));
+    var older = section.querySelector('[data-timeline-older]');
+    var newer = section.querySelector('[data-timeline-newer]');
+    var indicator = section.querySelector('[data-timeline-indicator]');
+    if (!toggle || !controls || items.length === 0) return;
+    var showAll = true;
+    var currentIndex = 0;
+    var total = items.length;
+
+    function render() {
+      if (showAll) {
+        items.forEach(function(item) { item.style.display = ''; });
+        controls.classList.add('hidden');
+        toggle.textContent = 'Show Timeline';
+      } else {
+        items.forEach(function(item, i) {
+          item.style.display = i === currentIndex ? '' : 'none';
+        });
+        controls.classList.remove('hidden');
+        if (indicator) indicator.textContent = (currentIndex + 1) + ' of ' + total;
+        if (older) older.disabled = currentIndex === total - 1;
+        if (newer) newer.disabled = currentIndex === 0;
+        toggle.textContent = 'Show All';
+      }
+    }
+
+    toggle.addEventListener('click', function() { showAll = !showAll; render(); });
+    if (older) older.addEventListener('click', function() { if (currentIndex < total - 1) { currentIndex++; render(); } });
+    if (newer) newer.addEventListener('click', function() { if (currentIndex > 0) { currentIndex--; render(); } });
+    render();
+  })();
 </script>
 {% endblock %}

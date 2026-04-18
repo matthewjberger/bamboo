@@ -384,6 +384,7 @@ blockquote {
 .text-purple-600 { color: #7c3aed; }
 
 .text-pink-400 { color: #f472b6; }
+.text-pink-500 { color: #ec4899; }
 .text-pink-600 { color: #db2777; }
 
 .text-emerald-400 { color: #34d399; }
@@ -442,9 +443,13 @@ blockquote {
 
 .bg-red-100 { background-color: #fee2e2; }
 
+.bg-pink-500 { background-color: #ec4899; }
+.bg-pink-600 { background-color: #db2777; }
+
 /* Background opacity */
 .bg-white\/95 { background-color: rgba(255, 255, 255, 0.95); }
 .bg-white\/5 { background-color: rgba(255, 255, 255, 0.05); }
+.bg-black\/75 { background-color: rgba(0, 0, 0, 0.75); }
 
 /* Dark mode background colors */
 .dark .dark\:bg-gray-800 { background-color: #1f2937; }
@@ -743,6 +748,8 @@ blockquote {
 
 .hover\:text-emerald-600:hover { color: #059669; }
 
+.hover\:text-pink-600:hover { color: #db2777; }
+
 .hover\:bg-gray-50:hover { background-color: #f9fafb; }
 .hover\:bg-gray-100:hover { background-color: #f3f4f6; }
 .hover\:bg-gray-600:hover { background-color: #4b5563; }
@@ -755,6 +762,8 @@ blockquote {
 
 .hover\:bg-purple-100:hover { background-color: #f3e8ff; }
 .hover\:bg-purple-600:hover { background-color: #7c3aed; }
+
+.hover\:bg-pink-600:hover { background-color: #db2777; }
 
 .hover\:bg-emerald-600:hover { background-color: #059669; }
 
