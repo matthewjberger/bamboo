@@ -239,9 +239,9 @@
         <button type="button" data-timeline-toggle class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Show Timeline</button>
       </div>
       <div class="flex justify-between items-center mb-8 hidden" data-timeline-controls>
-        <button type="button" data-timeline-older class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">&larr; Older</button>
-        <span class="text-gray-700 dark:text-gray-300" data-timeline-indicator>1 of {{ site.data.experience.jobs | length }}</span>
-        <button type="button" data-timeline-newer class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Newer &rarr;</button>
+        <button type="button" data-timeline-older class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">&larr; Older</button>
+        <span class="text-gray-700 dark:text-gray-300" data-timeline-indicator>{{ site.data.experience.jobs | length }} of {{ site.data.experience.jobs | length }}</span>
+        <button type="button" data-timeline-newer class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Newer &rarr;</button>
       </div>
       <div class="space-y-8" data-timeline-items>
         {% for job in site.data.experience.jobs %}
@@ -519,7 +519,7 @@
           item.style.display = i === currentIndex ? '' : 'none';
         });
         controls.classList.remove('hidden');
-        if (indicator) indicator.textContent = (currentIndex + 1) + ' of ' + total;
+        if (indicator) indicator.textContent = (total - currentIndex) + ' of ' + total;
         if (older) older.disabled = currentIndex === total - 1;
         if (newer) newer.disabled = currentIndex === 0;
         toggle.textContent = 'Show All';
