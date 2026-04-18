@@ -1,3 +1,12 @@
+## [0.3.4] - 2026-04-18
+
+### 🐛 Bug Fixes
+
+- *(portfolio)* Full-width nav, readable timeline toggle, dedupe footer
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.4
 ## [0.3.3] - 2026-04-18
 
 ### 🚜 Refactor
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.3
+- Update changelog for v0.3.3
 ## [0.3.2] - 2026-04-18
 
 ### 🚜 Refactor
