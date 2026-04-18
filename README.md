@@ -250,6 +250,18 @@ Something went wrong!
 {{%/* /alert */%}}
 ```
 
+Shortcode templates also receive a `base_url` variable matching `site.config.base_url`. Use it to resolve author-provided local paths so content works correctly when deployed under a subpath:
+
+```html
+<!-- templates/shortcodes/download.html -->
+{% if src is starting_with("http") %}
+  {% set resolved = src %}
+{% else %}
+  {% set resolved = base_url ~ src %}
+{% endif %}
+<a href="{{ resolved | safe }}" download>{{ label | default(value="Download") }}</a>
+```
+
 ## Templating
 
 Bamboo uses [Tera](https://keats.github.io/tera/) for templating. Templates live in your theme's `templates/` directory. Site-level templates in `templates/` override theme templates.
@@ -434,6 +446,37 @@ The repository includes example sites:
 | `landing` | Product landing page with pricing | `just example landing` |
 | `portfolio` | Creative portfolio with project showcase | `just example portfolio` |
 | `slideshow` | Presentation/slideshow site | `just example slideshow` |
+
+### Portfolio Template
+
+Set `template = "portfolio.html"` in `content/_index.md` to use the built-in portfolio layout. Every section is optional — each one only renders if its data source is present.
+
+**Config fields** (all under `[extra]` in `bamboo.toml`):
+
+| Field | Description |
+|-------|-------------|
+| `avatar` | URL or local path to your photo |
+| `tagline` | Short subtitle under the hero name |
+| `linkedin` | LinkedIn profile URL → shows a LinkedIn button in the hero |
+| `github` | GitHub profile URL → shows a GitHub button in the hero |
+| `resume_pdf` | Path to a PDF resume → shows a "Resume" hero button that opens a modal viewer |
+| `book_url` | URL → shows a "Book" button in the hero |
+| `articles_url` | URL → shows an "Articles" link in the nav |
+| `sponsor_url` | URL → shows a "Sponsor" button in the nav |
+| `source_url` | URL → shows a GitHub source icon in the nav |
+
+Local paths (anything not starting with `http`, `https`, or `//`) are automatically prefixed with `site.config.base_url`.
+
+**Data files** (under `data/`):
+
+| File | Shape | Drives |
+|------|-------|--------|
+| `highlights.toml` | `[[items]]` with `title`, `description`, `image`, `link`, optional `demo_link` + `demo_label` | Highlights grid |
+| `experience.toml` | `[[jobs]]` with `title`, `company`, `period`, `achievements = [...]` | Experience section with Show-All/Timeline toggle |
+| `crates.toml` | Optional `title` plus `[[items]]` with `title`, `description`, `link`, `technologies = [...]` | Published Crates section with A-Z/Z-A sort |
+| `education.toml` | `[[degrees]]` with `degree`, `institution`, `period`, `description` | Education section |
+
+**Collection**: a `content/projects/` collection (with `_collection.toml`) drives the Projects grid. Each item's frontmatter supports `extra.link` and `extra.technologies`.
 
 ## Output
 
