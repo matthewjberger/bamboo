@@ -1,3 +1,12 @@
+## [0.3.2] - 2026-04-18
+
+### 🚜 Refactor
+
+- *(portfolio)* Rename resume_pdf to hero_pdf with configurable label
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.2
 ## [0.3.1] - 2026-04-18
 
 ### 📚 Documentation
@@ -8,6 +17,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.1
+- Update changelog for v0.3.1
 ## [0.3.0] - 2026-04-18
 
 ### 🚀 Features
