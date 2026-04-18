@@ -1,3 +1,12 @@
+## [0.3.7] - 2026-04-18
+
+### 🚀 Features
+
+- *(links)* Link_check_ignore config for sibling-deployment paths
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.7
 ## [0.3.6] - 2026-04-18
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.6
+- Update changelog for v0.3.6
 ## [0.3.5] - 2026-04-18
 
 ### 🐛 Bug Fixes
