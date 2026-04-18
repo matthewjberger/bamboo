@@ -206,8 +206,8 @@
         {%- if highlight_image and not (highlight_image is starting_with("http")) and not (highlight_image is starting_with("//")) -%}
           {%- set highlight_image = base ~ highlight_image -%}
         {%- endif -%}
-        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all flex flex-col">
-          <a href="{{ item.link | safe }}" target="_blank" rel="noopener noreferrer" class="block flex-1 hover:scale-105 transition-all">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:scale-105 transition-all flex flex-col">
+          <a href="{{ item.link | safe }}" target="_blank" rel="noopener noreferrer" class="block flex-1">
             {% if highlight_image %}
             <img src="{{ highlight_image | safe }}" alt="{{ item.title }}" class="w-full h-48 object-cover" />
             {% endif %}
