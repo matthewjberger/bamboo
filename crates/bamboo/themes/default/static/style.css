@@ -455,6 +455,7 @@ blockquote {
 .bg-black\/75 { background-color: rgba(0, 0, 0, 0.75); }
 
 /* Dark mode background colors */
+.dark .dark\:bg-gray-700 { background-color: #374151; }
 .dark .dark\:bg-gray-800 { background-color: #1f2937; }
 .dark .dark\:bg-gray-900 { background-color: #111827; }
 .dark .dark\:bg-gray-950 { background-color: #030712; }
@@ -791,6 +792,8 @@ blockquote {
 .dark .dark\:hover\:text-blue-400:hover { color: #60a5fa; }
 .dark .dark\:hover\:text-emerald-400:hover { color: #34d399; }
 
+.dark .dark\:hover\:bg-gray-600:hover { background-color: #4b5563; }
+.dark .dark\:hover\:bg-gray-700:hover { background-color: #374151; }
 .dark .dark\:hover\:bg-gray-800:hover { background-color: #1f2937; }
 .dark .dark\:hover\:bg-white\/5:hover { background-color: rgba(255, 255, 255, 0.05); }
 
