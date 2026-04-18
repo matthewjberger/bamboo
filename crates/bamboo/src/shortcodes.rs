@@ -1,3 +1,11 @@
+//! Shortcode processor: expands inline `{{< name arg="..." >}}` and block
+//! `{{% name %}}...{{% /name %}}` tags in markdown content by rendering
+//! Tera templates under `templates/shortcodes/`.
+//!
+//! Built-in shortcodes (`youtube`, `figure`, `gist`, `pdf`, `note`, `details`)
+//! are compiled into the binary; user-provided templates in the site or theme
+//! take priority.
+
 use std::collections::HashMap;
 
 use tera::Tera;
@@ -12,6 +20,9 @@ const BUILTIN_DETAILS: &str = include_str!("../themes/default/templates/shortcod
 const BUILTIN_GIST: &str = include_str!("../themes/default/templates/shortcodes/gist.html");
 const BUILTIN_PDF: &str = include_str!("../themes/default/templates/shortcodes/pdf.html");
 
+/// Expands `{{< ... >}}` inline and `{{% ... %}}` block shortcodes found in
+/// markdown content by rendering Tera templates from either the built-in
+/// set or user-supplied directories.
 pub struct ShortcodeProcessor {
     tera: Tera,
     ref_registry: HashMap<String, String>,
@@ -19,6 +30,8 @@ pub struct ShortcodeProcessor {
 }
 
 impl ShortcodeProcessor {
+    /// Creates a processor preloaded with the built-in shortcodes and any
+    /// custom `shortcodes/` directories supplied in `shortcode_dirs`.
     pub fn new(shortcode_dirs: &[std::path::PathBuf]) -> Result<Self> {
         let mut tera = Tera::default();
 
@@ -60,14 +73,22 @@ impl ShortcodeProcessor {
         })
     }
 
+    /// Replaces the `ref` resolution table used by `{{< ref "path.md" >}}`
+    /// with the given map from source-path to resolved URL.
     pub fn set_ref_registry(&mut self, registry: HashMap<String, String>) {
         self.ref_registry = registry;
     }
 
+    /// Sets the site base URL that shortcode templates can read from their
+    /// Tera context as `{{ base_url }}`. Stored with any trailing `/`
+    /// removed.
     pub fn set_base_url(&mut self, base_url: impl Into<String>) {
         self.base_url = base_url.into().trim_end_matches('/').to_string();
     }
 
+    /// Registers the default theme's `partials/header.html`,
+    /// `partials/footer.html`, and `partials/nav.html` so shortcodes can
+    /// `{% include %}` them.
     pub fn register_builtin_default_partials(&mut self) -> Result<()> {
         const BUILTIN_HEADER: &str =
             include_str!("../themes/default/templates/partials/header.html");
@@ -96,6 +117,10 @@ impl ShortcodeProcessor {
         Ok(())
     }
 
+    /// Registers every `*.html` file found recursively under
+    /// `templates_dir/partials/`, preserving the relative path as the Tera
+    /// template name. Site-level partials registered after theme partials
+    /// shadow them.
     pub fn register_partials_from_directory(
         &mut self,
         templates_dir: &std::path::Path,
@@ -130,6 +155,9 @@ impl ShortcodeProcessor {
         Ok(())
     }
 
+    /// Expands every shortcode in `content` and returns the result.
+    /// Block-shortcode bodies are rendered as markdown via `renderer`
+    /// before substitution.
     pub fn process(&self, content: &str, renderer: &MarkdownRenderer) -> Result<String> {
         let mut output = String::with_capacity(content.len());
         let mut remaining = content;

@@ -1,3 +1,6 @@
+//! Generates HTML redirect stubs for every `redirect_from` entry declared
+//! in frontmatter, so old URLs continue to resolve after a content move.
+
 use crate::error::Result;
 use crate::types::Site;
 use std::fs;
@@ -81,6 +84,8 @@ fn write_redirect(output_dir: &Path, redirect_path: &str, target_url: &str) -> R
     Ok(())
 }
 
+/// Writes an HTML redirect stub into `output_dir` for every
+/// `redirect_from` entry declared across the site's pages and posts.
 pub fn generate_redirects(site: &Site, output_dir: &Path) -> Result<()> {
     let base_url = site.config.base_url.trim_end_matches('/');
 

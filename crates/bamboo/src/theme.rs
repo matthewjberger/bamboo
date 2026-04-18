@@ -1,3 +1,7 @@
+//! The [`ThemeEngine`] that renders a [`Site`] to disk
+//! using Tera templates from the built-in default theme (embedded via
+//! `include_str!`) or a user-supplied theme directory.
+
 use crate::assets::AssetConfig;
 use crate::error::Result;
 use crate::feeds;
@@ -65,6 +69,17 @@ pub(crate) fn site_metadata(site: &Site) -> SiteMetadata<'_> {
     }
 }
 
+/// Renders a loaded [`Site`] to disk using Tera templates from a theme.
+///
+/// # Example
+///
+/// ```no_run
+/// use bamboo_ssg::{SiteBuilder, ThemeEngine};
+/// let site = SiteBuilder::new("./my-site").build()?;
+/// let engine = ThemeEngine::new("default")?;
+/// engine.render_site(&site, std::path::Path::new("./dist"))?;
+/// # Ok::<_, bamboo_ssg::BambooError>(())
+/// ```
 pub struct ThemeEngine {
     tera: Tera,
     theme_static_dir: Option<PathBuf>,
@@ -73,6 +88,9 @@ pub struct ThemeEngine {
 }
 
 impl ThemeEngine {
+    /// Loads a theme by name. If `theme` is a directory path that exists on
+    /// disk, it is used directly; the literal value `"default"` loads the
+    /// built-in theme that ships compiled into the crate.
     pub fn new(theme: &str) -> Result<Self> {
         let theme_path = Path::new(theme);
 
@@ -87,6 +105,9 @@ impl ThemeEngine {
         }
     }
 
+    /// Like [`ThemeEngine::new`] but also loads site-level template and
+    /// static-file overrides from `override_dir`. Templates in the override
+    /// directory shadow theme templates of the same name.
     pub fn new_with_overrides(theme: &str, override_dir: &Path) -> Result<Self> {
         let mut engine = Self::new(theme)?;
         engine.apply_overrides(override_dir)?;
@@ -196,10 +217,16 @@ impl ThemeEngine {
         })
     }
 
+    /// Renders every page, post, collection item, taxonomy page, feed, and
+    /// sitemap into `output_dir`. Performs a full build.
     pub fn render_site(&self, site: &Site, output_dir: &Path) -> Result<()> {
         self.render_site_with_targets(site, output_dir, None)
     }
 
+    /// Incremental variant of [`ThemeEngine::render_site`]. Only writes
+    /// output for the [`RenderTarget`](crate::cache::RenderTarget)s listed in
+    /// `targets`; use [`classify_changes`](crate::cache::classify_changes) +
+    /// [`expand_targets`](crate::cache::expand_targets) to compute the set.
     pub fn render_site_with_targets(
         &self,
         site: &Site,
@@ -814,6 +841,8 @@ fn is_direct_child_of_root(path: &Path) -> bool {
     }
 }
 
+/// Removes every file and subdirectory under `output_dir`, preserving the
+/// directory itself. Safe to call on a non-existent path.
 pub fn clean_output_dir(output_dir: &Path) -> Result<()> {
     if output_dir.exists() {
         let canonical =

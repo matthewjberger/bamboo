@@ -1,3 +1,5 @@
+//! RSS 2.0 and Atom feed generation for a built [`Site`].
+
 use crate::error::Result;
 use crate::parsing::extract_excerpt;
 use crate::types::{Collection, Site};
@@ -5,6 +7,7 @@ use crate::xml::escape;
 use std::fs;
 use std::path::Path;
 
+/// Writes an RSS 2.0 feed (`rss.xml`) covering every post to `output_dir`.
 pub fn generate_rss(site: &Site, output_dir: &Path) -> Result<()> {
     let base_url = site.config.base_url.trim_end_matches('/');
     let language = site.config.language.as_deref().unwrap_or("en");
@@ -57,6 +60,7 @@ pub fn generate_rss(site: &Site, output_dir: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Writes an Atom feed (`atom.xml`) covering every post to `output_dir`.
 pub fn generate_atom(site: &Site, output_dir: &Path) -> Result<()> {
     let base_url = site.config.base_url.trim_end_matches('/');
 
@@ -118,6 +122,7 @@ pub fn generate_atom(site: &Site, output_dir: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Writes a per-collection RSS feed to `output_dir/<collection>/rss.xml`.
 pub fn generate_collection_rss(
     site: &Site,
     collection_name: &str,
@@ -186,6 +191,7 @@ pub fn generate_collection_rss(
     Ok(())
 }
 
+/// Writes a per-collection Atom feed to `output_dir/<collection>/atom.xml`.
 pub fn generate_collection_atom(
     site: &Site,
     collection_name: &str,

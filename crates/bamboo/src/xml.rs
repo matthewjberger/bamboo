@@ -1,3 +1,8 @@
+//! Minimal XML entity escape/unescape helpers used by the feed and sitemap
+//! generators. Not a general-purpose XML library.
+
+/// Escapes the five XML special characters (`&`, `<`, `>`, `"`, `'`) so the
+/// result is safe to embed as XML character data or inside an attribute.
 pub fn escape(input: &str) -> String {
     input
         .replace('&', "&amp;")
@@ -7,6 +12,8 @@ pub fn escape(input: &str) -> String {
         .replace('\'', "&apos;")
 }
 
+/// Inverse of [`escape`]: decodes the five named XML entities plus numeric
+/// (`&#123;`) and hexadecimal (`&#x7B;`) character references.
 pub fn unescape(input: &str) -> String {
     let partial = input
         .replace("&lt;", "<")

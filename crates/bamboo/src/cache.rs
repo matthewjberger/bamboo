@@ -1,3 +1,6 @@
+//! Incremental build cache: content hashing and change classification so
+//! `bamboo serve` can rebuild only what actually changed between edits.
+
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -9,36 +12,63 @@ use walkdir::WalkDir;
 const CACHE_DIR_NAME: &str = ".bamboo-cache";
 const CACHE_FILE_NAME: &str = "build-state.json";
 
+/// Persisted snapshot of a prior build, used to detect which files changed
+/// between runs. Serialized to `.bamboo-cache/build-state.json`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildState {
+    /// SHA-256 hash of every tracked content/data/static/template file,
+    /// keyed by its project-relative path.
     pub content_hashes: HashMap<String, String>,
 }
 
+/// Result of comparing two [`BuildState`]s: either a full rebuild is
+/// needed, or only a targeted subset.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChangeClassification {
+    /// Something non-trivial (config, template, data) changed. Rebuild
+    /// everything.
     Full,
-    Targeted { changed_files: Vec<PathBuf> },
+    /// Only individual content files changed; render exactly these.
+    Targeted {
+        /// Project-relative paths of the files that changed.
+        changed_files: Vec<PathBuf>,
+    },
 }
 
+/// One unit of render work that the theme engine can perform. Produced by
+/// [`expand_targets`] from a [`ChangeClassification`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RenderTarget {
+    /// Re-render the page with the given slug.
     Page(String),
+    /// Re-render the post with the given slug.
     Post(String),
+    /// Re-render every item in the named collection.
     Collection(String),
+    /// Re-render paginated index pages.
     Pagination,
+    /// Re-render every taxonomy index and term page.
     AllTaxonomies,
+    /// Regenerate RSS and Atom feeds.
     Feeds,
+    /// Regenerate the sitemap.
     Sitemap,
+    /// Regenerate the client-side search index.
     SearchIndex,
+    /// Perform a full rebuild.
     All,
 }
 
+/// Loads the persisted [`BuildState`] from `project_dir/.bamboo-cache/`.
+/// Returns `None` if the file is missing or malformed.
 pub fn load_cache(project_dir: &Path) -> Option<BuildState> {
     let cache_path = project_dir.join(CACHE_DIR_NAME).join(CACHE_FILE_NAME);
     let content = fs::read_to_string(cache_path).ok()?;
     serde_json::from_str(&content).ok()
 }
 
+/// Writes `state` to `project_dir/.bamboo-cache/build-state.json`, creating
+/// the cache directory if needed.
 pub fn save_cache(project_dir: &Path, state: &BuildState) -> Result<()> {
     let cache_dir = project_dir.join(CACHE_DIR_NAME);
     fs::create_dir_all(&cache_dir)?;
@@ -49,6 +79,9 @@ pub fn save_cache(project_dir: &Path, state: &BuildState) -> Result<()> {
     Ok(())
 }
 
+/// Walks `input_dir`'s `content/`, `data/`, `static/`, and `templates/`
+/// subdirectories and returns a SHA-256 hash of every file found, keyed by
+/// project-relative path.
 pub fn compute_content_hashes(input_dir: &Path) -> Result<HashMap<String, String>> {
     let mut hashes = HashMap::new();
 
@@ -110,6 +143,10 @@ fn hash_directory(
     Ok(())
 }
 
+/// Compares fresh content hashes against a previously-persisted
+/// [`BuildState`] and decides whether the upcoming build needs to be
+/// [`Full`](ChangeClassification::Full) or
+/// [`Targeted`](ChangeClassification::Targeted).
 pub fn classify_changes(
     old_hashes: &HashMap<String, String>,
     new_hashes: &HashMap<String, String>,
@@ -148,6 +185,8 @@ pub fn classify_changes(
     ChangeClassification::Targeted { changed_files }
 }
 
+/// Translates a [`ChangeClassification`] into the set of
+/// [`RenderTarget`]s the theme engine should re-render.
 pub fn expand_targets(classification: &ChangeClassification) -> HashSet<RenderTarget> {
     match classification {
         ChangeClassification::Full => {
@@ -214,6 +253,8 @@ fn extract_post_slug(filename: &str) -> String {
     }
 }
 
+/// Returns `true` if `target` (or [`RenderTarget::All`]) is present in
+/// `targets`.
 pub fn should_render(targets: &HashSet<RenderTarget>, target: &RenderTarget) -> bool {
     if targets.contains(&RenderTarget::All) {
         return true;
@@ -221,6 +262,7 @@ pub fn should_render(targets: &HashSet<RenderTarget>, target: &RenderTarget) -> 
     targets.contains(target)
 }
 
+/// Returns `true` if any [`RenderTarget::Post`] (or `All`) is in `targets`.
 pub fn should_render_any_post(targets: &HashSet<RenderTarget>) -> bool {
     if targets.contains(&RenderTarget::All) {
         return true;
@@ -230,6 +272,7 @@ pub fn should_render_any_post(targets: &HashSet<RenderTarget>) -> bool {
         .any(|target| matches!(target, RenderTarget::Post(_)))
 }
 
+/// Returns `true` if any [`RenderTarget::Page`] (or `All`) is in `targets`.
 pub fn should_render_any_page(targets: &HashSet<RenderTarget>) -> bool {
     if targets.contains(&RenderTarget::All) {
         return true;
@@ -239,6 +282,8 @@ pub fn should_render_any_page(targets: &HashSet<RenderTarget>) -> bool {
         .any(|target| matches!(target, RenderTarget::Page(_)))
 }
 
+/// Returns `true` if any [`RenderTarget::Collection`] (or `All`) is in
+/// `targets`.
 pub fn should_render_any_collection(targets: &HashSet<RenderTarget>) -> bool {
     if targets.contains(&RenderTarget::All) {
         return true;

@@ -1,3 +1,6 @@
+//! Client-side search index generation. Produces a `search-index.json` file
+//! that the Fuse.js-based search page in the default theme consumes.
+
 use std::path::Path;
 
 use serde::Serialize;
@@ -5,13 +8,21 @@ use serde::Serialize;
 use crate::error::Result;
 use crate::types::Site;
 
+/// One entry in the generated `search-index.json`. Consumed by the Fuse.js
+/// search page in the default theme.
 #[derive(Serialize)]
 pub struct SearchEntry {
+    /// Page or post title.
     pub title: String,
+    /// Resolved URL (prefixed with the site base URL).
     pub url: String,
+    /// Tags, for faceted filtering.
     pub tags: Vec<String>,
+    /// ISO-8601 date string (empty for pages without a date).
     pub date: String,
+    /// Short plain-text excerpt.
     pub excerpt: String,
+    /// Plain-text body used for full-text matching.
     pub content: String,
 }
 
@@ -46,6 +57,8 @@ fn decode_numeric_entities(input: &str) -> String {
     result
 }
 
+/// Strips HTML tags from `html` and decodes numeric character references,
+/// producing the plain text used in search-index entries.
 pub fn strip_html_tags(html: &str) -> String {
     let mut output = String::with_capacity(html.len());
     let mut inside_tag = false;
@@ -122,6 +135,8 @@ fn truncate_content(content: &str, max_chars: usize) -> String {
     content.chars().take(max_chars).collect()
 }
 
+/// Writes `search-index.json` into `output_dir`, containing one
+/// [`SearchEntry`] per page and post.
 pub fn generate_search_index(site: &Site, output_dir: &Path) -> Result<()> {
     let mut entries: Vec<SearchEntry> = Vec::new();
 

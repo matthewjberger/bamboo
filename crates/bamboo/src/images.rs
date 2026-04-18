@@ -1,3 +1,6 @@
+//! Responsive image generation: resizes source images to configured widths
+//! and emits `<picture>`/srcset-ready output alongside the originals.
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -12,12 +15,18 @@ use rayon::prelude::*;
 
 use crate::error::Result;
 
+/// `[images]` table from `bamboo.toml`: drives the responsive-image
+/// generation pipeline.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ImageConfig {
+    /// Target widths to resize each source image to (px). Larger sizes are
+    /// skipped automatically.
     #[serde(default = "default_widths")]
     pub widths: Vec<u32>,
+    /// JPEG/WebP quality (1–100). Defaults to 80.
     #[serde(default = "default_quality")]
     pub quality: u8,
+    /// Output formats to emit per source image (e.g. `["webp", "jpg"]`).
     #[serde(default = "default_formats")]
     pub formats: Vec<String>,
 }
@@ -44,15 +53,22 @@ impl Default for ImageConfig {
     }
 }
 
+/// One resized output produced from a single source image.
 #[derive(Debug, Clone, Serialize)]
 pub struct ImageVariant {
+    /// Output path relative to the project root.
     pub path: String,
+    /// Width in pixels.
     pub width: u32,
+    /// Output format (`"webp"`, `"jpg"`, ...).
     pub format: String,
 }
 
+/// All variants produced during a build, keyed by the original source image
+/// path. Consumed by templates that want to emit `<picture>` markup.
 #[derive(Debug, Clone, Serialize)]
 pub struct ImageManifest {
+    /// Map from source image path to the list of variants generated for it.
     pub variants: HashMap<String, Vec<ImageVariant>>,
 }
 
@@ -81,6 +97,9 @@ fn is_generated_variant(path: &Path, configured_widths: &[u32]) -> bool {
     false
 }
 
+/// Walks `output_dir`, finds source images, and emits resized variants at
+/// each configured width/format combination. Returns the [`ImageManifest`]
+/// describing every variant produced.
 pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageManifest> {
     let image_paths: Vec<_> = WalkDir::new(output_dir)
         .into_iter()
@@ -210,6 +229,9 @@ pub fn process_images(output_dir: &Path, config: &ImageConfig) -> Result<ImageMa
     Ok(ImageManifest { variants })
 }
 
+/// Builds a `srcset` attribute value for the given original image using the
+/// variants recorded in `manifest`. Returns an empty string if nothing has
+/// been generated for that path.
 pub fn generate_srcset(original_path: &str, manifest: &ImageManifest) -> String {
     let escaped_path = crate::xml::escape(original_path);
     let Some(image_variants) = manifest.variants.get(original_path) else {
@@ -279,6 +301,9 @@ fn format_to_mime(format: &str) -> &'static str {
     }
 }
 
+/// Walks every HTML file under `output_dir` and rewrites `<img>` tags for
+/// images present in `manifest` to include the matching `srcset`, so the
+/// browser can pick an appropriately-sized variant.
 pub fn apply_srcset_to_html(output_dir: &Path, manifest: &ImageManifest) -> Result<()> {
     if manifest.variants.is_empty() {
         return Ok(());

@@ -1,10 +1,16 @@
+//! Post-build internal link validation: walks the generated HTML and reports
+//! references that resolve nowhere in the output tree.
+
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+/// A single broken-link finding from [`validate_internal_links`].
 pub struct LinkWarning {
+    /// Path of the HTML file containing the offending link.
     pub source: PathBuf,
+    /// The `href` value that couldn't be resolved.
     pub href: String,
 }
 
@@ -19,6 +25,9 @@ impl std::fmt::Display for LinkWarning {
     }
 }
 
+/// Walks every HTML file under `output_dir` and returns a list of internal
+/// references that don't resolve to a file inside the output tree. External
+/// links (different host) and fragment-only links (`#anchor`) are skipped.
 pub fn validate_internal_links(output_dir: &Path, base_url: &str) -> Vec<LinkWarning> {
     let mut warnings = Vec::new();
     let mut seen: HashSet<(PathBuf, String)> = HashSet::new();

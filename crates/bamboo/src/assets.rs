@@ -1,3 +1,6 @@
+//! Post-build asset processing: Sass/SCSS compilation, CSS/JS/HTML
+//! minification, and content-hash fingerprinting of static files.
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -8,13 +11,22 @@ use walkdir::WalkDir;
 
 use crate::error::Result;
 
+/// Knobs for the post-render asset pipeline ([`process_assets`]).
 pub struct AssetConfig {
+    /// If `true`, CSS/JS/HTML output is minified in place.
     pub minify: bool,
+    /// If `true`, CSS and JS files receive a content-hash suffix and every
+    /// reference to them is rewritten.
     pub fingerprint: bool,
+    /// Site base URL, needed to rewrite references during fingerprinting.
     pub base_url: String,
+    /// Additional directories Sass/SCSS imports can resolve against.
     pub sass_load_paths: Vec<std::path::PathBuf>,
 }
 
+/// Compiles Sass, optionally minifies, and optionally fingerprints the files
+/// under `output_dir`. Returns a mapping of original → fingerprinted paths
+/// (empty if fingerprinting is disabled).
 pub fn process_assets(output_dir: &Path, config: &AssetConfig) -> Result<HashMap<String, String>> {
     compile_sass_files(output_dir, &config.sass_load_paths)?;
 

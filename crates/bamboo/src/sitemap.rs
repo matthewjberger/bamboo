@@ -1,3 +1,6 @@
+//! `sitemap.xml` generation covering every page, post, taxonomy index,
+//! and pagination slice in a built [`Site`].
+
 use crate::error::Result;
 use crate::parsing::slugify;
 use crate::types::Site;
@@ -5,6 +8,8 @@ use crate::xml::escape;
 use std::fs;
 use std::path::Path;
 
+/// Writes `sitemap.xml` into `output_dir`, listing every page, post,
+/// taxonomy index, and paginated slice in the site.
 pub fn generate_sitemap(site: &Site, output_dir: &Path) -> Result<()> {
     let base_url = site.config.base_url.trim_end_matches('/');
     let escaped_base_url = escape(base_url);

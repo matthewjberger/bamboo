@@ -1,3 +1,7 @@
+//! Site assembly: loads `bamboo.toml`, walks the content directory, parses
+//! frontmatter, expands shortcodes, and produces an in-memory [`Site`] tree
+//! ready to hand to the [`theme`](crate::theme) renderer.
+
 use crate::error::{BambooError, IoContext, Result};
 use crate::parsing::{
     MarkdownRenderer, extract_excerpt, extract_frontmatter, parse_date_from_filename,
@@ -28,6 +32,21 @@ struct ContentInput {
     url: String,
 }
 
+/// Builder for loading a bamboo site from disk. Reads `bamboo.toml`, walks
+/// the content tree, parses frontmatter, expands shortcodes, and assembles
+/// the in-memory [`Site`] that [`ThemeEngine`](crate::ThemeEngine) renders.
+///
+/// # Example
+///
+/// ```no_run
+/// use bamboo_ssg::SiteBuilder;
+///
+/// let site = SiteBuilder::new("./my-site")
+///     .base_url("https://example.com")
+///     .include_drafts(false)
+///     .build()?;
+/// # Ok::<_, bamboo_ssg::BambooError>(())
+/// ```
 pub struct SiteBuilder {
     input_dir: PathBuf,
     include_drafts: bool,
@@ -39,6 +58,13 @@ pub struct SiteBuilder {
 }
 
 impl SiteBuilder {
+    /// Creates a builder rooted at `input_dir` (the directory containing
+    /// `bamboo.toml`).
+    ///
+    /// ```no_run
+    /// use bamboo_ssg::SiteBuilder;
+    /// let builder = SiteBuilder::new("./my-site");
+    /// ```
     pub fn new(input_dir: impl AsRef<Path>) -> Self {
         Self {
             input_dir: input_dir.as_ref().to_path_buf(),
@@ -51,21 +77,30 @@ impl SiteBuilder {
         }
     }
 
+    /// If `true`, content marked `draft = true` is kept in the build output.
+    /// Defaults to `false`.
     pub fn include_drafts(mut self, include: bool) -> Self {
         self.include_drafts = include;
         self
     }
 
+    /// Overrides `bamboo.toml`'s `base_url`. Useful for building the same
+    /// site at multiple deployment URLs (e.g. preview vs production).
     pub fn base_url(mut self, url: impl Into<String>) -> Self {
         self.base_url_override = Some(url.into());
         self
     }
 
+    /// Registers additional directories to scan for custom shortcode
+    /// templates. The site's own `templates/shortcodes/` and the theme's
+    /// shortcodes are still loaded automatically.
     pub fn shortcode_dirs(mut self, dirs: &[PathBuf]) -> Result<Self> {
         self.shortcode_processor = Some(ShortcodeProcessor::new(dirs)?);
         Ok(self)
     }
 
+    /// Points at a theme's `templates/` directory so shortcode `partials/`
+    /// from the theme are available during shortcode expansion.
     pub fn theme_templates_dir(self, dir: impl AsRef<Path>) -> Self {
         Self {
             theme_templates_dir: Some(dir.as_ref().to_path_buf()),
@@ -73,6 +108,8 @@ impl SiteBuilder {
         }
     }
 
+    /// Loads the site and returns a fully-populated [`Site`]. Consumes no
+    /// fields so the same builder can be reused for incremental rebuilds.
     pub fn build(&mut self) -> Result<Site> {
         let mut config = self.load_config()?;
 

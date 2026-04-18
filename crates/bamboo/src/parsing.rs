@@ -1,3 +1,8 @@
+//! Markdown rendering with syntect-powered syntax highlighting, plus the
+//! helper functions that back common content-processing needs: frontmatter
+//! extraction, filename-date parsing, slugification, word count, reading
+//! time, and excerpt generation.
+
 use crate::error::{BambooError, Result};
 use crate::types::{Frontmatter, TocEntry};
 use chrono::NaiveDate;
@@ -9,6 +14,8 @@ use syntect::highlighting::ThemeSet;
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
 
+/// Renders markdown to HTML with syntect-powered syntax highlighting for
+/// fenced code blocks.
 pub struct MarkdownRenderer {
     syntax_set: SyntaxSet,
     theme_set: ThemeSet,
@@ -21,12 +28,18 @@ impl Default for MarkdownRenderer {
     }
 }
 
+/// Output of [`MarkdownRenderer::render`]: the rendered HTML plus the
+/// heading-based table of contents extracted along the way.
 pub struct RenderedMarkdown {
+    /// Rendered HTML body.
     pub html: String,
+    /// Headings encountered during rendering, in source order.
     pub toc: Vec<TocEntry>,
 }
 
 impl MarkdownRenderer {
+    /// Creates a renderer using the default syntax theme
+    /// (`base16-ocean.dark`).
     pub fn new() -> Self {
         Self {
             syntax_set: SyntaxSet::load_defaults_newlines(),
@@ -35,6 +48,8 @@ impl MarkdownRenderer {
         }
     }
 
+    /// Creates a renderer that uses the named syntect theme. Returns
+    /// [`BambooError::ThemeNotFound`] if the theme isn't registered.
     pub fn with_theme(theme_name: &str) -> Result<Self> {
         let theme_set = ThemeSet::load_defaults();
         if !theme_set.themes.contains_key(theme_name) {
@@ -49,6 +64,8 @@ impl MarkdownRenderer {
         })
     }
 
+    /// Renders `content` as markdown and collects heading information for
+    /// the table of contents.
     pub fn render(&self, content: &str) -> RenderedMarkdown {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_TABLES);
@@ -210,6 +227,8 @@ fn heading_level_to_u32(level: HeadingLevel) -> u32 {
     }
 }
 
+/// Converts arbitrary text into a URL-safe slug: lowercased, with
+/// non-alphanumeric runs replaced by a single `-`.
 pub fn slugify(text: &str) -> String {
     text.to_lowercase()
         .chars()
@@ -231,10 +250,13 @@ fn escape_html(input: &str) -> String {
     crate::xml::escape(input)
 }
 
+/// Counts whitespace-separated words in `text`.
 pub fn word_count(text: &str) -> usize {
     text.split_whitespace().count()
 }
 
+/// Estimated reading time in minutes at ~200 WPM. Rounds up to 1 minute for
+/// any non-empty content so short posts don't show "0 min read".
 pub fn reading_time(word_count: usize) -> usize {
     let minutes = word_count / 200;
     if minutes == 0 && word_count > 0 {
@@ -244,6 +266,9 @@ pub fn reading_time(word_count: usize) -> usize {
     }
 }
 
+/// Derives a plain-text excerpt from the first paragraph of markdown
+/// `content`, truncated to at most `max_chars` characters on a word
+/// boundary. Returns `None` for empty input.
 pub fn extract_excerpt(content: &str, max_chars: usize) -> Option<String> {
     if content.trim().is_empty() {
         return None;
@@ -267,6 +292,9 @@ pub fn extract_excerpt(content: &str, max_chars: usize) -> Option<String> {
     }
 }
 
+/// Protects `$...$` and `$$...$$` math blocks from the markdown parser by
+/// wrapping them in HTML placeholders that KaTeX can render client-side.
+/// Math inside fenced or inline code is left untouched.
 pub fn preprocess_math(content: &str) -> String {
     let mut output = String::with_capacity(content.len());
     let chars: Vec<char> = content.chars().collect();
@@ -529,6 +557,9 @@ fn skip_paren_link(chars: &mut std::iter::Peekable<std::str::Chars>) {
     }
 }
 
+/// Splits a content file into its TOML (`+++`) or YAML (`---`) frontmatter
+/// block and the remaining body. Returns an empty [`Frontmatter`] plus the
+/// full content if no frontmatter is present.
 pub fn extract_frontmatter(content: &str, path: &Path) -> Result<(Frontmatter, String)> {
     let content = content.replace("\r\n", "\n");
     let content = content.trim_start();
@@ -597,6 +628,8 @@ fn find_closing_delimiter(content: &str, delimiter: &str) -> Option<usize> {
     None
 }
 
+/// Parses a `YYYY-MM-DD-slug` filename prefix, returning `(date, slug)`
+/// strings. Returns `None` if the filename doesn't match the pattern.
 pub fn parse_date_from_filename(filename: &str) -> Option<(String, String)> {
     let name = filename.strip_suffix(".md").unwrap_or(filename);
 
