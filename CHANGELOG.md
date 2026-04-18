@@ -1,3 +1,13 @@
+## [0.3.1] - 2026-04-18
+
+### 📚 Documentation
+
+- Document base_url in shortcode context and portfolio template schema
+- Populate rustdocs across bamboo-ssg
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.1
 ## [0.3.0] - 2026-04-18
 
 ### 🚀 Features
@@ -7,6 +17,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.0
+- Update changelog for v0.3.0
 ## [0.2.5] - 2026-03-30
 
 ### 🐛 Bug Fixes
