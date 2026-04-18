@@ -1,3 +1,12 @@
+## [0.3.5] - 2026-04-18
+
+### 🐛 Bug Fixes
+
+- *(portfolio)* Scale the whole highlight card on hover, not just the upper link
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.5
 ## [0.3.4] - 2026-04-18
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.4
+- Update changelog for v0.3.4
 ## [0.3.3] - 2026-04-18
 
 ### 🚜 Refactor
