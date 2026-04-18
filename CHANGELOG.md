@@ -1,3 +1,12 @@
+## [0.3.6] - 2026-04-18
+
+### 🐛 Bug Fixes
+
+- *(portfolio)* Invert timeline indicator and make disabled buttons visible
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.6
 ## [0.3.5] - 2026-04-18
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.5
+- Update changelog for v0.3.5
 ## [0.3.4] - 2026-04-18
 
 ### 🐛 Bug Fixes
