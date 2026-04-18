@@ -1,3 +1,12 @@
+## [0.3.3] - 2026-04-18
+
+### 🚜 Refactor
+
+- *(portfolio)* Consolidate setters, gate hero CTAs, switch projects to data file
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.3
 ## [0.3.2] - 2026-04-18
 
 ### 🚜 Refactor
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.2
+- Update changelog for v0.3.2
 ## [0.3.1] - 2026-04-18
 
 ### 📚 Documentation
