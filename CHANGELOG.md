@@ -1,3 +1,12 @@
+## [0.3.0] - 2026-04-18
+
+### 🚀 Features
+
+- Add pdf shortcode and enrich portfolio template
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.3.0
 ## [0.2.5] - 2026-03-30
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.2.5
+- Update changelog for v0.2.5
 ## [0.2.4] - 2026-03-30
 
 ### 🚀 Features
