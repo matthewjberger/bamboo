@@ -459,7 +459,8 @@ Set `template = "portfolio.html"` in `content/_index.md` to use the built-in por
 | `tagline` | Short subtitle under the hero name |
 | `linkedin` | LinkedIn profile URL → shows a LinkedIn button in the hero |
 | `github` | GitHub profile URL → shows a GitHub button in the hero |
-| `resume_pdf` | Path to a PDF resume → shows a "Resume" hero button that opens a modal viewer |
+| `hero_pdf` | Path to a PDF → shows a hero button that opens a modal viewer with a download link |
+| `hero_pdf_label` | Text for the hero PDF button (defaults to `"View PDF"`; e.g. set to `"Resume"` for a resume) |
 | `book_url` | URL → shows a "Book" button in the hero |
 | `articles_url` | URL → shows an "Articles" link in the nav |
 | `sponsor_url` | URL → shows a "Sponsor" button in the nav |

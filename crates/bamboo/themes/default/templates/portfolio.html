@@ -110,13 +110,14 @@
       {% endif %}
 
       <div class="flex gap-4 justify-center flex-wrap">
-        {% set resume_pdf = site.config.extra.resume_pdf | default(value="") %}
-        {% if resume_pdf %}
-        <button type="button" id="resume-open" class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+        {% set hero_pdf = site.config.extra.hero_pdf | default(value="") %}
+        {% set hero_pdf_label = site.config.extra.hero_pdf_label | default(value="View PDF") %}
+        {% if hero_pdf %}
+        <button type="button" id="hero-pdf-open" class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
           </svg>
-          Resume
+          {{ hero_pdf_label }}
         </button>
         {% endif %}
         <a href="#experience" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
@@ -338,23 +339,23 @@
     </div>
   </footer>
 
-  {% if resume_pdf %}
-  {% set resume_url = resume_pdf %}
-  {% if not (resume_url is starting_with("http")) and not (resume_url is starting_with("//")) %}{% set resume_url = base ~ resume_url %}{% endif %}
-  <!-- Resume Modal -->
-  <div id="resume-modal" class="fixed inset-0 z-100 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.75);">
-    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl flex flex-col" style="height: 90vh;" data-resume-dialog>
+  {% if hero_pdf %}
+  {% set hero_pdf_url = hero_pdf %}
+  {% if not (hero_pdf_url is starting_with("http")) and not (hero_pdf_url is starting_with("//")) %}{% set hero_pdf_url = base ~ hero_pdf_url %}{% endif %}
+  <!-- Hero PDF Modal -->
+  <div id="hero-pdf-modal" class="fixed inset-0 z-100 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.75);">
+    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl flex flex-col" style="height: 90vh;" data-hero-pdf-dialog>
       <div class="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
-        <a href="{{ resume_url | safe }}" download class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2">
+        <a href="{{ hero_pdf_url | safe }}" download class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
           </svg>
           Download
         </a>
-        <button type="button" id="resume-close" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 text-2xl font-bold" aria-label="Close">&times;</button>
+        <button type="button" id="hero-pdf-close" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 text-2xl font-bold" aria-label="Close">&times;</button>
       </div>
       <div class="bg-gray-200 dark:bg-gray-700 p-4" style="flex: 1; width: 100%; overflow: auto;">
-        <iframe src="{{ resume_url | safe }}#toolbar=1&view=FitH" style="width: 100%; height: 100%; border: 0; background: #ffffff;" title="Resume"></iframe>
+        <iframe src="{{ hero_pdf_url | safe }}#toolbar=1&view=FitH" style="width: 100%; height: 100%; border: 0; background: #ffffff;" title="{{ hero_pdf_label }}"></iframe>
       </div>
     </div>
   </div>
@@ -363,7 +364,7 @@
 
 <style>
   html { scroll-behavior: smooth; }
-  #resume-modal.is-open { display: flex; }
+  #hero-pdf-modal.is-open { display: flex; }
   [data-sort-active] { background-color: #3b82f6 !important; color: #ffffff !important; }
 </style>
 
@@ -380,10 +381,10 @@
   });
 
   (function() {
-    var modal = document.getElementById('resume-modal');
+    var modal = document.getElementById('hero-pdf-modal');
     if (!modal) return;
-    var openButton = document.getElementById('resume-open');
-    var closeButton = document.getElementById('resume-close');
+    var openButton = document.getElementById('hero-pdf-open');
+    var closeButton = document.getElementById('hero-pdf-close');
     if (openButton) openButton.addEventListener('click', function() { modal.classList.add('is-open'); });
     if (closeButton) closeButton.addEventListener('click', function() { modal.classList.remove('is-open'); });
     modal.addEventListener('click', function(event) {
