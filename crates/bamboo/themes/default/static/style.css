@@ -446,6 +446,9 @@ blockquote {
 .bg-pink-500 { background-color: #ec4899; }
 .bg-pink-600 { background-color: #db2777; }
 
+.bg-indigo-500 { background-color: #6366f1; }
+.bg-indigo-600 { background-color: #4f46e5; }
+
 /* Background opacity */
 .bg-white\/95 { background-color: rgba(255, 255, 255, 0.95); }
 .bg-white\/5 { background-color: rgba(255, 255, 255, 0.05); }
@@ -764,6 +767,8 @@ blockquote {
 .hover\:bg-purple-600:hover { background-color: #7c3aed; }
 
 .hover\:bg-pink-600:hover { background-color: #db2777; }
+
+.hover\:bg-indigo-600:hover { background-color: #4f46e5; }
 
 .hover\:bg-emerald-600:hover { background-color: #059669; }
 

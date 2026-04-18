@@ -1,0 +1,35 @@
+[[items]]
+title = "middle-out"
+description = "The core compression algorithm that started it all. Achieves a 5.2 Weissman score through revolutionary middle-out approach."
+link = "https://github.com"
+technologies = ["Rust", "C++", "Algorithms"]
+
+[[items]]
+title = "pipernet"
+description = "Decentralized peer-to-peer network protocol for the new internet. Making centralized servers obsolete."
+link = "https://github.com"
+technologies = ["Distributed Systems", "Networking", "Rust"]
+
+[[items]]
+title = "piperchat"
+description = "End-to-end encrypted video chat with superior compression. Real-time communication without compromising quality."
+link = "https://github.com"
+technologies = ["WebRTC", "Rust", "TypeScript"]
+
+[[items]]
+title = "pipercoin"
+description = "Cryptocurrency built on top of the decentralized Pied Piper network. Secure, fast, and truly decentralized."
+link = "https://github.com"
+technologies = ["Blockchain", "Cryptography", "Rust"]
+
+[[items]]
+title = "smartfridge-sdk"
+description = "IoT compression solution for smart refrigerator data. Because even your fridge deserves good compression."
+link = "https://github.com"
+technologies = ["IoT", "Embedded", "C"]
+
+[[items]]
+title = "tabs-not-spaces"
+description = "Static analysis tool for enforcing tabs (the objectively correct choice). Saving bytes one indentation at a time."
+link = "https://github.com"
+technologies = ["Tooling", "Rust", "CLI"]

@@ -12,7 +12,29 @@
 {% endblock %}
 
 {% block content %}
-{% set base = site.config.base_url | default(value="") %}
+{%- set base = site.config.base_url | default(value="") -%}
+{%- set avatar = site.config.extra.avatar | default(value="") -%}
+{%- set tagline = site.config.extra.tagline | default(value="") -%}
+{%- set linkedin_url = site.config.extra.linkedin | default(value="") -%}
+{%- set github_url = site.config.extra.github | default(value="") -%}
+{%- set articles_url = site.config.extra.articles_url | default(value="") -%}
+{%- set sponsor_url = site.config.extra.sponsor_url | default(value="") -%}
+{%- set source_url = site.config.extra.source_url | default(value="") -%}
+{%- set book_url = site.config.extra.book_url | default(value="") -%}
+{%- set hero_pdf = site.config.extra.hero_pdf | default(value="") -%}
+{%- set hero_pdf_label = site.config.extra.hero_pdf_label | default(value="View PDF") -%}
+{%- set has_highlights = site.data.highlights -%}
+{%- set has_experience = site.data.experience -%}
+{%- set has_crates = site.data.crates -%}
+{%- set has_projects = site.data.projects -%}
+{%- set has_education = site.data.education -%}
+{%- if avatar and not (avatar is starting_with("http")) and not (avatar is starting_with("//")) -%}
+  {%- set avatar = base ~ avatar -%}
+{%- endif -%}
+{%- set hero_pdf_url = hero_pdf -%}
+{%- if hero_pdf_url and not (hero_pdf_url is starting_with("http")) and not (hero_pdf_url is starting_with("//")) -%}
+  {%- set hero_pdf_url = base ~ hero_pdf_url -%}
+{%- endif -%}
 <div class="w-screen relative left-1/2 -ml-[50vw] -mt-[calc(var(--header-height)+3rem)] -mb-12">
   <!-- Navigation -->
   <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md dark:shadow-none border-b border-gray-200 dark:border-gray-800 z-50 h-16">
@@ -23,12 +45,11 @@
       <div class="flex items-center gap-4">
         <div class="hidden md:flex space-x-8 items-center">
           <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
-          {% if site.data.highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
-          {% if site.data.experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
-          {% if site.data.crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
-          {% if site.collections.projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
-          {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
-          {% set articles_url = site.config.extra.articles_url | default(value="") %}
+          {% if has_highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
+          {% if has_experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+          {% if has_crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
+          {% if has_projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
+          {% if has_education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
           {% if articles_url %}
           <a href="{{ articles_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
             <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
@@ -38,7 +59,6 @@
             Articles
           </a>
           {% endif %}
-          {% set sponsor_url = site.config.extra.sponsor_url | default(value="") %}
           {% if sponsor_url %}
           <a href="{{ sponsor_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
             <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
@@ -47,7 +67,6 @@
             Sponsor
           </a>
           {% endif %}
-          {% set source_url = site.config.extra.source_url | default(value="") %}
           {% if source_url %}
           <a href="{{ source_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2" aria-label="View source on GitHub" title="View source on GitHub">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
@@ -77,11 +96,11 @@
       </div>
       <div class="hidden peer-checked:flex peer-checked:flex-col peer-checked:absolute peer-checked:top-16 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-gray-100 dark:peer-checked:bg-gray-800 peer-checked:border-b peer-checked:border-gray-300 dark:peer-checked:border-gray-700 peer-checked:p-4 peer-checked:space-y-4 md:hidden">
         <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
-        {% if site.data.highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
-        {% if site.data.experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
-        {% if site.data.crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
-        {% if site.collections.projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
-        {% if site.data.education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
+        {% if has_highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
+        {% if has_experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+        {% if has_crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
+        {% if has_projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
+        {% if has_education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
         {% if articles_url %}<a href="{{ articles_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors">Articles</a>{% endif %}
         {% if sponsor_url %}<a href="{{ sponsor_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-pink-500 dark:text-pink-400 hover:text-pink-600 transition-colors">Sponsor</a>{% endif %}
         {% if source_url %}<a href="{{ source_url | safe }}" target="_blank" rel="noopener noreferrer" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">View source on GitHub</a>{% endif %}
@@ -92,11 +111,9 @@
   <!-- Hero Section -->
   <section id="hero" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16">
     <div class="text-center px-4">
-      {% if site.config.extra.avatar %}
-      {% set avatar_src = site.config.extra.avatar %}
-      {% if not (avatar_src is starting_with("http")) and not (avatar_src is starting_with("//")) %}{% set avatar_src = base ~ avatar_src %}{% endif %}
+      {% if avatar %}
       <img
-        src="{{ avatar_src | safe }}"
+        src="{{ avatar | safe }}"
         alt="{{ site.config.title }}"
         class="rounded-lg mx-auto mb-6 border-2 border-blue-500 dark:border-blue-400 object-cover"
         style="width: 180px; height: 180px;"
@@ -105,13 +122,11 @@
       <h1 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4">
         Hi, I'm <span class="text-blue-500 dark:text-blue-400">{{ site.config.title }}</span>
       </h1>
-      {% if site.config.extra.tagline %}
-      <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">{{ site.config.extra.tagline }}</p>
+      {% if tagline %}
+      <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">{{ tagline }}</p>
       {% endif %}
 
       <div class="flex gap-4 justify-center flex-wrap">
-        {% set hero_pdf = site.config.extra.hero_pdf | default(value="") %}
-        {% set hero_pdf_label = site.config.extra.hero_pdf_label | default(value="View PDF") %}
         {% if hero_pdf %}
         <button type="button" id="hero-pdf-open" class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
@@ -120,13 +135,14 @@
           {{ hero_pdf_label }}
         </button>
         {% endif %}
+        {% if has_experience %}
         <a href="#experience" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
           </svg>
           Experience
         </a>
-        {% set linkedin_url = site.config.extra.linkedin | default(value="") %}
+        {% endif %}
         {% if linkedin_url %}
         <a href="{{ linkedin_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
@@ -135,7 +151,6 @@
           LinkedIn
         </a>
         {% endif %}
-        {% set github_url = site.config.extra.github | default(value="") %}
         {% if github_url %}
         <a href="{{ github_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
@@ -144,21 +159,22 @@
           GitHub
         </a>
         {% endif %}
-        {% set book_url = site.config.extra.book_url | default(value="") %}
         {% if book_url %}
-        <a href="{{ book_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+        <a href="{{ book_url | safe }}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 2H6c-1.206 0-3 .799-3 3v14c0 2.201 1.794 3 3 3h15v-2H6.012C5.55 19.988 5 19.806 5 19c0-.101.009-.191.024-.273.112-.576.584-.717.988-.727H21V4c0-1.103-.897-2-2-2zm0 14H5V5c0-.806.55-.988 1-1h13v12z"/>
           </svg>
           Book
         </a>
         {% endif %}
+        {% if has_projects %}
         <a href="#projects" class="px-6 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clip-rule="evenodd"/>
           </svg>
           Projects
         </a>
+        {% endif %}
       </div>
     </div>
   </section>
@@ -178,7 +194,7 @@
   </section>
 
   <!-- Highlights Section -->
-  {% if site.data.highlights %}
+  {% if has_highlights %}
   <section id="highlights" class="py-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
     <div class="max-w-6xl mx-auto px-4">
       <div class="text-center mb-12">
@@ -186,8 +202,10 @@
       </div>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for item in site.data.highlights.items %}
-        {% set highlight_image = item.image | default(value="") %}
-        {% if highlight_image and not (highlight_image is starting_with("http")) and not (highlight_image is starting_with("//")) %}{% set highlight_image = base ~ highlight_image %}{% endif %}
+        {%- set highlight_image = item.image | default(value="") -%}
+        {%- if highlight_image and not (highlight_image is starting_with("http")) and not (highlight_image is starting_with("//")) -%}
+          {%- set highlight_image = base ~ highlight_image -%}
+        {%- endif -%}
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all flex flex-col">
           <a href="{{ item.link | safe }}" target="_blank" rel="noopener noreferrer" class="block flex-1 hover:scale-105 transition-all">
             {% if highlight_image %}
@@ -213,7 +231,7 @@
   {% endif %}
 
   <!-- Experience Section -->
-  {% if site.data.experience %}
+  {% if has_experience %}
   <section id="experience" class="py-20 bg-white dark:bg-gray-900" data-timeline-section>
     <div class="max-w-4xl mx-auto px-4">
       <div class="flex justify-between items-center mb-12">
@@ -247,14 +265,14 @@
   {% endif %}
 
   <!-- Crates Section -->
-  {% if site.data.crates %}
+  {% if has_crates %}
   <section id="crates" class="py-20 bg-gray-100 dark:bg-gray-800" data-sort-section="crates">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between items-center mb-12">
         <h2 class="text-4xl font-bold text-gray-900 dark:text-white">{{ site.data.crates.title | default(value="Published Crates") }}</h2>
         <div class="flex gap-2">
-          <button type="button" data-sort-target="crates-grid" data-sort-direction="asc" class="px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors" data-sort-active>A-Z</button>
-          <button type="button" data-sort-target="crates-grid" data-sort-direction="desc" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Z-A</button>
+          <button type="button" data-sort-target="crates-grid" data-sort-direction="asc" class="bamboo-sort-button" data-sort-active>A-Z</button>
+          <button type="button" data-sort-target="crates-grid" data-sort-direction="desc" class="bamboo-sort-button">Z-A</button>
         </div>
       </div>
       <div id="crates-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -279,25 +297,25 @@
   {% endif %}
 
   <!-- Projects Section -->
-  {% if site.collections.projects %}
+  {% if has_projects %}
   <section id="projects" class="py-20 bg-gray-100 dark:bg-gray-800" data-sort-section="projects">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between items-center mb-12">
-        <h2 class="text-4xl font-bold text-gray-900 dark:text-white">Projects</h2>
+        <h2 class="text-4xl font-bold text-gray-900 dark:text-white">{{ site.data.projects.title | default(value="Projects") }}</h2>
         <div class="flex gap-2">
-          <button type="button" data-sort-target="projects-grid" data-sort-direction="asc" class="px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors" data-sort-active>A-Z</button>
-          <button type="button" data-sort-target="projects-grid" data-sort-direction="desc" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Z-A</button>
+          <button type="button" data-sort-target="projects-grid" data-sort-direction="asc" class="bamboo-sort-button" data-sort-active>A-Z</button>
+          <button type="button" data-sort-target="projects-grid" data-sort-direction="desc" class="bamboo-sort-button">Z-A</button>
         </div>
       </div>
       <div id="projects-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {% for item in site.collections.projects.items %}
-        <a href="{{ item.frontmatter.extra.link | default(value='#') | safe }}" target="_blank" rel="noopener noreferrer" data-sort-key="{{ item.title }}" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:scale-105 cursor-pointer">
+        {% for item in site.data.projects.items %}
+        <a href="{{ item.link | safe }}" target="_blank" rel="noopener noreferrer" data-sort-key="{{ item.title }}" class="block bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:scale-105 cursor-pointer">
           <div class="p-6">
             <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">{{ item.title }}</h3>
-            <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{{ item.content | striptags | truncate(length=120) }}</p>
-            {% if item.frontmatter.extra.technologies %}
+            <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{{ item.description }}</p>
+            {% if item.technologies %}
             <div class="flex flex-wrap gap-2">
-              {% for tech in item.frontmatter.extra.technologies %}
+              {% for tech in item.technologies %}
               <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded text-sm border border-gray-200 dark:border-gray-700">{{ tech }}</span>
               {% endfor %}
             </div>
@@ -311,7 +329,7 @@
   {% endif %}
 
   <!-- Education Section -->
-  {% if site.data.education %}
+  {% if has_education %}
   <section id="education" class="py-20 bg-gray-100 dark:bg-gray-800">
     <div class="max-w-4xl mx-auto px-4">
       <h2 class="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Education</h2>
@@ -340,11 +358,9 @@
   </footer>
 
   {% if hero_pdf %}
-  {% set hero_pdf_url = hero_pdf %}
-  {% if not (hero_pdf_url is starting_with("http")) and not (hero_pdf_url is starting_with("//")) %}{% set hero_pdf_url = base ~ hero_pdf_url %}{% endif %}
   <!-- Hero PDF Modal -->
-  <div id="hero-pdf-modal" class="fixed inset-0 z-100 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.75);">
-    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl flex flex-col" style="height: 90vh;" data-hero-pdf-dialog>
+  <div id="hero-pdf-modal" class="fixed inset-0 z-100 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.75);" role="dialog" aria-modal="true" aria-labelledby="hero-pdf-title">
+    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl flex flex-col" style="height: 90vh;">
       <div class="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
         <a href="{{ hero_pdf_url | safe }}" download class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="currentColor">
@@ -352,6 +368,7 @@
           </svg>
           Download
         </a>
+        <span id="hero-pdf-title" class="sr-only">{{ hero_pdf_label }}</span>
         <button type="button" id="hero-pdf-close" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 text-2xl font-bold" aria-label="Close">&times;</button>
       </div>
       <div class="bg-gray-200 dark:bg-gray-700 p-4" style="flex: 1; width: 100%; overflow: auto;">
@@ -365,7 +382,30 @@
 <style>
   html { scroll-behavior: smooth; }
   #hero-pdf-modal.is-open { display: flex; }
-  [data-sort-active] { background-color: #3b82f6 !important; color: #ffffff !important; }
+  .bamboo-sort-button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #e5e7eb;
+    color: #111827;
+    cursor: pointer;
+  }
+  .bamboo-sort-button:hover { background-color: #f3f4f6; }
+  .dark .bamboo-sort-button { background-color: #374151; color: #d1d5db; }
+  .dark .bamboo-sort-button:hover { background-color: #1f2937; }
+  .bamboo-sort-button[data-sort-active] { background-color: #3b82f6; color: #ffffff; }
+  .bamboo-sort-button[data-sort-active]:hover { background-color: #2563eb; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 </style>
 
 <script>
@@ -385,43 +425,83 @@
     if (!modal) return;
     var openButton = document.getElementById('hero-pdf-open');
     var closeButton = document.getElementById('hero-pdf-close');
-    if (openButton) openButton.addEventListener('click', function() { modal.classList.add('is-open'); });
-    if (closeButton) closeButton.addEventListener('click', function() { modal.classList.remove('is-open'); });
+    var lastFocused = null;
+
+    function focusables() {
+      return Array.from(modal.querySelectorAll(
+        'a[href], button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
+      ));
+    }
+
+    function openModal() {
+      lastFocused = document.activeElement;
+      modal.classList.add('is-open');
+      var first = focusables()[0];
+      if (first) first.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove('is-open');
+      if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    }
+
+    if (openButton) openButton.addEventListener('click', openModal);
+    if (closeButton) closeButton.addEventListener('click', closeModal);
     modal.addEventListener('click', function(event) {
-      if (event.target === modal) modal.classList.remove('is-open');
+      if (event.target === modal) closeModal();
     });
     document.addEventListener('keydown', function(event) {
-      if (event.key === 'Escape') modal.classList.remove('is-open');
+      if (!modal.classList.contains('is-open')) return;
+      if (event.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      var nodes = focusables();
+      if (nodes.length === 0) return;
+      var first = nodes[0];
+      var last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     });
   })();
 
   (function() {
+    function applySort(target, direction) {
+      var items = Array.from(target.children);
+      items.sort(function(a, b) {
+        var keyA = (a.dataset.sortKey || '').toLowerCase();
+        var keyB = (b.dataset.sortKey || '').toLowerCase();
+        if (keyA < keyB) return -direction;
+        if (keyA > keyB) return direction;
+        return 0;
+      });
+      items.forEach(function(item) { target.appendChild(item); });
+    }
+
     document.querySelectorAll('[data-sort-section]').forEach(function(section) {
-      var buttons = section.querySelectorAll('[data-sort-target]');
+      var buttons = Array.from(section.querySelectorAll('[data-sort-target]'));
       buttons.forEach(function(button) {
         button.addEventListener('click', function() {
           var target = document.getElementById(button.dataset.sortTarget);
           if (!target) return;
           var direction = button.dataset.sortDirection === 'desc' ? -1 : 1;
-          var items = Array.from(target.children);
-          items.sort(function(a, b) {
-            var keyA = (a.dataset.sortKey || '').toLowerCase();
-            var keyB = (b.dataset.sortKey || '').toLowerCase();
-            if (keyA < keyB) return -direction;
-            if (keyA > keyB) return direction;
-            return 0;
-          });
-          items.forEach(function(item) { target.appendChild(item); });
-          buttons.forEach(function(other) {
-            other.removeAttribute('data-sort-active');
-            other.classList.remove('bg-blue-500', 'text-white');
-            other.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-gray-300');
-          });
+          applySort(target, direction);
+          buttons.forEach(function(other) { other.removeAttribute('data-sort-active'); });
           button.setAttribute('data-sort-active', '');
-          button.classList.add('bg-blue-500', 'text-white');
-          button.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-gray-300');
         });
       });
+      var active = section.querySelector('[data-sort-active]');
+      if (active) {
+        var target = document.getElementById(active.dataset.sortTarget);
+        var direction = active.dataset.sortDirection === 'desc' ? -1 : 1;
+        if (target) applySort(target, direction);
+      }
     });
   })();
 

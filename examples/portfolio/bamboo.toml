@@ -7,7 +7,6 @@ language = "en"
 [extra]
 avatar = "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=180&h=180&fit=crop&crop=face"
 tagline = "CEO & Founder at Pied Piper"
-email = "richard@piedpiper.com"
 github = "https://github.com"
 linkedin = "https://linkedin.com"
 hero_pdf = "/Resume.pdf"
