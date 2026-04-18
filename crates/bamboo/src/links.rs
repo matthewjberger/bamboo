@@ -28,7 +28,16 @@ impl std::fmt::Display for LinkWarning {
 /// Walks every HTML file under `output_dir` and returns a list of internal
 /// references that don't resolve to a file inside the output tree. External
 /// links (different host) and fragment-only links (`#anchor`) are skipped.
-pub fn validate_internal_links(output_dir: &Path, base_url: &str) -> Vec<LinkWarning> {
+///
+/// `ignore_prefixes` lists path prefixes (e.g. `"/other-project"`) that the
+/// validator should treat as external even when they appear to share the
+/// configured `base_url`. Useful when the site shares a domain with
+/// sibling deployments.
+pub fn validate_internal_links(
+    output_dir: &Path,
+    base_url: &str,
+    ignore_prefixes: &[String],
+) -> Vec<LinkWarning> {
     let mut warnings = Vec::new();
     let mut seen: HashSet<(PathBuf, String)> = HashSet::new();
     let base_url_trimmed = base_url.trim_end_matches('/');
@@ -68,6 +77,10 @@ pub fn validate_internal_links(output_dir: &Path, base_url: &str) -> Vec<LinkWar
                 continue;
             }
 
+            if is_ignored(clean, ignore_prefixes) {
+                continue;
+            }
+
             let key = (relative.clone(), clean.to_string());
             if seen.contains(&key) {
                 continue;
@@ -86,6 +99,18 @@ pub fn validate_internal_links(output_dir: &Path, base_url: &str) -> Vec<LinkWar
     warnings.sort_by(|a, b| a.source.cmp(&b.source).then_with(|| a.href.cmp(&b.href)));
 
     warnings
+}
+
+fn is_ignored(path: &str, ignore_prefixes: &[String]) -> bool {
+    ignore_prefixes.iter().any(|prefix| {
+        let trimmed = prefix.trim_end_matches('/');
+        if trimmed.is_empty() {
+            return false;
+        }
+        path == trimmed
+            || path.starts_with(&format!("{trimmed}/"))
+            || path.starts_with(&format!("{trimmed}#"))
+    })
 }
 
 fn normalize_href<'a>(href: &'a str, base_url: &str) -> Option<&'a str> {
@@ -313,7 +338,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "");
+        let warnings = validate_internal_links(dir.path(), "", &[]);
         assert_eq!(warnings.len(), 1);
         assert_eq!(warnings[0].href, "/about/");
     }
@@ -329,7 +354,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "");
+        let warnings = validate_internal_links(dir.path(), "", &[]);
         assert!(warnings.is_empty());
     }
 
@@ -342,7 +367,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "https://example.com");
+        let warnings = validate_internal_links(dir.path(), "https://example.com", &[]);
         assert!(warnings.is_empty());
     }
 
@@ -355,7 +380,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "");
+        let warnings = validate_internal_links(dir.path(), "", &[]);
         assert!(warnings.is_empty());
     }
 
@@ -370,7 +395,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "");
+        let warnings = validate_internal_links(dir.path(), "", &[]);
         assert!(warnings.is_empty());
     }
 
@@ -383,7 +408,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "");
+        let warnings = validate_internal_links(dir.path(), "", &[]);
         assert_eq!(warnings.len(), 1);
     }
 
@@ -396,9 +421,36 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "https://example.com");
+        let warnings = validate_internal_links(dir.path(), "https://example.com", &[]);
         assert_eq!(warnings.len(), 1);
         assert_eq!(warnings[0].href, "/missing/");
+    }
+
+    #[test]
+    fn test_validate_respects_ignore_prefixes() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(
+            dir.path().join("index.html"),
+            r#"<a href="https://example.com/sibling/">Sibling</a><a href="https://example.com/sibling/page">Deep</a><a href="/broken/">Broken</a>"#,
+        )
+        .unwrap();
+
+        let ignore = vec!["/sibling".to_string()];
+        let warnings = validate_internal_links(dir.path(), "https://example.com", &ignore);
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].href, "/broken/");
+    }
+
+    #[test]
+    fn test_is_ignored_variants() {
+        let ignore = vec!["/nightshade".to_string(), "/book/".to_string()];
+        assert!(is_ignored("/nightshade", &ignore));
+        assert!(is_ignored("/nightshade/", &ignore));
+        assert!(is_ignored("/nightshade/demo", &ignore));
+        assert!(is_ignored("/book", &ignore));
+        assert!(is_ignored("/book/ch1/", &ignore));
+        assert!(!is_ignored("/nightshade-book", &ignore));
+        assert!(!is_ignored("/other", &ignore));
     }
 
     #[test]
@@ -412,7 +464,7 @@ mod tests {
         )
         .unwrap();
 
-        let warnings = validate_internal_links(dir.path(), "https://example.com");
+        let warnings = validate_internal_links(dir.path(), "https://example.com", &[]);
         assert!(warnings.is_empty());
     }
 }

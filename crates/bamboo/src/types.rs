@@ -122,6 +122,13 @@ pub struct SiteConfig {
     /// Enable LaTeX math rendering (KaTeX) site-wide.
     #[serde(default)]
     pub math: bool,
+    /// Prefixes (matched against the normalized local path after the base
+    /// URL is stripped) that the post-build link validator should skip.
+    /// Useful when the site shares a domain with other deployments, so
+    /// `https://example.com/other-project/` doesn't get flagged as a
+    /// broken internal link.
+    #[serde(default)]
+    pub link_check_ignore: Vec<String>,
     /// Arbitrary user fields from `[extra]`, accessible in templates as
     /// `site.config.extra.<name>`.
     #[serde(default)]

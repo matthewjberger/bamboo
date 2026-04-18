@@ -307,6 +307,7 @@ mod tests {
                 syntax_theme: crate::types::default_syntax_theme(),
                 taxonomies: crate::types::default_taxonomies(),
                 math: false,
+                link_check_ignore: Vec::new(),
                 extra: HashMap::new(),
             },
             home: None,

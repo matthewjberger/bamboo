@@ -203,7 +203,11 @@ pub fn build_site(
         elapsed
     );
 
-    let warnings = validate_internal_links(output, &site.config.base_url);
+    let warnings = validate_internal_links(
+        output,
+        &site.config.base_url,
+        &site.config.link_check_ignore,
+    );
     for warning in &warnings {
         eprintln!("warning: {}", warning);
     }

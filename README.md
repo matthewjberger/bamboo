@@ -115,6 +115,7 @@ syntax_theme = "base16-ocean.dark"  # Syntax highlighting theme
 math = false           # Enable LaTeX math rendering
 minify = false         # Minify CSS, JS, and HTML output
 fingerprint = false    # Content-hash asset filenames for cache busting
+link_check_ignore = []  # Paths the link validator treats as external (e.g. ["/other-project"])
 
 [taxonomies.tags]      # Built-in (auto-configured)
 singular = "tag"
