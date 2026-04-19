@@ -1,3 +1,12 @@
+## [0.5.3] - 2026-04-19
+
+### 🐛 Bug Fixes
+
+- *(theme)* Prevent nav title from wrapping at medium widths
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.3
 ## [0.5.2] - 2026-04-19
 
 ### 🚀 Features
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.5.2
+- Update changelog for v0.5.2
 ## [0.5.1] - 2026-04-19
 
 ### 🚀 Features
