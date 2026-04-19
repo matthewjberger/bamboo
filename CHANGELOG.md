@@ -1,3 +1,12 @@
+## [0.4.1] - 2026-04-19
+
+### 🐛 Bug Fixes
+
+- *(theme)* Add missing text-gray-200 utilities so archive post titles are readable in dark mode
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.4.1
 ## [0.4.0] - 2026-04-19
 
 ### 🚀 Features
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.4.0
+- Update changelog for v0.4.0
 ## [0.3.7] - 2026-04-18
 
 ### 🚀 Features
