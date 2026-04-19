@@ -1,3 +1,12 @@
+## [0.5.1] - 2026-04-19
+
+### 🚀 Features
+
+- *(theme)* Add briefcase icon to author_profile links
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.1
 ## [0.5.0] - 2026-04-19
 
 ### 🐛 Bug Fixes
@@ -11,6 +20,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.5.0
+- Update changelog for v0.5.0
 ## [0.4.2] - 2026-04-19
 
 ### 🐛 Bug Fixes
