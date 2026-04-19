@@ -1,3 +1,12 @@
+## [0.4.2] - 2026-04-19
+
+### 🐛 Bug Fixes
+
+- *(theme)* Og:url for the home page resolves to the site root, not /index/
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.4.2
 ## [0.4.1] - 2026-04-19
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.4.1
+- Update changelog for v0.4.1
 ## [0.4.0] - 2026-04-19
 
 ### 🚀 Features
