@@ -73,7 +73,7 @@
         {%- set meta_type = "article" -%}
         {%- set meta_url = site.config.base_url ~ "/posts/" ~ post.slug ~ "/" -%}
         {%- set meta_image = post.frontmatter.extra.image | default(value=site.config.extra.og_image | default(value="")) -%}
-    {%- elif page is defined -%}
+    {%- elif page is defined and page.slug != "index" -%}
         {%- set meta_title = page.title ~ " | " ~ site.config.title -%}
         {%- set meta_description = page.frontmatter.extra.description | default(value=site.config.description | default(value="")) -%}
         {%- set meta_type = "website" -%}
