@@ -33,6 +33,8 @@
             prose-hr:border-gray-200 dark:prose-hr:border-gray-700">
             {{ page.content | safe }}
         </div>
+
+        {% include "partials/page_edit_link.html" %}
     </article>
 </div>
 {% endblock %}

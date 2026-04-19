@@ -22,8 +22,15 @@
         {% for link in author_links %}
         {% set link_url = link.url | default(value="#") %}
         {% set link_label = link.label | default(value=link_url) %}
+        {# Resolve relative paths against the site's base_url so authors can
+           write "/rss.xml" and it works in both dev and prod. Schemes like
+           mailto: / tel: / http(s) / protocol-relative pass through unchanged. #}
+        {% set is_external = link_url is starting_with("http") or link_url is starting_with("//") or link_url is starting_with("mailto:") or link_url is starting_with("tel:") %}
+        {% if not is_external and link_url is starting_with("/") %}
+            {% set link_url = site.config.base_url ~ link_url %}
+        {% endif %}
         <li>
-            <a href="{{ link_url | safe }}"{% if link_url is starting_with("http") %} target="_blank" rel="noopener noreferrer"{% endif %} class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+            <a href="{{ link_url | safe }}"{% if is_external and link_url is starting_with("http") %} target="_blank" rel="noopener noreferrer"{% endif %} class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                 {% set icon = link.icon | default(value="link") %}
                 {% if icon == "envelope" or icon == "email" or icon == "mail" %}
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>

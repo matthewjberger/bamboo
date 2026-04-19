@@ -72,6 +72,8 @@ const DEFAULT_POST_PREV_NEXT_PARTIAL: &str =
     include_str!("../themes/default/templates/partials/post_prev_next.html");
 const DEFAULT_POST_EDIT_LINK_PARTIAL: &str =
     include_str!("../themes/default/templates/partials/post_edit_link.html");
+const DEFAULT_PAGE_EDIT_LINK_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/page_edit_link.html");
 const DEFAULT_SEARCH_TEMPLATE: &str = include_str!("../themes/default/templates/search.html");
 const DEFAULT_STYLESHEET: &str = include_str!("../themes/default/static/style.css");
 
@@ -269,6 +271,10 @@ impl ThemeEngine {
         tera.add_raw_template(
             "partials/post_edit_link.html",
             DEFAULT_POST_EDIT_LINK_PARTIAL,
+        )?;
+        tera.add_raw_template(
+            "partials/page_edit_link.html",
+            DEFAULT_PAGE_EDIT_LINK_PARTIAL,
         )?;
         tera.add_raw_template("search.html", DEFAULT_SEARCH_TEMPLATE)?;
 

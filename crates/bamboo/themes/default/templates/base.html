@@ -106,8 +106,8 @@
     {% if site.config.extra.twitter_handle %}<meta name="twitter:site" content="{{ site.config.extra.twitter_handle }}">{% endif %}
     <link rel="canonical" href="{{ meta_url | safe }}">
 
-    <link rel="alternate" type="application/rss+xml" title="{{ site.config.title }} RSS" href="{{ site.config.base_url }}/rss.xml">
-    <link rel="alternate" type="application/atom+xml" title="{{ site.config.title }} Atom" href="{{ site.config.base_url }}/atom.xml">
+    <link rel="alternate" type="application/rss+xml" title="{{ site.config.title }} RSS" href="{{ site.config.base_url | safe }}/rss.xml">
+    <link rel="alternate" type="application/atom+xml" title="{{ site.config.title }} Atom" href="{{ site.config.base_url | safe }}/atom.xml">
     {% block head %}{% endblock %}
     {% if math %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">

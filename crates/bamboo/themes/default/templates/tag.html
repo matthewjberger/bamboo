@@ -5,7 +5,7 @@
 {% block content %}
 <div class="max-w-3xl mx-auto">
     <div class="mb-8">
-        <a href="{{ site.config.base_url }}/tags/" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm font-medium transition-colors">&larr; All tags</a>
+        <a href="{{ site.config.base_url | safe }}/tags/" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm font-medium transition-colors">&larr; All tags</a>
     </div>
     <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">Posts tagged "{{ tag_name }}"</h1>
 
@@ -15,7 +15,7 @@
             <div class="flex items-baseline gap-4">
                 <time class="text-sm text-gray-500 dark:text-gray-400 shrink-0 tabular-nums">{{ post.date | date(format="%Y-%m-%d") }}</time>
                 <h2 class="text-lg font-medium">
-                    <a href="{{ site.config.base_url }}/posts/{{ post.slug }}/" class="text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">{{ post.title }}</a>
+                    <a href="{{ site.config.base_url | safe }}/posts/{{ post.slug }}/" class="text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">{{ post.title }}</a>
                 </h2>
             </div>
         </article>

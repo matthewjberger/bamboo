@@ -1,6 +1,6 @@
 {%- set use_data_nav = site.data.navigation and site.data.navigation.main -%}
 <nav class="flex justify-between items-center">
-    <a href="{{ site.config.base_url }}/" class="text-xl font-bold text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+    <a href="{{ site.config.base_url | safe }}/" class="text-xl font-bold text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
         {{ site.config.title }}
     </a>
     <div class="flex items-center gap-6">
@@ -12,7 +12,7 @@
             {% else %}
                 {% for page in site.pages %}
                 {% if page.slug != "index" and page.slug != "404" and not (page.slug is containing("/")) %}
-                <a href="{{ site.config.base_url }}/{{ page.slug }}/" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors whitespace-nowrap">{{ page.title }}</a>
+                <a href="{{ site.config.base_url | safe }}/{{ page.slug }}/" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors whitespace-nowrap">{{ page.title }}</a>
                 {% endif %}
                 {% endfor %}
             {% endif %}
@@ -50,7 +50,7 @@
         {% else %}
             {% for page in site.pages %}
             {% if page.slug != "index" and page.slug != "404" and not (page.slug is containing("/")) %}
-            <a href="{{ site.config.base_url }}/{{ page.slug }}/" class="block py-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">{{ page.title }}</a>
+            <a href="{{ site.config.base_url | safe }}/{{ page.slug }}/" class="block py-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">{{ page.title }}</a>
             {% endif %}
             {% endfor %}
         {% endif %}

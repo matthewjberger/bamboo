@@ -43,7 +43,7 @@
                 {% if category in post.categories %}
                 <li class="flex items-baseline gap-4">
                     <time class="text-sm font-mono text-gray-500 dark:text-gray-400 tabular-nums shrink-0" datetime="{{ post.date }}">{{ post.date | date(format="%b %d, %Y") }}</time>
-                    <a href="{{ site.config.base_url }}/posts/{{ post.slug }}/" class="text-gray-700 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">{{ post.title }}</a>
+                    <a href="{{ site.config.base_url | safe }}/posts/{{ post.slug }}/" class="text-gray-700 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">{{ post.title }}</a>
                 </li>
                 {% endif %}
                 {% endfor %}

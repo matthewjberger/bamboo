@@ -3,13 +3,13 @@
     <div class="flex-1">
         {% if prev_post is defined %}
         <span class="text-sm text-gray-500 dark:text-gray-400">Previous</span>
-        <a href="{{ site.config.base_url }}/posts/{{ prev_post.slug }}/" class="block text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium transition-colors mt-1">&larr; {{ prev_post.title }}</a>
+        <a href="{{ site.config.base_url | safe }}/posts/{{ prev_post.slug }}/" class="block text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium transition-colors mt-1">&larr; {{ prev_post.title }}</a>
         {% endif %}
     </div>
     <div class="flex-1 text-right">
         {% if next_post is defined %}
         <span class="text-sm text-gray-500 dark:text-gray-400">Next</span>
-        <a href="{{ site.config.base_url }}/posts/{{ next_post.slug }}/" class="block text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium transition-colors mt-1">{{ next_post.title }} &rarr;</a>
+        <a href="{{ site.config.base_url | safe }}/posts/{{ next_post.slug }}/" class="block text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium transition-colors mt-1">{{ next_post.title }} &rarr;</a>
         {% endif %}
     </div>
 </nav>
