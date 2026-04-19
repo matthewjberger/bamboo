@@ -25,6 +25,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ site.config.base_url | safe }}/style.css">
+    {% if site.config.favicon %}
+    {%- set favicon_href = site.config.favicon -%}
+    {%- if favicon_href is starting_with("/") -%}
+      {%- set favicon_href = site.config.base_url ~ favicon_href -%}
+    {%- endif -%}
+    {%- set favicon_type = "" -%}
+    {%- if favicon_href is ending_with(".svg") -%}
+      {%- set favicon_type = "image/svg+xml" -%}
+    {%- elif favicon_href is ending_with(".png") -%}
+      {%- set favicon_type = "image/png" -%}
+    {%- elif favicon_href is ending_with(".ico") -%}
+      {%- set favicon_type = "image/x-icon" -%}
+    {%- endif -%}
+    <link rel="icon"{% if favicon_type %} type="{{ favicon_type }}"{% endif %} href="{{ favicon_href | safe }}">
+    {% endif %}
     <style>
       /* Suppress color/background/border transitions until after the first
          paint. Without this, every navigation animates body/header/footer

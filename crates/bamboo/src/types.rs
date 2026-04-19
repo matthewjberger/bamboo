@@ -122,6 +122,11 @@ pub struct SiteConfig {
     /// Enable LaTeX math rendering (KaTeX) site-wide.
     #[serde(default)]
     pub math: bool,
+    /// Optional path to a favicon file (e.g. `/favicon.ico`, `/favicon.svg`).
+    /// When set, the default theme emits a `<link rel="icon">` tag in the
+    /// document head. Relative paths are resolved against the site base URL.
+    #[serde(default)]
+    pub favicon: Option<String>,
     /// Prefixes (matched against the normalized local path after the base
     /// URL is stripped) that the post-build link validator should skip.
     /// Useful when the site shares a domain with other deployments, so
