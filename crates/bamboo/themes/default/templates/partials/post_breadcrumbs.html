@@ -1,0 +1,12 @@
+{% if post.categories and post.categories | length > 0 %}
+{% set primary_category = post.categories | first %}
+<nav class="mb-6 text-sm text-gray-500 dark:text-gray-400" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-2 flex-wrap">
+        <li><a href="{{ site.config.base_url }}/" class="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Home</a></li>
+        <li aria-hidden="true" class="text-gray-400 dark:text-gray-600">/</li>
+        <li><a href="{{ site.config.base_url }}/categories/{{ primary_category | slugify }}/" class="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">{{ primary_category }}</a></li>
+        <li aria-hidden="true" class="text-gray-400 dark:text-gray-600">/</li>
+        <li class="text-gray-700 dark:text-gray-300 truncate" aria-current="page">{{ post.title }}</li>
+    </ol>
+</nav>
+{% endif %}

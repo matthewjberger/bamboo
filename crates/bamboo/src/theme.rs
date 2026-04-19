@@ -33,6 +33,11 @@ const DEFAULT_PORTFOLIO_TEMPLATE: &str = include_str!("../themes/default/templat
 const DEFAULT_LANDING_TEMPLATE: &str = include_str!("../themes/default/templates/landing.html");
 const DEFAULT_CHANGELOG_TEMPLATE: &str = include_str!("../themes/default/templates/changelog.html");
 const DEFAULT_BOOK_TEMPLATE: &str = include_str!("../themes/default/templates/book.html");
+const DEFAULT_ARCHIVE_TEMPLATE: &str = include_str!("../themes/default/templates/archive.html");
+const DEFAULT_CATEGORIES_GROUPED_TEMPLATE: &str =
+    include_str!("../themes/default/templates/categories_grouped.html");
+const DEFAULT_TAGS_GROUPED_TEMPLATE: &str =
+    include_str!("../themes/default/templates/tags_grouped.html");
 const DEFAULT_TAGS_TEMPLATE: &str = include_str!("../themes/default/templates/tags.html");
 const DEFAULT_TAG_TEMPLATE: &str = include_str!("../themes/default/templates/tag.html");
 const DEFAULT_CATEGORIES_TEMPLATE: &str =
@@ -49,6 +54,24 @@ const DEFAULT_HEADER_PARTIAL: &str =
 const DEFAULT_FOOTER_PARTIAL: &str =
     include_str!("../themes/default/templates/partials/footer.html");
 const DEFAULT_NAV_PARTIAL: &str = include_str!("../themes/default/templates/partials/nav.html");
+const DEFAULT_AUTHOR_PROFILE_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/author_profile.html");
+const DEFAULT_POST_BREADCRUMBS_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_breadcrumbs.html");
+const DEFAULT_POST_HEADER_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_header.html");
+const DEFAULT_POST_HERO_IMAGE_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_hero_image.html");
+const DEFAULT_POST_TOC_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_toc.html");
+const DEFAULT_POST_SHARE_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_share.html");
+const DEFAULT_POST_RELATED_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_related.html");
+const DEFAULT_POST_PREV_NEXT_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_prev_next.html");
+const DEFAULT_POST_EDIT_LINK_PARTIAL: &str =
+    include_str!("../themes/default/templates/partials/post_edit_link.html");
 const DEFAULT_SEARCH_TEMPLATE: &str = include_str!("../themes/default/templates/search.html");
 const DEFAULT_STYLESHEET: &str = include_str!("../themes/default/static/style.css");
 
@@ -56,14 +79,51 @@ const DEFAULT_STYLESHEET: &str = include_str!("../themes/default/static/style.cs
 pub(crate) struct SiteMetadata<'a> {
     config: &'a crate::types::SiteConfig,
     pages: &'a [crate::types::Page],
+    posts: &'a [crate::types::Post],
     data: &'a HashMap<String, serde_json::Value>,
     collections: &'a HashMap<String, crate::types::Collection>,
+}
+
+fn related_posts<'a>(
+    site: &'a Site,
+    post: &crate::types::Post,
+    limit: usize,
+) -> Vec<&'a crate::types::Post> {
+    if post.tags.is_empty() && post.categories.is_empty() {
+        return Vec::new();
+    }
+    let mut scored: Vec<(usize, &crate::types::Post)> = site
+        .posts
+        .iter()
+        .filter(|candidate| candidate.content.slug != post.content.slug)
+        .map(|candidate| {
+            let shared_tags = candidate
+                .tags
+                .iter()
+                .filter(|tag| post.tags.contains(tag))
+                .count();
+            let shared_categories = candidate
+                .categories
+                .iter()
+                .filter(|category| post.categories.contains(category))
+                .count();
+            (shared_tags + shared_categories, candidate)
+        })
+        .filter(|(score, _)| *score > 0)
+        .collect();
+    scored.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| b.1.date.cmp(&a.1.date)));
+    scored
+        .into_iter()
+        .take(limit)
+        .map(|(_, candidate)| candidate)
+        .collect()
 }
 
 pub(crate) fn site_metadata(site: &Site) -> SiteMetadata<'_> {
     SiteMetadata {
         config: &site.config,
         pages: &site.pages,
+        posts: &site.posts,
         data: &site.data,
         collections: &site.collections,
     }
@@ -169,6 +229,12 @@ impl ThemeEngine {
         tera.add_raw_template("landing.html", DEFAULT_LANDING_TEMPLATE)?;
         tera.add_raw_template("changelog.html", DEFAULT_CHANGELOG_TEMPLATE)?;
         tera.add_raw_template("book.html", DEFAULT_BOOK_TEMPLATE)?;
+        tera.add_raw_template("archive.html", DEFAULT_ARCHIVE_TEMPLATE)?;
+        tera.add_raw_template(
+            "categories_grouped.html",
+            DEFAULT_CATEGORIES_GROUPED_TEMPLATE,
+        )?;
+        tera.add_raw_template("tags_grouped.html", DEFAULT_TAGS_GROUPED_TEMPLATE)?;
         tera.add_raw_template("tags.html", DEFAULT_TAGS_TEMPLATE)?;
         tera.add_raw_template("tag.html", DEFAULT_TAG_TEMPLATE)?;
         tera.add_raw_template("categories.html", DEFAULT_CATEGORIES_TEMPLATE)?;
@@ -180,6 +246,30 @@ impl ThemeEngine {
         tera.add_raw_template("partials/header.html", DEFAULT_HEADER_PARTIAL)?;
         tera.add_raw_template("partials/footer.html", DEFAULT_FOOTER_PARTIAL)?;
         tera.add_raw_template("partials/nav.html", DEFAULT_NAV_PARTIAL)?;
+        tera.add_raw_template(
+            "partials/author_profile.html",
+            DEFAULT_AUTHOR_PROFILE_PARTIAL,
+        )?;
+        tera.add_raw_template(
+            "partials/post_breadcrumbs.html",
+            DEFAULT_POST_BREADCRUMBS_PARTIAL,
+        )?;
+        tera.add_raw_template("partials/post_header.html", DEFAULT_POST_HEADER_PARTIAL)?;
+        tera.add_raw_template(
+            "partials/post_hero_image.html",
+            DEFAULT_POST_HERO_IMAGE_PARTIAL,
+        )?;
+        tera.add_raw_template("partials/post_toc.html", DEFAULT_POST_TOC_PARTIAL)?;
+        tera.add_raw_template("partials/post_share.html", DEFAULT_POST_SHARE_PARTIAL)?;
+        tera.add_raw_template("partials/post_related.html", DEFAULT_POST_RELATED_PARTIAL)?;
+        tera.add_raw_template(
+            "partials/post_prev_next.html",
+            DEFAULT_POST_PREV_NEXT_PARTIAL,
+        )?;
+        tera.add_raw_template(
+            "partials/post_edit_link.html",
+            DEFAULT_POST_EDIT_LINK_PARTIAL,
+        )?;
         tera.add_raw_template("search.html", DEFAULT_SEARCH_TEMPLATE)?;
 
         register_custom_filters(&mut tera);
@@ -479,6 +569,9 @@ impl ThemeEngine {
         if let Some(next) = next_post {
             context.insert("next_post", next);
         }
+
+        let related = related_posts(site, post, 3);
+        context.insert("related_posts", &related);
 
         let template_name = post.content.template.as_deref().unwrap_or("post.html");
         let rendered = self.tera.render(template_name, &context)?;

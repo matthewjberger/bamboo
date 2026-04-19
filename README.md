@@ -23,7 +23,7 @@ Bamboo transforms markdown content with frontmatter into static HTML sites. It f
 | **Syntax Highlighting** | Built-in highlighting via syntect with configurable themes |
 | **Templating** | Tera templates with inheritance, includes, filters, and macros |
 | **Shortcodes** | Inline (`{{</* name */>}}`) and block (`{{%/* name */%}}`) shortcodes with Tera templates |
-| **Collections** | Organize content beyond posts — projects, recipes, portfolios (supports nesting) |
+| **Collections** | Organize content beyond posts: projects, recipes, portfolios (supports nesting) |
 | **Data Files** | Load TOML/YAML/JSON from `data/` directory into templates |
 | **Pagination** | Automatic pagination for post listings, tag pages, and category pages |
 | **Tags & Categories** | Auto-generated tag and category index/listing pages |
@@ -450,7 +450,7 @@ The repository includes example sites:
 
 ### Portfolio Template
 
-Set `template = "portfolio.html"` in `content/_index.md` to use the built-in portfolio layout. Every section is optional — each one only renders if its data source is present.
+Set `template = "portfolio.html"` in `content/_index.md` to use the built-in portfolio layout. Every section is optional, and each one only renders if its data source is present.
 
 **Config fields** (all under `[extra]` in `bamboo.toml`):
 
@@ -476,9 +476,110 @@ Local paths (anything not starting with `http`, `https`, or `//`) are automatica
 | `highlights.toml` | `[[items]]` with `title`, `description`, `image`, `link`, optional `demo_link` + `demo_label` | Highlights grid |
 | `experience.toml` | `[[jobs]]` with `title`, `company`, `period`, `achievements = [...]` | Experience section with Show-All/Timeline toggle |
 | `crates.toml` | Optional `title` plus `[[items]]` with `title`, `description`, `link`, `technologies = [...]` | Published Crates section with A-Z/Z-A sort |
+| `projects.toml` | Optional `title` plus `[[items]]` with `title`, `description`, `link`, `technologies = [...]` | Projects section with A-Z/Z-A sort |
 | `education.toml` | `[[degrees]]` with `degree`, `institution`, `period`, `description` | Education section |
 
-**Collection**: a `content/projects/` collection (with `_collection.toml`) drives the Projects grid. Each item's frontmatter supports `extra.link` and `extra.technologies`.
+### Blog Layout (Author Profile Sidebar)
+
+The default `index.html`, `post.html`, and `page.html` templates render with a sticky two-column author profile sidebar when `[extra.author_profile]` is set. When the field is absent the layout falls back to single-column (no breakage for existing sites).
+
+```toml
+[extra.author_profile]
+name = "Jane Doe"
+avatar = "/bio-photo.jpg"   # local path or full URL
+bio = "Writing about distributed systems and compression."
+
+[[extra.author_profile.links]]
+label = "Email"
+url = "mailto:jane@example.com"
+icon = "envelope"
+
+[[extra.author_profile.links]]
+label = "GitHub"
+url = "https://github.com/jane"
+icon = "github"
+
+[[extra.author_profile.links]]
+label = "RSS"
+url = "/rss.xml"
+icon = "rss"
+```
+
+Supported `icon` values: `envelope` / `email` / `mail`, `github`, `linkedin`, `twitter` / `x`, `mastodon`, `rss`, `website` / `globe` / `link`. Unknown or omitted icon falls back to a generic link glyph.
+
+### Post Features
+
+`post.html` composes a set of slot partials. Each slot is opt-out via `[extra]` toggles (default `true`):
+
+| Partial | `[extra]` toggle | Renders |
+|---|---|---|
+| `partials/post_breadcrumbs.html` | `post_breadcrumbs` | `Home / Category / Post` above the title (requires `categories` frontmatter) |
+| `partials/post_header.html` | always | Title, date, author, read time, tags |
+| `partials/post_hero_image.html` | `extra.image` in post frontmatter | Banner image above the title (also used as `og:image`) |
+| `partials/post_toc.html` | `post_toc` | Collapsible table of contents, when the post has >= 2 headings |
+| `partials/post_share.html` | `post_share` | Share on X, LinkedIn, copy-link buttons |
+| `partials/post_related.html` | `post_related` | Top 3 posts by shared tags/categories, computed at build time |
+| `partials/post_prev_next.html` | always | Previous / next navigation |
+| `partials/post_edit_link.html` | `extra.edit_url_base` | "Edit this post on GitHub" link |
+
+**Feature image** is set per-post via frontmatter:
+
+```toml
++++
+title = "My Post"
+tags = ["rust"]
+
+[extra]
+image = "/images/header.jpg"
+image_alt = "A descriptive alt text"
+image_caption = "Optional caption"
++++
+```
+
+Local paths are prefixed with `site.config.base_url` automatically. The image also becomes the `og:image` meta tag for social share cards.
+
+**Edit-on-GitHub link** is enabled globally by setting `extra.edit_url_base` to your repo's edit URL. The link resolves to `{edit_url_base}/content/posts/{slug}.md` unless overridden by `extra.source_path` in the post frontmatter.
+
+### Social Meta Tags
+
+Open Graph and Twitter Card meta tags are emitted on every page automatically. The `og:image` / `twitter:image` chooses, in order:
+
+1. Per-post `extra.image`
+2. Per-page `extra.image`
+3. Site-wide `extra.og_image`
+4. Author profile avatar (`extra.author_profile.avatar`)
+
+Optional: set `extra.twitter_handle = "@yoursite"` to attribute the card.
+
+### Posts-by-Year Archive
+
+Create `content/archive.md` (or any path) with the archive template:
+
+```markdown
++++
+title = "Archive"
+template = "archive.html"
++++
+
+Every post, grouped by year.
+```
+
+The template iterates `site.posts` and groups entries by year. The author-profile sidebar renders alongside if configured.
+
+### Grouped Category / Tag Archives
+
+For a Jekyll-style "all posts grouped by tag on one page" layout, use the grouped templates:
+
+```markdown
++++
+title = "Posts by Category"
+template = "categories_grouped.html"
++++
+
+Every post, grouped by category.
+```
+
+`tags_grouped.html` is the tag equivalent. They complement (not replace) the per-tag and per-category index pages generated automatically under `/tags/<name>/` and `/categories/<name>/`.
 
 ## Output
 

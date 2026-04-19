@@ -15,3 +15,26 @@ formats = ["webp", "jpg"]
 [extra]
 github = "https://github.com/richardhendricks"
 twitter = "@richardhendricks"
+twitter_handle = "@richardhendricks"
+og_image = "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=1200&h=630&fit=crop"
+edit_url_base = "https://github.com/matthewjberger/bamboo/edit/main/examples/blog"
+
+[extra.author_profile]
+name = "Richard Hendricks"
+avatar = "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=180&h=180&fit=crop&crop=face"
+bio = "CEO & Founder at Pied Piper. Writing about compression algorithms, middle-out, and the new decentralized internet."
+
+[[extra.author_profile.links]]
+label = "Email"
+url = "mailto:richard@piedpiper.com"
+icon = "envelope"
+
+[[extra.author_profile.links]]
+label = "GitHub"
+url = "https://github.com/richardhendricks"
+icon = "github"
+
+[[extra.author_profile.links]]
+label = "RSS"
+url = "/rss.xml"
+icon = "rss"

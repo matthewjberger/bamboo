@@ -1,0 +1,12 @@
+{% set hero_image = post.frontmatter.extra.image | default(value="") %}
+{% if hero_image %}
+{%- if not (hero_image is starting_with("http")) and not (hero_image is starting_with("//")) -%}
+    {%- set hero_image = site.config.base_url ~ hero_image -%}
+{%- endif -%}
+<figure class="mb-10">
+    <img src="{{ hero_image | safe }}" alt="{{ post.frontmatter.extra.image_alt | default(value=post.title) }}" class="w-full rounded-xl border border-gray-200 dark:border-gray-700" loading="eager" />
+    {% if post.frontmatter.extra.image_caption %}
+    <figcaption class="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center">{{ post.frontmatter.extra.image_caption }}</figcaption>
+    {% endif %}
+</figure>
+{% endif %}

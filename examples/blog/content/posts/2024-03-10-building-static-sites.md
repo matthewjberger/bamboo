@@ -3,6 +3,11 @@ title = "Middle-Out Compression Explained"
 tags = ["compression", "algorithms", "pied-piper"]
 categories = ["engineering"]
 excerpt = "The core insight behind our compression algorithm and why it works so well."
+
+[extra]
+image = "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=400&fit=crop"
+image_alt = "Abstract data compression visualization"
+image_caption = "Middle-out compression in action."
 +++
 
 People keep asking me to explain middle-out compression. Here's my attempt at a non-technical explanation of the core insight.

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title | default(value="Posts by Category") }} | {{ site.config.title }}{% endblock %}
+
+{% block content %}
+{% set has_sidebar = site.config.extra.author_profile | default(value=false) %}
+<div class="{% if has_sidebar %}bamboo-sidebar-grid{% else %}max-w-4xl mx-auto{% endif %}">
+    {% if has_sidebar %}
+    <aside class="bamboo-sidebar">
+        {% include "partials/author_profile.html" %}
+    </aside>
+    {% endif %}
+    <div class="bamboo-main-column">
+        <header class="mb-10 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">{{ page.title | default(value="Posts by Category") }}</h1>
+            {% if page.content %}
+            <div class="mt-4 text-gray-600 dark:text-gray-300 leading-relaxed">{{ page.content | safe }}</div>
+            {% endif %}
+        </header>
+
+        {% set all_categories = [] %}
+        {% for post in site.posts %}
+            {% for category in post.categories %}
+                {% set_global all_categories = all_categories | concat(with=category) %}
+            {% endfor %}
+        {% endfor %}
+        {% set unique_categories = all_categories | unique | sort %}
+
+        {% if unique_categories | length == 0 %}
+        <p class="text-gray-500 dark:text-gray-400">No categorized posts yet.</p>
+        {% else %}
+        <nav class="mb-10 flex flex-wrap gap-2" aria-label="Jump to category">
+            {% for category in unique_categories %}
+            <a href="#{{ category | slugify }}" class="px-3 py-1 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-sm font-medium border border-purple-100 dark:border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors">{{ category }}</a>
+            {% endfor %}
+        </nav>
+
+        {% for category in unique_categories %}
+        <section class="mb-12" id="{{ category | slugify }}">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ category }}</h2>
+            <ul class="space-y-3">
+                {% for post in site.posts %}
+                {% if category in post.categories %}
+                <li class="flex items-baseline gap-4">
+                    <time class="text-sm font-mono text-gray-500 dark:text-gray-400 tabular-nums shrink-0" datetime="{{ post.date }}">{{ post.date | date(format="%b %d, %Y") }}</time>
+                    <a href="{{ site.config.base_url }}/posts/{{ post.slug }}/" class="text-gray-700 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors">{{ post.title }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </section>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

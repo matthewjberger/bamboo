@@ -1,0 +1,14 @@
+{% if post.toc and post.toc | length >= 2 %}
+<details class="mb-10 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50" open>
+    <summary class="cursor-pointer px-4 py-3 font-semibold text-gray-900 dark:text-white select-none">On this page</summary>
+    <ul class="px-4 pb-4 space-y-1 text-sm">
+        {% for entry in post.toc %}
+        {% if entry.level <= 3 %}
+        <li style="padding-left: {{ (entry.level - 1) * 12 }}px;">
+            <a href="#{{ entry.id }}" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">{{ entry.title }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</details>
+{% endif %}

@@ -283,6 +283,9 @@ blockquote {
 .gap-4 { gap: 1rem; }
 .gap-6 { gap: 1.5rem; }
 .gap-8 { gap: 2rem; }
+.gap-10 { gap: 2.5rem; }
+.gap-12 { gap: 3rem; }
+.gap-16 { gap: 4rem; }
 
 .space-x-8 > * + * { margin-left: 2rem; }
 .space-y-1 > * + * { margin-top: 0.25rem; }
@@ -1280,6 +1283,10 @@ blockquote {
   color: #db2777 !important;
 }
 
+.prose-code\:text-emerald-600 :where(code):not(:where([class~="not-prose"] *)) {
+  color: #059669 !important;
+}
+
 .prose-code\:bg-gray-100 :where(:not(pre) > code):not(:where([class~="not-prose"] *)) {
   background-color: #f3f4f6 !important;
 }
@@ -1484,6 +1491,10 @@ blockquote {
   color: #f472b6 !important;
 }
 
+.dark .dark\:prose-code\:text-emerald-400 :where(code):not(:where([class~="not-prose"] *)) {
+  color: #34d399 !important;
+}
+
 .dark .dark\:prose-code\:bg-gray-800 :where(:not(pre) > code):not(:where([class~="not-prose"] *)) {
   background-color: #1f2937 !important;
 }
@@ -1587,6 +1598,38 @@ blockquote {
    ========================================================================== */
 
 .stroke-2 { stroke-width: 2; }
+
+/* ==========================================================================
+   Heading Anchor Links
+   ========================================================================== */
+
+/* parsing.rs emits <a class="anchor" href="#id">#</a> before each heading
+   text so every heading is linkable. Hide it by default so the hash isn't
+   visible as text; fade in on heading hover. */
+.prose :where(h1, h2, h3, h4, h5, h6) .anchor,
+:where(h1, h2, h3, h4, h5, h6) > .anchor {
+    display: inline-block;
+    margin-left: -1.25rem;
+    padding-right: 0.25rem;
+    width: 1rem;
+    color: #9ca3af;
+    text-decoration: none;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+}
+
+.prose :where(h1, h2, h3, h4, h5, h6):hover .anchor,
+:where(h1, h2, h3, h4, h5, h6):hover > .anchor,
+.prose :where(h1, h2, h3, h4, h5, h6) .anchor:focus,
+:where(h1, h2, h3, h4, h5, h6) > .anchor:focus {
+    opacity: 1;
+}
+
+.dark .prose :where(h1, h2, h3, h4, h5, h6) .anchor,
+.dark :where(h1, h2, h3, h4, h5, h6) > .anchor {
+    color: #6b7280;
+}
 
 /* ==========================================================================
    Shortcode Styles - Dark Mode

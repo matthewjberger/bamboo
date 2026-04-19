@@ -1,0 +1,16 @@
+{% if related_posts and related_posts | length > 0 %}
+<section class="my-12 pt-8 border-t border-gray-200 dark:border-gray-700" aria-labelledby="related-posts-heading">
+    <h2 id="related-posts-heading" class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Related posts</h2>
+    <div class="grid gap-4 md:grid-cols-{% if related_posts | length >= 3 %}3{% else %}2{% endif %}">
+        {% for related in related_posts %}
+        <a href="{{ site.config.base_url }}/posts/{{ related.slug }}/" class="group block p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-xl hover:border-blue-300 dark:hover:border-blue-500/40 hover:shadow-md transition-all">
+            <time class="block text-xs text-gray-500 dark:text-gray-400 mb-2" datetime="{{ related.date }}">{{ related.date | date(format="%b %d, %Y") }}</time>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug mb-2">{{ related.title }}</h3>
+            {% if related.excerpt %}
+            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{{ related.excerpt }}</p>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

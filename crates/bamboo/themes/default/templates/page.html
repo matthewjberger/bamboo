@@ -3,28 +3,36 @@
 {% block title %}{{ page.title }} | {{ site.config.title }}{% endblock %}
 
 {% block content %}
-<article class="max-w-3xl mx-auto">
-    <header class="mb-10">
-        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">{{ page.title }}</h1>
-    </header>
+{% set has_sidebar = site.config.extra.author_profile | default(value=false) %}
+<div class="{% if has_sidebar %}bamboo-sidebar-grid{% else %}max-w-3xl mx-auto{% endif %}">
+    {% if has_sidebar %}
+    <aside class="bamboo-sidebar">
+        {% include "partials/author_profile.html" %}
+    </aside>
+    {% endif %}
+    <article class="bamboo-main-column">
+        <header class="mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">{{ page.title }}</h1>
+        </header>
 
-    <div class="prose prose-lg dark:prose-invert max-w-none
-        prose-headings:text-gray-900 dark:prose-headings:text-white
-        prose-p:text-gray-600 dark:prose-p:text-gray-300
-        prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:marker:text-gray-400 dark:prose-li:marker:text-gray-500
-        prose-ol:text-gray-600 dark:prose-ol:text-gray-300
-        prose-ul:text-gray-600 dark:prose-ul:text-gray-300
-        prose-a:text-blue-500 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
-        prose-strong:text-gray-900 dark:prose-strong:text-white
-        prose-code:text-pink-600 dark:prose-code:text-pink-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-        prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700
-        prose-blockquote:border-blue-500 prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400
-        prose-img:rounded-xl
-        prose-table:text-gray-600 dark:prose-table:text-gray-300
-        prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:text-gray-900 dark:prose-th:text-white
-        prose-td:border-gray-200 dark:prose-td:border-gray-700
-        prose-hr:border-gray-200 dark:prose-hr:border-gray-700">
-        {{ page.content | safe }}
-    </div>
-</article>
+        <div class="prose prose-lg dark:prose-invert
+            prose-headings:text-gray-900 dark:prose-headings:text-white
+            prose-p:text-gray-600 dark:prose-p:text-gray-300
+            prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:marker:text-gray-400 dark:prose-li:marker:text-gray-500
+            prose-ol:text-gray-600 dark:prose-ol:text-gray-300
+            prose-ul:text-gray-600 dark:prose-ul:text-gray-300
+            prose-a:text-blue-500 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-gray-900 dark:prose-strong:text-white
+            prose-code:text-emerald-600 dark:prose-code:text-emerald-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+            prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700
+            prose-blockquote:border-blue-500 prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400
+            prose-img:rounded-xl
+            prose-table:text-gray-600 dark:prose-table:text-gray-300
+            prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:text-gray-900 dark:prose-th:text-white
+            prose-td:border-gray-200 dark:prose-td:border-gray-700
+            prose-hr:border-gray-200 dark:prose-hr:border-gray-700">
+            {{ page.content | safe }}
+        </div>
+    </article>
+</div>
 {% endblock %}

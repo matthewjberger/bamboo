@@ -1,21 +1,111 @@
 <!DOCTYPE html>
-<html lang="{{ site.config.language | default(value='en') }}" class="dark">
+<html lang="{{ site.config.language | default(value='en') }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ site.config.base_url | safe }}/style.css">
     <script>
       (function() {
-        var theme = localStorage.getItem('theme');
-        if (theme === 'light') {
-          document.documentElement.classList.remove('dark');
+        try {
+          var theme = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = theme === 'dark' || (!theme && prefersDark);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (error) {}
+        if ('requestAnimationFrame' in window) {
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              document.documentElement.classList.add('bamboo-ready');
+            });
+          });
+        } else {
+          document.documentElement.classList.add('bamboo-ready');
         }
       })();
     </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ site.config.base_url | safe }}/style.css">
+    <style>
+      /* Suppress color/background/border transitions until after the first
+         paint. Without this, every navigation animates body/header/footer
+         colors for 200ms as the dark class settles, which reads as the
+         theme "flickering" between pages. */
+      html:not(.bamboo-ready) *,
+      html:not(.bamboo-ready) *::before,
+      html:not(.bamboo-ready) *::after {
+        transition: none !important;
+      }
+
+      /* Sidebar-with-content layout. Defined here so the gap value can't be
+         lost to missing utility classes. */
+      .bamboo-sidebar-grid {
+        display: grid;
+        gap: 3rem;
+      }
+      @media (min-width: 1024px) {
+        .bamboo-sidebar-grid {
+          grid-template-columns: 240px minmax(0, 1fr);
+          gap: 4rem;
+        }
+      }
+      .bamboo-sidebar {
+        min-width: 0;
+      }
+      @media (min-width: 1024px) {
+        .bamboo-sidebar {
+          position: sticky;
+          top: 6rem;
+          align-self: start;
+          max-height: calc(100vh - 8rem);
+          overflow-y: auto;
+        }
+      }
+      .bamboo-main-column {
+        min-width: 0;
+        max-width: 48rem;
+      }
+    </style>
     <title>{% block title %}{{ site.config.title }}{% endblock %}</title>
-    {% if site.config.description %}
-    <meta name="description" content="{{ site.config.description }}">
-    {% endif %}
+
+    {%- if post is defined -%}
+        {%- set meta_title = post.title ~ " | " ~ site.config.title -%}
+        {%- set meta_description = post.excerpt | default(value=site.config.description | default(value="")) -%}
+        {%- set meta_type = "article" -%}
+        {%- set meta_url = site.config.base_url ~ "/posts/" ~ post.slug ~ "/" -%}
+        {%- set meta_image = post.frontmatter.extra.image | default(value=site.config.extra.og_image | default(value="")) -%}
+    {%- elif page is defined -%}
+        {%- set meta_title = page.title ~ " | " ~ site.config.title -%}
+        {%- set meta_description = page.frontmatter.extra.description | default(value=site.config.description | default(value="")) -%}
+        {%- set meta_type = "website" -%}
+        {%- set meta_url = site.config.base_url ~ "/" ~ page.slug ~ "/" -%}
+        {%- set meta_image = page.frontmatter.extra.image | default(value=site.config.extra.og_image | default(value="")) -%}
+    {%- else -%}
+        {%- set meta_title = site.config.title -%}
+        {%- set meta_description = site.config.description | default(value="") -%}
+        {%- set meta_type = "website" -%}
+        {%- set meta_url = site.config.base_url -%}
+        {%- set meta_image = site.config.extra.og_image | default(value="") -%}
+    {%- endif -%}
+    {%- if meta_image == "" and site.config.extra.author_profile -%}
+        {%- set meta_image = site.config.extra.author_profile.avatar | default(value="") -%}
+    {%- endif -%}
+    {%- if meta_image and not (meta_image is starting_with("http")) and not (meta_image is starting_with("//")) -%}
+        {%- set meta_image = site.config.base_url ~ meta_image -%}
+    {%- endif -%}
+    <meta name="description" content="{{ meta_description }}">
+    <meta property="og:title" content="{{ meta_title }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    <meta property="og:type" content="{{ meta_type }}">
+    <meta property="og:url" content="{{ meta_url | safe }}">
+    <meta property="og:site_name" content="{{ site.config.title }}">
+    {% if meta_image %}<meta property="og:image" content="{{ meta_image | safe }}">{% endif %}
+    <meta name="twitter:card" content="{% if meta_image %}summary_large_image{% else %}summary{% endif %}">
+    <meta name="twitter:title" content="{{ meta_title }}">
+    <meta name="twitter:description" content="{{ meta_description }}">
+    {% if meta_image %}<meta name="twitter:image" content="{{ meta_image | safe }}">{% endif %}
+    {% if site.config.extra.twitter_handle %}<meta name="twitter:site" content="{{ site.config.extra.twitter_handle }}">{% endif %}
+    <link rel="canonical" href="{{ meta_url | safe }}">
+
     <link rel="alternate" type="application/rss+xml" title="{{ site.config.title }} RSS" href="{{ site.config.base_url }}/rss.xml">
     <link rel="alternate" type="application/atom+xml" title="{{ site.config.title }} Atom" href="{{ site.config.base_url }}/atom.xml">
     {% block head %}{% endblock %}
@@ -35,6 +125,12 @@
 
     {% include "partials/footer.html" %}
 
+    <button id="back-to-top" type="button" aria-label="Back to top" class="fixed bottom-6 right-6 p-3 rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all opacity-0 pointer-events-none z-50">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+        </svg>
+    </button>
+
     <script>
       var toggle = document.getElementById('theme-toggle');
       if (toggle) toggle.addEventListener('click', function() {
@@ -47,6 +143,25 @@
           localStorage.setItem('theme', 'dark');
         }
       });
+
+      (function() {
+        var btn = document.getElementById('back-to-top');
+        if (!btn) return;
+        function update() {
+          if (window.scrollY > 400) {
+            btn.classList.remove('opacity-0', 'pointer-events-none');
+            btn.classList.add('opacity-100');
+          } else {
+            btn.classList.add('opacity-0', 'pointer-events-none');
+            btn.classList.remove('opacity-100');
+          }
+        }
+        window.addEventListener('scroll', update, { passive: true });
+        btn.addEventListener('click', function() {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        update();
+      })();
     </script>
 </body>
 </html>

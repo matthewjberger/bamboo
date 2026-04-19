@@ -97,6 +97,11 @@ async fn main() {
 
     if let Err(error) = result {
         eprintln!("Error: {error}");
+        let mut source = error.source();
+        while let Some(cause) = source {
+            eprintln!("  caused by: {cause}");
+            source = cause.source();
+        }
         std::process::exit(1);
     }
 }
