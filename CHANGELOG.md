@@ -1,3 +1,16 @@
+## [0.5.0] - 2026-04-19
+
+### 🐛 Bug Fixes
+
+- *(theme)* Escape base_url in hrefs and prefix relative author links
+
+### 📚 Documentation
+
+- Add docs.rs badge to README
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.0
 ## [0.4.2] - 2026-04-19
 
 ### 🐛 Bug Fixes
@@ -7,6 +20,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.4.2
+- Update changelog for v0.4.2
 ## [0.4.1] - 2026-04-19
 
 ### 🐛 Bug Fixes
