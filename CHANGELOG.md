@@ -1,3 +1,12 @@
+## [0.4.0] - 2026-04-19
+
+### 🚀 Features
+
+- *(theme)* Enrich the default blog theme with sidebar + post features
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.4.0
 ## [0.3.7] - 2026-04-18
 
 ### 🚀 Features
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.3.7
+- Update changelog for v0.3.7
 ## [0.3.6] - 2026-04-18
 
 ### 🐛 Bug Fixes
