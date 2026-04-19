@@ -3,6 +3,7 @@
 <p align="center">
   <a href="https://github.com/matthewjberger/bamboo"><img alt="github" src="https://img.shields.io/badge/github-matthewjberger/bamboo-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20"></a>
   <a href="https://crates.io/crates/bamboo-ssg"><img alt="crates.io" src="https://img.shields.io/crates/v/bamboo-ssg.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20"></a>
+  <a href="https://docs.rs/bamboo-ssg"><img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-bamboo--ssg-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20"></a>
   <a href="https://github.com/matthewjberger/bamboo/blob/main/LICENSE-MIT"><img alt="license" src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue?style=for-the-badge&labelColor=555555" height="20"></a>
 </p>
 
