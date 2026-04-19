@@ -371,6 +371,7 @@ blockquote {
 
 .text-white { color: #ffffff; }
 .text-gray-100 { color: #f3f4f6; }
+.text-gray-200 { color: #e5e7eb; }
 .text-gray-300 { color: #d1d5db; }
 .text-gray-400 { color: #9ca3af; }
 .text-gray-500 { color: #6b7280; }
@@ -401,6 +402,7 @@ blockquote {
 /* Dark mode text colors */
 .dark .dark\:text-white { color: #ffffff; }
 .dark .dark\:text-gray-100 { color: #f3f4f6; }
+.dark .dark\:text-gray-200 { color: #e5e7eb; }
 .dark .dark\:text-gray-300 { color: #d1d5db; }
 .dark .dark\:text-gray-400 { color: #9ca3af; }
 .dark .dark\:text-gray-500 { color: #6b7280; }
