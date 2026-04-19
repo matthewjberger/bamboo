@@ -1,6 +1,6 @@
 [package]
 name = "bamboo-cli"
-version = "0.4.2"
+version = "0.5.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "CLI for the Bamboo static site generator"
@@ -16,7 +16,7 @@ name = "bamboo"
 path = "src/main.rs"
 
 [dependencies]
-bamboo-ssg = { version = "0.4.2", path = "../../crates/bamboo" }
+bamboo-ssg = { version = "0.5.0", path = "../../crates/bamboo" }
 clap = { version = "4", features = ["derive"] }
 notify = "8"
 open = "5"
