@@ -1649,6 +1649,84 @@ blockquote {
 .dark .bamboo-note-error strong { color: #fca5a5 !important; }
 
 /* ==========================================================================
+   Portfolio Skills pills
+   ========================================================================== */
+
+.bamboo-skill-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.bamboo-skill-row-top {
+    margin-bottom: 1.5rem;
+}
+
+.bamboo-skill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+    color: #1f2937;
+    border: 1px solid #d1d5db;
+    border-radius: 9999px;
+    font-size: 1rem;
+    font-weight: 500;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: border-color 150ms ease-in-out, color 150ms ease-in-out, box-shadow 150ms ease-in-out, transform 150ms ease-in-out;
+    cursor: default;
+    line-height: 1.2;
+}
+
+.bamboo-skill:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    transform: scale(1.04);
+}
+
+.dark .bamboo-skill {
+    background-color: #111827;
+    color: #e5e7eb;
+    border-color: #374151;
+}
+
+.dark .bamboo-skill:hover {
+    border-color: #60a5fa;
+    color: #93c5fd;
+}
+
+.bamboo-skill-top {
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: #ffffff;
+    border-color: transparent;
+    font-weight: 600;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.25), 0 2px 4px -1px rgba(59, 130, 246, 0.15);
+}
+
+.bamboo-skill-top:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.2);
+    transform: scale(1.06);
+}
+
+.dark .bamboo-skill-top {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.dark .bamboo-skill-top:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #818cf8 100%);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+/* ==========================================================================
    Code Blocks: copy button + toggleable line numbers
    ========================================================================== */
 

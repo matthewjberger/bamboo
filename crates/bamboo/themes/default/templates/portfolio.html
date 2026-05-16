@@ -269,6 +269,19 @@
 
   <!-- Skills Section -->
   {% if has_skills %}
+  {%- set skills_sort = site.data.skills.sort | default(value="") -%}
+  {%- set top_items_raw = site.data.skills.top_items | default(value=[]) -%}
+  {%- set items_raw = site.data.skills.items | default(value=[]) -%}
+  {%- if skills_sort == "asc" -%}
+    {%- set top_items_sorted = top_items_raw | sort -%}
+    {%- set items_sorted = items_raw | sort -%}
+  {%- elif skills_sort == "desc" -%}
+    {%- set top_items_sorted = top_items_raw | sort | reverse -%}
+    {%- set items_sorted = items_raw | sort | reverse -%}
+  {%- else -%}
+    {%- set top_items_sorted = top_items_raw -%}
+    {%- set items_sorted = items_raw -%}
+  {%- endif -%}
   <section id="skills" class="py-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
     <div class="max-w-4xl mx-auto px-4">
       <h2 class="text-4xl font-bold text-center mb-4 text-gray-900 dark:text-white">{{ site.data.skills.title | default(value="Skills") }}</h2>
@@ -277,17 +290,17 @@
       {% else %}
       <div class="mb-12"></div>
       {% endif %}
-      {% if site.data.skills.top_items %}
-      <div class="flex flex-wrap justify-center gap-3 mb-6">
-        {% for skill in site.data.skills.top_items %}
-        <span class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-500 dark:to-indigo-500 text-white rounded-full text-base font-semibold shadow-md hover:shadow-lg hover:scale-105 hover:from-blue-600 hover:to-indigo-600 transition-all cursor-default">{{ skill }}</span>
+      {% if top_items_sorted %}
+      <div class="bamboo-skill-row bamboo-skill-row-top">
+        {% for skill in top_items_sorted %}
+        <span class="bamboo-skill bamboo-skill-top">{{ skill }}</span>
         {% endfor %}
       </div>
       {% endif %}
-      {% if site.data.skills.items %}
-      <div class="flex flex-wrap justify-center gap-3">
-        {% for skill in site.data.skills.items %}
-        <span class="px-4 py-2 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-full text-base font-medium border border-gray-300 dark:border-gray-700 shadow-sm hover:shadow-md hover:scale-105 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-default">{{ skill }}</span>
+      {% if items_sorted %}
+      <div class="bamboo-skill-row">
+        {% for skill in items_sorted %}
+        <span class="bamboo-skill">{{ skill }}</span>
         {% endfor %}
       </div>
       {% endif %}

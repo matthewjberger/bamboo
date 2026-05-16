@@ -1,6 +1,10 @@
 title = "Skills"
 description = "A non-exhaustive list of things I have shipped to production at least once. Standout strengths are highlighted."
 
+# Optional. "asc" / "desc" sorts top_items and items alphabetically.
+# Omit (or any other value) to preserve the order written below.
+# sort = "asc"
+
 top_items = [
     "Middle-out compression",
     "Distributed systems",
