@@ -1,3 +1,12 @@
+## [0.5.5] - 2026-05-16
+
+### 🐛 Bug Fixes
+
+- *(theme)* Make skill pills render and add sort property
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.5
 ## [0.5.4] - 2026-05-16
 
 ### 🚀 Features
@@ -8,6 +17,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.5.4
+- Update changelog for v0.5.4
 ## [0.5.3] - 2026-04-19
 
 ### 🐛 Bug Fixes
