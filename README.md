@@ -630,7 +630,7 @@ Use `bamboo-ssg` as a library in your own tools:
 
 ```toml
 [dependencies]
-bamboo-ssg = "0.5.5"
+bamboo-ssg = "0.5.6"
 ```
 
 ```rust
