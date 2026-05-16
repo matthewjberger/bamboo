@@ -1,3 +1,13 @@
+## [0.5.4] - 2026-05-16
+
+### 🚀 Features
+
+- *(theme)* Add optional Skills section to portfolio template
+- *(theme)* Code-block copy button + toggleable line numbers
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.4
 ## [0.5.3] - 2026-04-19
 
 ### 🐛 Bug Fixes
@@ -7,6 +17,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.5.3
+- Update changelog for v0.5.3
 ## [0.5.2] - 2026-04-19
 
 ### 🚀 Features
