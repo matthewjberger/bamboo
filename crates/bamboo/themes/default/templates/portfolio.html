@@ -25,6 +25,7 @@
 {%- set hero_pdf_label = site.config.extra.hero_pdf_label | default(value="View PDF") -%}
 {%- set has_highlights = site.data.highlights -%}
 {%- set has_experience = site.data.experience -%}
+{%- set has_skills = site.data.skills and (site.data.skills.items or site.data.skills.top_items) -%}
 {%- set has_crates = site.data.crates -%}
 {%- set has_projects = site.data.projects -%}
 {%- set has_education = site.data.education -%}
@@ -47,6 +48,7 @@
           <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
           {% if has_highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
           {% if has_experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+          {% if has_skills %}<a href="#skills" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Skills</a>{% endif %}
           {% if has_crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
           {% if has_projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
           {% if has_education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
@@ -98,6 +100,7 @@
         <a href="#about" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">About</a>
         {% if has_highlights %}<a href="#highlights" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Highlights</a>{% endif %}
         {% if has_experience %}<a href="#experience" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Experience</a>{% endif %}
+        {% if has_skills %}<a href="#skills" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Skills</a>{% endif %}
         {% if has_crates %}<a href="#crates" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Crates</a>{% endif %}
         {% if has_projects %}<a href="#projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Projects</a>{% endif %}
         {% if has_education %}<a href="#education" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Education</a>{% endif %}
@@ -260,6 +263,34 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Skills Section -->
+  {% if has_skills %}
+  <section id="skills" class="py-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="text-4xl font-bold text-center mb-4 text-gray-900 dark:text-white">{{ site.data.skills.title | default(value="Skills") }}</h2>
+      {% if site.data.skills.description %}
+      <p class="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">{{ site.data.skills.description }}</p>
+      {% else %}
+      <div class="mb-12"></div>
+      {% endif %}
+      {% if site.data.skills.top_items %}
+      <div class="flex flex-wrap justify-center gap-3 mb-6">
+        {% for skill in site.data.skills.top_items %}
+        <span class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-500 dark:to-indigo-500 text-white rounded-full text-base font-semibold shadow-md hover:shadow-lg hover:scale-105 hover:from-blue-600 hover:to-indigo-600 transition-all cursor-default">{{ skill }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if site.data.skills.items %}
+      <div class="flex flex-wrap justify-center gap-3">
+        {% for skill in site.data.skills.items %}
+        <span class="px-4 py-2 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-full text-base font-medium border border-gray-300 dark:border-gray-700 shadow-sm hover:shadow-md hover:scale-105 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-default">{{ skill }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
   </section>
   {% endif %}

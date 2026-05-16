@@ -1,0 +1,25 @@
+title = "Skills"
+description = "A non-exhaustive list of things I have shipped to production at least once. Standout strengths are highlighted."
+
+top_items = [
+    "Middle-out compression",
+    "Distributed systems",
+    "Algorithm design",
+    "Rust",
+]
+
+items = [
+    "Peer-to-peer networking",
+    "Go",
+    "Python",
+    "C++",
+    "Lossless compression",
+    "Cryptography",
+    "Linux internals",
+    "Networking protocols",
+    "Concurrency",
+    "Performance engineering",
+    "Technical leadership",
+    "Public speaking",
+    "Fundraising",
+]

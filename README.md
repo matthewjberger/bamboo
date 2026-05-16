@@ -476,6 +476,7 @@ Local paths (anything not starting with `http`, `https`, or `//`) are automatica
 |------|-------|--------|
 | `highlights.toml` | `[[items]]` with `title`, `description`, `image`, `link`, optional `demo_link` + `demo_label` | Highlights grid |
 | `experience.toml` | `[[jobs]]` with `title`, `company`, `period`, `achievements = [...]` | Experience section with Show-All/Timeline toggle |
+| `skills.toml` | Optional `title` + `description` plus `items = [...]` and/or `top_items = [...]` (lists of strings) | Skills section: `top_items` render as filled gradient pills (highlighted), `items` render as muted outline pills |
 | `crates.toml` | Optional `title` plus `[[items]]` with `title`, `description`, `link`, `technologies = [...]` | Published Crates section with A-Z/Z-A sort |
 | `projects.toml` | Optional `title` plus `[[items]]` with `title`, `description`, `link`, `technologies = [...]` | Projects section with A-Z/Z-A sort |
 | `education.toml` | `[[degrees]]` with `degree`, `institution`, `period`, `description` | Education section |
