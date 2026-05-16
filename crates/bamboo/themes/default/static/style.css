@@ -830,7 +830,7 @@ blockquote {
 .group:hover .group-hover\:opacity-100 { opacity: 1; }
 
 /* Hover prose utilities */
-.hover\:prose-a\:underline:hover a { text-decoration: underline !important; }
+.hover\:prose-a\:underline a:hover { text-decoration: underline !important; }
 
 /* ==========================================================================
    Focus State Utilities
