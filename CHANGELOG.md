@@ -1,3 +1,12 @@
+## [0.5.6] - 2026-05-16
+
+### 🐛 Bug Fixes
+
+- *(theme)* Underline only the hovered link, not every link in the article
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.6
 ## [0.5.5] - 2026-05-16
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.5.5
+- Update changelog for v0.5.5
 ## [0.5.4] - 2026-05-16
 
 ### 🚀 Features
