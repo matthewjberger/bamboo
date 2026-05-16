@@ -1649,5 +1649,122 @@ blockquote {
 .dark .bamboo-note-error strong { color: #fca5a5 !important; }
 
 /* ==========================================================================
+   Code Blocks: copy button + toggleable line numbers
+   ========================================================================== */
+
+.bamboo-code-block {
+    position: relative;
+    margin: 1.5rem 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.bamboo-code-block pre {
+    margin: 0;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+}
+
+.bamboo-code-block pre code {
+    counter-reset: bamboo-line;
+    display: block;
+    background: transparent;
+    padding: 0;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.bamboo-line {
+    counter-increment: bamboo-line;
+    display: inline;
+}
+
+.bamboo-code-block[data-line-numbers] .bamboo-line::before {
+    content: counter(bamboo-line);
+    display: inline-block;
+    width: 2.5ch;
+    margin-right: 1rem;
+    padding-right: 0.5rem;
+    text-align: right;
+    color: rgba(160, 174, 192, 0.6);
+    border-right: 1px solid rgba(160, 174, 192, 0.25);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.bamboo-code-toolbar {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+    z-index: 1;
+}
+
+.bamboo-code-block:hover .bamboo-code-toolbar,
+.bamboo-code-block:focus-within .bamboo-code-toolbar {
+    opacity: 1;
+}
+
+.bamboo-code-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: rgba(30, 41, 59, 0.55);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 120ms ease-in-out, color 120ms ease-in-out, transform 120ms ease-in-out;
+}
+
+.bamboo-code-button:hover {
+    background: rgba(30, 41, 59, 0.85);
+    color: #ffffff;
+}
+
+.bamboo-code-button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.bamboo-code-button[data-active] {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.bamboo-code-button[data-copied] {
+    background: #10b981;
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.bamboo-code-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.bamboo-code-icon-check {
+    display: none;
+}
+
+.bamboo-code-button[data-copied] .bamboo-code-icon-copy {
+    display: none;
+}
+
+.bamboo-code-button[data-copied] .bamboo-code-icon-check {
+    display: inline-block;
+}
+
+/* ==========================================================================
    End of Bamboo SSG Standalone CSS
    ========================================================================== */

@@ -10,9 +10,11 @@ use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, T
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use syntect::highlighting::ThemeSet;
-use syntect::html::highlighted_html_for_string;
-use syntect::parsing::SyntaxSet;
+use syntect::easy::HighlightLines;
+use syntect::highlighting::{Color, Theme, ThemeSet};
+use syntect::html::{IncludeBackground, append_highlighted_html_for_styled_line};
+use syntect::parsing::{SyntaxReference, SyntaxSet};
+use syntect::util::LinesWithEndings;
 
 /// Renders markdown to HTML with syntect-powered syntax highlighting for
 /// fenced code blocks.
@@ -145,32 +147,13 @@ impl MarkdownRenderer {
                 }
                 Event::End(TagEnd::CodeBlock) => {
                     in_code_block = false;
-                    let highlighted = if let Some(ref lang) = code_block_lang {
-                        self.syntax_set
-                            .find_syntax_by_token(lang)
-                            .map(|syntax| {
-                                highlighted_html_for_string(
-                                    &code_block_content,
-                                    &self.syntax_set,
-                                    syntax,
-                                    theme,
-                                )
-                                .unwrap_or_else(|_| escape_html(&code_block_content))
-                            })
-                            .unwrap_or_else(|| {
-                                format!(
-                                    "<pre><code class=\"language-{}\">{}</code></pre>",
-                                    escape_html(lang),
-                                    escape_html(&code_block_content)
-                                )
-                            })
-                    } else {
-                        format!(
-                            "<pre><code>{}</code></pre>",
-                            escape_html(&code_block_content)
-                        )
-                    };
-                    html_output.push_str(&highlighted);
+                    let rendered = render_code_block(
+                        &code_block_content,
+                        code_block_lang.as_deref(),
+                        &self.syntax_set,
+                        theme,
+                    );
+                    html_output.push_str(&rendered);
                     code_block_lang = None;
                 }
                 Event::Text(ref text) if in_heading => {
@@ -214,6 +197,96 @@ impl MarkdownRenderer {
             toc,
         }
     }
+}
+
+const COPY_ICON: &str = "<svg class=\"bamboo-code-icon bamboo-code-icon-copy\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" aria-hidden=\"true\"><rect x=\"7\" y=\"3\" width=\"10\" height=\"12\" rx=\"2\"/><path d=\"M5 7v8a2 2 0 0 0 2 2h6\"/></svg><svg class=\"bamboo-code-icon bamboo-code-icon-check\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M4 10l4 4 8-8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>";
+
+const LINE_NUMBERS_ICON: &str = "<svg class=\"bamboo-code-icon\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" aria-hidden=\"true\"><path d=\"M4 5h2M4 10h2M4 15h2\" stroke-linecap=\"round\"/><path d=\"M9 5h7M9 10h7M9 15h7\" stroke-linecap=\"round\"/></svg>";
+
+fn render_code_block(
+    content: &str,
+    lang: Option<&str>,
+    syntax_set: &SyntaxSet,
+    theme: &Theme,
+) -> String {
+    let syntax = lang.and_then(|name| syntax_set.find_syntax_by_token(name));
+    let inner = match syntax {
+        Some(syntax) => highlight_lines(content, syntax, syntax_set, theme),
+        None => wrap_plain_lines(content),
+    };
+    let background = theme.settings.background.unwrap_or(Color {
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 255,
+    });
+    let foreground = theme.settings.foreground.unwrap_or(Color {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 255,
+    });
+    let pre_style = format!(
+        "background-color:#{:02x}{:02x}{:02x};color:#{:02x}{:02x}{:02x};",
+        background.r, background.g, background.b, foreground.r, foreground.g, foreground.b
+    );
+    let lang_attr = match lang {
+        Some(name) => format!(" data-bamboo-lang=\"{}\"", escape_html(name)),
+        None => String::new(),
+    };
+    let code_class = match lang {
+        Some(name) => format!(" class=\"language-{}\"", escape_html(name)),
+        None => String::new(),
+    };
+    format!(
+        "<div class=\"bamboo-code-block\" data-bamboo-code{lang_attr}>\
+<div class=\"bamboo-code-toolbar\">\
+<button type=\"button\" class=\"bamboo-code-button\" data-bamboo-line-toggle aria-label=\"Toggle line numbers\" aria-pressed=\"false\" title=\"Toggle line numbers\">{LINE_NUMBERS_ICON}</button>\
+<button type=\"button\" class=\"bamboo-code-button\" data-bamboo-copy aria-label=\"Copy code\" title=\"Copy code\">{COPY_ICON}</button>\
+</div>\
+<pre style=\"{pre_style}\"><code{code_class}>{inner}</code></pre>\
+</div>"
+    )
+}
+
+fn highlight_lines(
+    content: &str,
+    syntax: &SyntaxReference,
+    syntax_set: &SyntaxSet,
+    theme: &Theme,
+) -> String {
+    let mut highlighter = HighlightLines::new(syntax, theme);
+    let mut output = String::with_capacity(content.len() * 4);
+    for line in LinesWithEndings::from(content) {
+        output.push_str("<span class=\"bamboo-line\">");
+        match highlighter.highlight_line(line, syntax_set) {
+            Ok(regions) => {
+                let _ = append_highlighted_html_for_styled_line(
+                    &regions[..],
+                    IncludeBackground::No,
+                    &mut output,
+                );
+            }
+            Err(_) => {
+                output.push_str(&escape_html(line));
+            }
+        }
+        output.push_str("</span>");
+    }
+    output
+}
+
+fn wrap_plain_lines(content: &str) -> String {
+    if content.is_empty() {
+        return String::new();
+    }
+    let mut output = String::with_capacity(content.len() + 32);
+    for line in content.split_inclusive('\n') {
+        output.push_str("<span class=\"bamboo-line\">");
+        output.push_str(&escape_html(line));
+        output.push_str("</span>");
+    }
+    output
 }
 
 fn heading_level_to_u32(level: HeadingLevel) -> u32 {
@@ -706,6 +779,40 @@ mod tests {
         assert_eq!(output.toc[1].title, "Section One");
         assert_eq!(output.toc[2].level, 3);
         assert_eq!(output.toc[3].level, 2);
+    }
+
+    #[test]
+    fn test_code_block_emits_toolbar_and_line_wrappers() {
+        let input = "```rust\nfn main() {}\nlet x = 1;\n```";
+        let output = render(input);
+        assert!(output.html.contains("data-bamboo-code"));
+        assert!(output.html.contains("data-bamboo-copy"));
+        assert!(output.html.contains("data-bamboo-line-toggle"));
+        assert!(output.html.contains("data-bamboo-lang=\"rust\""));
+        let line_wrappers = output.html.matches("class=\"bamboo-line\"").count();
+        assert_eq!(line_wrappers, 2);
+    }
+
+    #[test]
+    fn test_code_block_unknown_language_still_wraps_lines() {
+        let input = "```unknownlang\nalpha\nbeta\n```";
+        let output = render(input);
+        assert!(output.html.contains("data-bamboo-code"));
+        assert!(output.html.contains("data-bamboo-lang=\"unknownlang\""));
+        let line_wrappers = output.html.matches("class=\"bamboo-line\"").count();
+        assert_eq!(line_wrappers, 2);
+        assert!(output.html.contains("alpha"));
+        assert!(output.html.contains("beta"));
+    }
+
+    #[test]
+    fn test_code_block_no_language_still_wraps_lines() {
+        let input = "```\nplain text\nsecond line\n```";
+        let output = render(input);
+        assert!(output.html.contains("data-bamboo-code"));
+        assert!(!output.html.contains("data-bamboo-lang"));
+        let line_wrappers = output.html.matches("class=\"bamboo-line\"").count();
+        assert_eq!(line_wrappers, 2);
     }
 
     #[test]

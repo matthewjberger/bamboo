@@ -160,6 +160,80 @@
       });
 
       (function() {
+        var blocks = document.querySelectorAll('[data-bamboo-code]');
+        if (blocks.length === 0) return;
+        var STORAGE_KEY = 'bamboo-line-numbers';
+        var showNumbers = false;
+        try { showNumbers = localStorage.getItem(STORAGE_KEY) === 'true'; } catch (e) {}
+
+        function applyState() {
+          blocks.forEach(function(block) {
+            var toggle = block.querySelector('[data-bamboo-line-toggle]');
+            if (showNumbers) {
+              block.setAttribute('data-line-numbers', '');
+              if (toggle) {
+                toggle.setAttribute('data-active', '');
+                toggle.setAttribute('aria-pressed', 'true');
+              }
+            } else {
+              block.removeAttribute('data-line-numbers');
+              if (toggle) {
+                toggle.removeAttribute('data-active');
+                toggle.setAttribute('aria-pressed', 'false');
+              }
+            }
+          });
+        }
+
+        function fallbackCopy(text) {
+          var area = document.createElement('textarea');
+          area.value = text;
+          area.setAttribute('readonly', '');
+          area.style.position = 'absolute';
+          area.style.left = '-9999px';
+          document.body.appendChild(area);
+          area.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(area);
+        }
+
+        blocks.forEach(function(block) {
+          var codeEl = block.querySelector('code');
+          var copyBtn = block.querySelector('[data-bamboo-copy]');
+          var lineBtn = block.querySelector('[data-bamboo-line-toggle]');
+
+          if (copyBtn && codeEl) {
+            copyBtn.addEventListener('click', function() {
+              var text = codeEl.textContent || '';
+              var done = function() {
+                copyBtn.setAttribute('data-copied', '');
+                setTimeout(function() { copyBtn.removeAttribute('data-copied'); }, 1500);
+              };
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done, function() {
+                  fallbackCopy(text);
+                  done();
+                });
+              } else {
+                fallbackCopy(text);
+                done();
+              }
+            });
+          }
+
+          if (lineBtn) {
+            lineBtn.addEventListener('click', function() {
+              showNumbers = !showNumbers;
+              try { localStorage.setItem(STORAGE_KEY, showNumbers ? 'true' : 'false'); } catch (e) {}
+              applyState();
+            });
+          }
+        });
+
+        applyState();
+      })();
+
+      (function() {
         var btn = document.getElementById('back-to-top');
         if (!btn) return;
         function update() {

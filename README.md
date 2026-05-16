@@ -21,7 +21,7 @@ Bamboo transforms markdown content with frontmatter into static HTML sites. It f
 |---------|-------------|
 | **Markdown** | Full CommonMark support with tables, footnotes, strikethrough, task lists |
 | **Frontmatter** | TOML (`+++`) or YAML (`---`) metadata in content files |
-| **Syntax Highlighting** | Built-in highlighting via syntect with configurable themes |
+| **Syntax Highlighting** | Built-in highlighting via syntect, with per-block copy-to-clipboard and toggleable line numbers (line numbers are CSS pseudo-elements, so they never make it into the clipboard) |
 | **Templating** | Tera templates with inheritance, includes, filters, and macros |
 | **Shortcodes** | Inline (`{{</* name */>}}`) and block (`{{%/* name */%}}`) shortcodes with Tera templates |
 | **Collections** | Organize content beyond posts: projects, recipes, portfolios (supports nesting) |
@@ -434,6 +434,14 @@ my-theme/
 ### Theme Overrides
 
 Override specific templates without creating a full theme by placing templates in your site's `templates/` directory. These take priority over theme templates.
+
+### Code Block Toolbar
+
+Every rendered code block is wrapped in `<div class="bamboo-code-block" data-bamboo-code>` containing a toolbar with a copy-to-clipboard button and a line-numbers toggle. Each line inside the code block is wrapped in `<span class="bamboo-line">` so the default theme's CSS can show line numbers via a `::before` pseudo-element. Because line numbers live in `::before` content (with `user-select: none`), they are never included when the user selects text or copies via the toolbar button.
+
+The line-numbers toggle is global per visitor and persisted under the `bamboo-line-numbers` `localStorage` key, so flipping it on one block flips every block on the site and survives page reloads.
+
+Custom themes that want this UI should copy the `.bamboo-code-block`, `.bamboo-line`, `.bamboo-code-toolbar`, and `.bamboo-code-button` rules from the default theme's `static/style.css`, plus the small initialization script from `templates/base.html`.
 
 ## Examples
 
