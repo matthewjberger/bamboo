@@ -1,3 +1,12 @@
+## [0.5.7] - 2026-05-16
+
+### 🐛 Bug Fixes
+
+- *(theme)* Preserve top_items order, sort only items
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.7
 ## [0.5.6] - 2026-05-16
 
 ### 🐛 Bug Fixes
@@ -7,6 +16,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump version to v0.5.6
+- Update changelog for v0.5.6
 ## [0.5.5] - 2026-05-16
 
 ### 🐛 Bug Fixes
