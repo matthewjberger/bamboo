@@ -270,16 +270,13 @@
   <!-- Skills Section -->
   {% if has_skills %}
   {%- set skills_sort = site.data.skills.sort | default(value="") -%}
-  {%- set top_items_raw = site.data.skills.top_items | default(value=[]) -%}
+  {%- set top_items_sorted = site.data.skills.top_items | default(value=[]) -%}
   {%- set items_raw = site.data.skills.items | default(value=[]) -%}
   {%- if skills_sort == "asc" -%}
-    {%- set top_items_sorted = top_items_raw | sort -%}
     {%- set items_sorted = items_raw | sort -%}
   {%- elif skills_sort == "desc" -%}
-    {%- set top_items_sorted = top_items_raw | sort | reverse -%}
     {%- set items_sorted = items_raw | sort | reverse -%}
   {%- else -%}
-    {%- set top_items_sorted = top_items_raw -%}
     {%- set items_sorted = items_raw -%}
   {%- endif -%}
   <section id="skills" class="py-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
